@@ -101,6 +101,11 @@
       "passwordNonNumeric": "Le mot de passe doit contenir au moins un caractère non numérique",
       "nameRequired": "Le nom est requis"
     },
+    "social": {
+      "divider": "OU",
+      "googleCta": "Continuer avec Google",
+      "appleCta": "Continuer avec Apple"
+    },
     "signIn": {
       "heading": "Bon retour.",
       "subheading": "Connectez-vous à votre compte.",
@@ -109,9 +114,6 @@
       "passwordLabel": "MOT DE PASSE",
       "forgotPassword": "Mot de passe oublié ?",
       "submit": "Se connecter",
-      "divider": "OU",
-      "googleCta": "Continuer avec Google",
-      "appleCta": "Continuer avec Apple",
       "noAccount": "Pas encore de compte ?",
       "createAccount": "Créer un compte",
       "browseAsGuest": "Naviguer en tant qu'invité",
@@ -140,9 +142,6 @@
       "alreadyHaveAccount": "Déjà un compte ?",
       "signIn": "Se connecter",
       "errorFallback": "Une erreur s'est produite. Veuillez réessayer.",
-      "divider": "OU",
-      "googleCta": "Continuer avec Google",
-      "appleCta": "Continuer avec Apple",
       "errorGoogle": "L'inscription avec Google a échoué. Veuillez réessayer.",
       "errorApple": "L'inscription avec Apple a échoué. Veuillez réessayer."
     },

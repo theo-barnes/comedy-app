@@ -1,24 +1,5 @@
-import { StyleSheet, View } from 'react-native';
-
-import { AppText } from '@/components/AppText';
-import { Screen } from '@/components/Screen';
-import { spacing } from '@/theme';
+import { TabScreenTemplate } from '@/components/TabScreenTemplate';
 
 export default function SearchScreen() {
-  return (
-    <Screen>
-      <View style={styles.container}>
-        <AppText variant="heading">Search</AppText>
-        <AppText muted>Search events, venues, and comedians.</AppText>
-      </View>
-    </Screen>
-  );
+  return <TabScreenTemplate title="Search" subtitle="Search events, venues, and comedians." />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-});

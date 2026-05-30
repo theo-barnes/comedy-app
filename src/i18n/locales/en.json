@@ -101,6 +101,11 @@
       "passwordNonNumeric": "Password must contain at least one non-numeric character",
       "nameRequired": "Name is required"
     },
+    "social": {
+      "divider": "OR",
+      "googleCta": "Continue with Google",
+      "appleCta": "Continue with Apple"
+    },
     "signIn": {
       "heading": "Welcome back.",
       "subheading": "Sign in to your account.",
@@ -109,9 +114,6 @@
       "passwordLabel": "PASSWORD",
       "forgotPassword": "Forgot password?",
       "submit": "Sign In",
-      "divider": "OR",
-      "googleCta": "Continue with Google",
-      "appleCta": "Continue with Apple",
       "noAccount": "No account?",
       "createAccount": "Create one",
       "browseAsGuest": "Browse as guest",
@@ -140,9 +142,6 @@
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "Sign in",
       "errorFallback": "Something went wrong. Please try again.",
-      "divider": "OR",
-      "googleCta": "Continue with Google",
-      "appleCta": "Continue with Apple",
       "errorGoogle": "Google sign-up failed. Please try again.",
       "errorApple": "Apple sign-up failed. Please try again."
     },

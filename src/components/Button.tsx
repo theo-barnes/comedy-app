@@ -7,6 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { type ReactNode } from 'react';
 
 import { colors, radii, spacing, typography } from '@/theme';
 
@@ -17,6 +18,7 @@ type ButtonProps = Omit<PressableProps, 'style'> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  icon?: ReactNode;
   children: string;
   style?: StyleProp<ViewStyle>;
 };
@@ -27,6 +29,7 @@ export function Button({
   loading = false,
   disabled = false,
   children,
+  icon,
   style,
   ...props
 }: ButtonProps) {
@@ -51,9 +54,12 @@ export function Button({
           size="small"
         />
       ) : (
-        <Text style={[styles.label, styles[`${variant}Label`], styles[`${size}Label`]]}>
-          {children}
-        </Text>
+        <>
+          {icon}
+          <Text style={[styles.label, styles[`${variant}Label`], styles[`${size}Label`]]}>
+            {children}
+          </Text>
+        </>
       )}
     </Pressable>
   );
@@ -65,6 +71,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radii.sm,
     flexDirection: 'row',
+    gap: spacing.sm,
   },
   disabled: {
     opacity: 0.45,

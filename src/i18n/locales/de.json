@@ -101,6 +101,11 @@
       "passwordNonNumeric": "Das Passwort muss mindestens ein nicht-numerisches Zeichen enthalten",
       "nameRequired": "Name ist erforderlich"
     },
+    "social": {
+      "divider": "ODER",
+      "googleCta": "Mit Google fortfahren",
+      "appleCta": "Mit Apple fortfahren"
+    },
     "signIn": {
       "heading": "Willkommen zurück.",
       "subheading": "Melde dich in deinem Konto an.",
@@ -109,9 +114,6 @@
       "passwordLabel": "PASSWORT",
       "forgotPassword": "Passwort vergessen?",
       "submit": "Anmelden",
-      "divider": "ODER",
-      "googleCta": "Mit Google fortfahren",
-      "appleCta": "Mit Apple fortfahren",
       "noAccount": "Noch kein Konto?",
       "createAccount": "Jetzt registrieren",
       "browseAsGuest": "Als Gast stöbern",
@@ -140,9 +142,6 @@
       "alreadyHaveAccount": "Bereits ein Konto?",
       "signIn": "Anmelden",
       "errorFallback": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-      "divider": "ODER",
-      "googleCta": "Mit Google fortfahren",
-      "appleCta": "Mit Apple fortfahren",
       "errorGoogle": "Google-Registrierung fehlgeschlagen. Bitte versuche es erneut.",
       "errorApple": "Apple-Registrierung fehlgeschlagen. Bitte versuche es erneut."
     },
