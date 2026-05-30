@@ -1,0 +1,113 @@
+# Billd Tonight — Outstanding Setup Tasks
+
+## CRITICAL — Do these now
+
+- [ ] Verify .env file contains no real secrets (it is committed to git — run: cat .env)
+- [ ] Update Supabase Dashboard redirect URLs: replace comedy-app://auth-callback with billd-tonight://auth-callback
+      (Dashboard → Authentication → URL Configuration)
+
+## Supabase Security Patches (run in Supabase SQL editor)
+
+-- PATCH 1: Prevent role escalation
+-- The current UPDATE policy lets users change their own role (fan → comedian/venue).
+-- Replace it with one that locks the role column after creation.
+
+drop policy "Users can update own profile" on public.profiles;
+
+create policy "Users can update own profile"
+  on public.profiles for update
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and role = (select p.role from public.profiles p where p.id = auth.uid())
+  );
+
+-- PATCH 2: Auto-update updated_at on every profile change
+
+create or replace function public.handle_updated_at()
+returns trigger language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger on_profile_updated
+  before update on public.profiles
+  for each row execute procedure public.handle_updated_at();
+
+## HIGH PRIORITY — Professional standard
+
+### Error Monitoring
+- [ ] Install Sentry: npx expo install @sentry/react-native
+- [ ] Create a free Sentry project at sentry.io and add DSN to .env.local
+- [ ] Wrap app root with Sentry provider and enable native crash reporting
+
+### Testing
+- [ ] Install React Native Testing Library: npx expo install @testing-library/react-native
+- [ ] Install Maestro for E2E tests: brew install maestro
+- [ ] Write first Maestro flow: sign-in happy path (.maestro/sign-in.yaml)
+- [ ] Write component unit tests for Button, AppText, Card
+
+### Git Branching Strategy
+- [ ] Create develop branch: git checkout -b develop
+- [ ] Protect main branch in GitHub (Settings → Branches → Add rule → require PR + status checks)
+- [ ] Use feature/* branches for new work, PR into develop, merge develop → main for releases
+
+### CI/CD (GitHub Actions)
+- [ ] Create .github/workflows/ci.yml
+      - Trigger: on pull_request to main and develop
+      - Steps: pnpm install → lint → typecheck
+- [ ] Create .github/workflows/eas-update.yml
+      - Trigger: on push to main
+      - Steps: eas update --branch production
+
+## MEDIUM PRIORITY — Before public release
+
+### OTA Update Strategy
+- [ ] Configure EAS Update channels: production, staging
+      (eas.json: add channel to preview and production build profiles)
+- [ ] Test OTA updates on staging channel before promoting to production
+- [ ] Consider switching runtimeVersion policy from "appVersion" to "fingerprint"
+      (more robust — prevents OTA updates reaching incompatible native builds)
+
+### Android
+- [ ] Run the app on Android emulator for the first time: npx expo start → press a
+- [ ] Test auth flow on Android (deep links and SecureStore behave differently)
+- [ ] Register Android SHA-1 fingerprint with Google OAuth credentials for release builds
+
+### UI / UX
+- [ ] Decide on dark mode support — currently hard-coded to light (userInterfaceStyle: "light" in app.json)
+      Either implement dark mode or set supportsTablet: false intentionally
+
+### Apple Developer Account
+- [ ] Enroll in Apple Developer Program ($99/year) when ready for physical device testing or TestFlight
+      https://developer.apple.com/programs/
+- [ ] After enrolling: npx eas-cli@latest device:create → register iPhone
+- [ ] Build for physical device: npx eas-cli@latest build --profile development-device --platform ios
+
+## Google OAuth (required before the "Continue with Google" button works)
+- [ ] Create a Google Cloud project: https://console.cloud.google.com
+- [ ] Enable the "OAuth 2.0" credential type for iOS and Android
+- [ ] Add redirect URI: billd-tonight://auth-callback
+- [ ] Enable Google provider in Supabase Dashboard → Authentication → Providers
+      (paste in the Client ID and Client Secret from Google Cloud)
+- [ ] Add EXPO_PUBLIC_GOOGLE_CLIENT_ID to your .env.local file
+- [ ] Android release builds: add your app's SHA-1 fingerprint to Google Cloud credentials
+- [ ] iOS production: configure Associated Domains / Universal Links for the OAuth callback
+      (replaces the custom URI scheme to prevent third-party hijacking — see Security section)
+
+## Security Hardening (production)
+- [ ] Replace billd-tonight:// URI scheme with Universal Links (iOS) + App Links (Android)
+      to prevent third-party apps hijacking the OAuth callback
+- [ ] Configure Supabase Dashboard password policy: minimum 8 characters
+      (enforces server-side to match the client-side Zod rule)
+- [ ] Enable Supabase rate limiting on auth endpoints if on a paid plan
+- [ ] Create a separate production Supabase project before launch
+
+## Future Features
+- [ ] Instagram OAuth (requires a Meta Developer App + Instagram Basic Display API)
+- [ ] Profile photo upload (Supabase Storage bucket + RLS)
+- [ ] Push notification permissions (Expo Notifications)
+- [ ] Finalise brand colours in src/theme/tokens.ts once design is locked

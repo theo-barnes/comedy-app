@@ -1,0 +1,177 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "errorRestart": "Please restart the app. If the problem persists, reinstall it.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "done": "Done",
+    "back": "Back",
+    "close": "Close",
+    "search": "Search",
+    "noResults": "No results found",
+    "seeAll": "See all"
+  },
+  "events": {
+    "title": "Comedy nights",
+    "subtitle": "Discover nearby comedy events, lineups, and performer clips.",
+    "tonight": "Tonight",
+    "tomorrow": "Tomorrow",
+    "thisWeekend": "This weekend",
+    "free": "Free",
+    "soldOut": "Sold out",
+    "doors": "Doors",
+    "showStarts": "Show starts",
+    "lineup": "Lineup",
+    "headliner": "Headliner",
+    "support": "Support",
+    "ticketsFrom": "Tickets from {{price}}",
+    "getTickets": "Get tickets",
+    "noUpcomingEvents": "No upcoming events",
+    "noUpcomingEventsSubtitle": "Check back soon for new dates."
+  },
+  "comedians": {
+    "profile": "Profile",
+    "clips": "Clips",
+    "upcomingGigs": "Upcoming gigs",
+    "noClips": "No clips yet",
+    "noGigs": "No upcoming gigs",
+    "bio": "About",
+    "watchClip": "Watch clip"
+  },
+  "venues": {
+    "details": "Venue details",
+    "address": "Address",
+    "getDirections": "Get directions",
+    "eventsHere": "Events here",
+    "noEvents": "No upcoming events at this venue"
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Search events, venues, and comedians.",
+    "placeholder": "Events, venues, comedians…",
+    "recent": "Recent searches",
+    "clearRecent": "Clear",
+    "events": "Events",
+    "comedians": "Comedians",
+    "venues": "Venues"
+  },
+  "saved": {
+    "title": "Saved",
+    "subtitle": "Your saved gigs and comedians will appear here.",
+    "noSaved": "Nothing saved yet",
+    "noSavedSubtitle": "Tap the bookmark on any event or comedian to save it."
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Account, comedian tools, and settings.",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out",
+    "settings": "Settings",
+    "comedianTools": "Comedian tools",
+    "manageProfile": "Manage profile",
+    "manageClips": "Manage clips",
+    "manageGigs": "My gigs"
+  },
+  "onboarding": {
+    "slide1": {
+      "title": "Comedy is live\nor it's nothing.",
+      "body": "Find the funniest nights in your city — before they sell out."
+    },
+    "slide2": {
+      "title": "Know the lineup\nbefore you commit.",
+      "body": "Watch clips, read bios, and decide before you buy a ticket."
+    },
+    "slide3": {
+      "title": "Never miss\na room\nthat matters.",
+      "body": "Save shows, get alerts, and discover hidden gems in your neighborhood."
+    },
+    "cta": "Continue",
+    "ctaFinal": "Find Comedy Near You",
+    "skip": "Skip for now"
+  },
+  "auth": {
+    "validation": {
+      "emailInvalid": "Enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 8 characters",
+      "passwordMax": "Password must be fewer than 128 characters",
+      "passwordNonNumeric": "Password must contain at least one non-numeric character",
+      "nameRequired": "Name is required"
+    },
+    "signIn": {
+      "heading": "Welcome back.",
+      "subheading": "Sign in to your account.",
+      "emailLabel": "EMAIL",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "PASSWORD",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign In",
+      "divider": "OR",
+      "googleCta": "Continue with Google",
+      "appleCta": "Continue with Apple",
+      "noAccount": "No account?",
+      "createAccount": "Create one",
+      "browseAsGuest": "Browse as guest",
+      "errorInvalid": "Invalid email or password.",
+      "errorGoogle": "Google sign-in failed. Please try again.",
+      "errorApple": "Apple sign-in failed. Please try again.",
+      "cooldown": "Too many attempts. Try again in {{seconds}}s."
+    },
+    "signUp": {
+      "heading": "Join the room.",
+      "subheading": "Who are you coming as?",
+      "roleFanLabel": "Comedy Fan",
+      "roleFanDescription": "Discover shows, save events, follow comedians",
+      "roleComedianLabel": "Comedian / Performer",
+      "roleComedianDescription": "Manage your profile, clips, and gig listings",
+      "roleVenueLabel": "Promoter / Venue",
+      "roleVenueDescription": "Submit events, manage lineups, sell tickets",
+      "nameLabel": "FULL NAME",
+      "namePlaceholder": "Your name",
+      "emailLabel": "EMAIL",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "PASSWORD",
+      "passwordPlaceholder": "Create a password",
+      "submit": "Create Account",
+      "termsAgreement": "By signing up you agree to our <termsLink>Terms</termsLink> and <privacyLink>Privacy Policy</privacyLink>.",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "errorFallback": "Something went wrong. Please try again.",
+      "divider": "OR",
+      "googleCta": "Continue with Google",
+      "appleCta": "Continue with Apple",
+      "errorGoogle": "Google sign-up failed. Please try again.",
+      "errorApple": "Apple sign-up failed. Please try again."
+    },
+    "selectRole": {
+      "heading": "Who are you?",
+      "subheading": "Choose how you'll use the app.",
+      "submit": "Continue",
+      "errorFallback": "Something went wrong. Please try again."
+    },
+    "forgotPassword": {
+      "heading": "Reset password.",
+      "subheading": "Enter your email and we'll send you a reset link.",
+      "emailLabel": "EMAIL",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send Reset Link",
+      "successTitle": "Check your inbox.",
+      "successBody": "If an account exists for that email, a password reset link has been sent.",
+      "backToSignIn": "Back to sign in"
+    },
+    "verifyEmail": {
+      "heading": "Check your inbox.",
+      "body": "We've sent a confirmation link to your email. Tap it to activate your account.",
+      "backToSignIn": "Back to sign in"
+    },
+    "authCallback": {
+      "verifying": "Verifying your account…",
+      "errorTitle": "Link expired or invalid.",
+      "errorBody": "This link is no longer valid. Please sign up again or request a new reset link.",
+      "backToSignIn": "Back to sign in"
+    }
+  }
+}

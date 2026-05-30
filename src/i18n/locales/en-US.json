@@ -1,0 +1,9 @@
+{
+  "common": {
+    "noResults": "No results found",
+    "errorRestart": "Please restart the app. If the problem persists, reinstall it."
+  },
+  "events": {
+    "ticketsFrom": "Tickets from {{price}}"
+  }
+}

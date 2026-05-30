@@ -1,0 +1,177 @@
+{
+  "common": {
+    "loading": "Chargement…",
+    "error": "Une erreur s'est produite",
+    "retry": "Réessayer",
+    "errorRestart": "Veuillez redémarrer l'application. Si le problème persiste, réinstallez-la.",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "done": "Terminer",
+    "back": "Retour",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat",
+    "seeAll": "Voir tout"
+  },
+  "events": {
+    "title": "Soirées comédie",
+    "subtitle": "Découvrez les spectacles d'humour près de chez vous.",
+    "tonight": "Ce soir",
+    "tomorrow": "Demain",
+    "thisWeekend": "Ce week-end",
+    "free": "Gratuit",
+    "soldOut": "Complet",
+    "doors": "Portes",
+    "showStarts": "Début du spectacle",
+    "lineup": "Programme",
+    "headliner": "Tête d'affiche",
+    "support": "Première partie",
+    "ticketsFrom": "Billets à partir de {{price}}",
+    "getTickets": "Acheter des billets",
+    "noUpcomingEvents": "Aucun événement à venir",
+    "noUpcomingEventsSubtitle": "Revenez bientôt pour de nouvelles dates."
+  },
+  "comedians": {
+    "profile": "Profil",
+    "clips": "Vidéos",
+    "upcomingGigs": "Prochains spectacles",
+    "noClips": "Aucune vidéo pour l'instant",
+    "noGigs": "Aucun spectacle à venir",
+    "bio": "À propos",
+    "watchClip": "Regarder"
+  },
+  "venues": {
+    "details": "Informations sur la salle",
+    "address": "Adresse",
+    "getDirections": "Itinéraire",
+    "eventsHere": "Événements ici",
+    "noEvents": "Aucun événement à venir dans cette salle"
+  },
+  "search": {
+    "title": "Recherche",
+    "subtitle": "Recherchez des événements, salles et comédiens.",
+    "placeholder": "Événements, salles, comédiens…",
+    "recent": "Recherches récentes",
+    "clearRecent": "Effacer",
+    "events": "Événements",
+    "comedians": "Comédiens",
+    "venues": "Salles"
+  },
+  "saved": {
+    "title": "Enregistrés",
+    "subtitle": "Vos spectacles et comédiens enregistrés apparaîtront ici.",
+    "noSaved": "Rien d'enregistré pour l'instant",
+    "noSavedSubtitle": "Appuyez sur le signet d'un événement ou d'un comédien pour l'enregistrer."
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Compte, outils pour comédiens et paramètres.",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "signOut": "Se déconnecter",
+    "settings": "Paramètres",
+    "comedianTools": "Outils comédien",
+    "manageProfile": "Gérer le profil",
+    "manageClips": "Gérer les vidéos",
+    "manageGigs": "Mes spectacles"
+  },
+  "onboarding": {
+    "slide1": {
+      "title": "La comédie est vivante\nou elle ne l'est pas.",
+      "body": "Trouvez les soirées les plus drôles de votre ville — avant qu'elles soient complètes."
+    },
+    "slide2": {
+      "title": "Connaissez la prog\navant de vous décider.",
+      "body": "Regardez des clips, lisez les bios et décidez avant d'acheter votre billet."
+    },
+    "slide3": {
+      "title": "Ne manquez jamais\nune salle\nqui compte.",
+      "body": "Enregistrez des spectacles, recevez des alertes et découvrez des trésors cachés dans votre quartier."
+    },
+    "cta": "Continuer",
+    "ctaFinal": "Trouver la comédie près de chez moi",
+    "skip": "Passer"
+  },
+  "auth": {
+    "validation": {
+      "emailInvalid": "Saisissez une adresse e-mail valide",
+      "passwordRequired": "Mot de passe requis",
+      "passwordMin": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordMax": "Le mot de passe doit contenir moins de 128 caractères",
+      "passwordNonNumeric": "Le mot de passe doit contenir au moins un caractère non numérique",
+      "nameRequired": "Le nom est requis"
+    },
+    "signIn": {
+      "heading": "Bon retour.",
+      "subheading": "Connectez-vous à votre compte.",
+      "emailLabel": "E-MAIL",
+      "emailPlaceholder": "vous@exemple.fr",
+      "passwordLabel": "MOT DE PASSE",
+      "forgotPassword": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "divider": "OU",
+      "googleCta": "Continuer avec Google",
+      "appleCta": "Continuer avec Apple",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte",
+      "browseAsGuest": "Naviguer en tant qu'invité",
+      "errorInvalid": "E-mail ou mot de passe incorrect.",
+      "errorGoogle": "La connexion avec Google a échoué. Veuillez réessayer.",
+      "errorApple": "La connexion avec Apple a échoué. Veuillez réessayer.",
+      "cooldown": "Trop de tentatives. Réessayez dans {{seconds}}s."
+    },
+    "signUp": {
+      "heading": "Rejoignez la salle.",
+      "subheading": "En tant que qui venez-vous ?",
+      "roleFanLabel": "Fan de comédie",
+      "roleFanDescription": "Découvrez des spectacles, enregistrez des événements, suivez des comédiens",
+      "roleComedianLabel": "Comédien / Artiste",
+      "roleComedianDescription": "Gérez votre profil, vos clips et vos engagements",
+      "roleVenueLabel": "Promoteur / Salle",
+      "roleVenueDescription": "Soumettez des événements, gérez les programmes, vendez des billets",
+      "nameLabel": "NOM COMPLET",
+      "namePlaceholder": "Votre nom",
+      "emailLabel": "E-MAIL",
+      "emailPlaceholder": "vous@exemple.fr",
+      "passwordLabel": "MOT DE PASSE",
+      "passwordPlaceholder": "Créer un mot de passe",
+      "submit": "Créer un compte",
+      "termsAgreement": "En vous inscrivant, vous acceptez nos <termsLink>Conditions d'utilisation</termsLink> et notre <privacyLink>Politique de confidentialité</privacyLink>.",
+      "alreadyHaveAccount": "Déjà un compte ?",
+      "signIn": "Se connecter",
+      "errorFallback": "Une erreur s'est produite. Veuillez réessayer.",
+      "divider": "OU",
+      "googleCta": "Continuer avec Google",
+      "appleCta": "Continuer avec Apple",
+      "errorGoogle": "L'inscription avec Google a échoué. Veuillez réessayer.",
+      "errorApple": "L'inscription avec Apple a échoué. Veuillez réessayer."
+    },
+    "selectRole": {
+      "heading": "Qui êtes-vous ?",
+      "subheading": "Choisissez comment vous utiliserez l'application.",
+      "submit": "Continuer",
+      "errorFallback": "Une erreur s'est produite. Veuillez réessayer."
+    },
+    "forgotPassword": {
+      "heading": "Réinitialiser le mot de passe.",
+      "subheading": "Saisissez votre e-mail et nous vous enverrons un lien de réinitialisation.",
+      "emailLabel": "E-MAIL",
+      "emailPlaceholder": "vous@exemple.fr",
+      "submit": "Envoyer le lien",
+      "successTitle": "Vérifiez votre boîte de réception.",
+      "successBody": "Si un compte existe pour cet e-mail, un lien de réinitialisation du mot de passe a été envoyé.",
+      "backToSignIn": "Retour à la connexion"
+    },
+    "verifyEmail": {
+      "heading": "Vérifiez votre boîte de réception.",
+      "body": "Nous avons envoyé un lien de confirmation à votre adresse e-mail. Appuyez dessus pour activer votre compte.",
+      "backToSignIn": "Retour à la connexion"
+    },
+    "authCallback": {
+      "verifying": "Vérification de votre compte…",
+      "errorTitle": "Lien expiré ou invalide.",
+      "errorBody": "Ce lien n'est plus valide. Veuillez vous inscrire à nouveau ou demander un nouveau lien.",
+      "backToSignIn": "Retour à la connexion"
+    }
+  }
+}

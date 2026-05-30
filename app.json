@@ -1,15 +1,30 @@
 {
   "expo": {
-    "name": "comedy-app",
-    "slug": "comedy-app",
+    "name": "billd-tonight",
+    "slug": "billd-tonight",
     "version": "1.0.0",
+    "scheme": "billd-tonight",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "url": "https://u.expo.dev/13242deb-ac3a-451f-b603-7afce2755fa7"
+    },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.billd.billdtonight",
+      "supportsTablet": true,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.billd.billdtonight",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -19,7 +34,18 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": ["expo-localization", "expo-dev-client", "expo-apple-authentication"],
+    "extra": {
+      "eas": {
+        "projectId": "13242deb-ac3a-451f-b603-7afce2755fa7"
+      }
+    },
+    "owner": "theobarnes"
   }
 }
