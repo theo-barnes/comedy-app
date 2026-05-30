@@ -6,6 +6,7 @@ export const colors = {
   border: '#232A32',
   primary: '#F25F5C',
   card: '#12161B',
+  error: '#E05C5C',
 };
 
 export const spacing = {

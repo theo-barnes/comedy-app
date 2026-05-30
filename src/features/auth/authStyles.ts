@@ -14,7 +14,7 @@ export const authStyles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputError: {
-    borderColor: '#E05C5C',
+    borderColor: colors.error,
   },
   passwordRow: {
     flexDirection: 'row',
@@ -37,7 +37,14 @@ export const authStyles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   fieldError: {
-    color: '#E05C5C',
+    color: colors.error,
     marginTop: 4,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+    marginTop: spacing.md,
   },
 });

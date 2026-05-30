@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, router, type Href } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/features/auth/useAuth';
 import { AppText } from '@/components/AppText';
-import { Button } from '@/components/Button';
+import { StatusScreen } from '@/components/StatusScreen';
 import { colors, spacing } from '@/theme';
 
 export default function AuthCallbackScreen() {
@@ -32,23 +31,16 @@ export default function AuthCallbackScreen() {
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Ionicons name="alert-circle-outline" size={48} color="#E05C5C" />
-        <AppText variant="heading" style={styles.errorTitle}>
-          {t('auth.authCallback.errorTitle')}
-        </AppText>
-        <AppText variant="body" muted style={styles.body}>
-          {t('auth.authCallback.errorBody')}
-        </AppText>
-        <Button
-          variant="secondary"
-          size="md"
-          onPress={() => router.replace('/(auth)/sign-in' as Href)}
-          style={styles.button}
-        >
-          {t('auth.authCallback.backToSignIn')}
-        </Button>
-      </View>
+      <StatusScreen
+        icon="alert-circle-outline"
+        iconColor={colors.error}
+        title={t('auth.authCallback.errorTitle')}
+        body={t('auth.authCallback.errorBody')}
+        cta={{
+          label: t('auth.authCallback.backToSignIn'),
+          onPress: () => router.replace('/(auth)/sign-in' as Href),
+        }}
+      />
     );
   }
 
@@ -71,16 +63,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
-  errorTitle: {
-    fontWeight: '700',
-    textAlign: 'center',
-  },
   body: {
     textAlign: 'center',
     lineHeight: 24,
-  },
-  button: {
-    marginTop: spacing.md,
-    alignSelf: 'stretch',
   },
 });

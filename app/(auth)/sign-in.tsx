@@ -1,20 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link, router, type Href } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod/v3';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/features/auth/useAuth';
 import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 import { AuthScreenWrapper } from '@/features/auth/AuthScreenWrapper';
 import { LogoHeader } from '@/features/auth/LogoHeader';
 import { useSocialAuthHandlers } from '@/features/auth/useSocialAuthHandlers';
-import { authStyles } from '@/features/auth/authStyles';
+import { createSignInSchema } from '@/features/auth/schemas';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { FormField } from '@/components/FormField';
+import { PasswordInput } from '@/components/PasswordInput';
+import { useCountdown } from '@/hooks/useCountdown';
 import { colors, spacing, typography } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
@@ -30,22 +31,14 @@ export default function SignInScreen() {
   const { signInWithEmail, continueAsGuest } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-  const schema = useMemo(
-    () =>
-      z.object({
-        email: z.string().email(t('auth.validation.emailInvalid')),
-        password: z.string().min(1, t('auth.validation.passwordRequired')),
-      }),
-    [t],
-  );
+  const schema = useMemo(() => createSignInSchema(t), [t]);
   const { handleGoogle, handleApple, googleLoading, appleLoading } = useSocialAuthHandlers({
     setError,
     googleErrorMessage: t('auth.signIn.errorGoogle'),
     appleErrorMessage: t('auth.signIn.errorApple'),
   });
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [cooldownRemaining, setCooldownRemaining] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
+  const { remaining: cooldownRemaining, start: startCooldown } = useCountdown(COOLDOWN_SECONDS);
 
   const {
     control,
@@ -55,16 +48,6 @@ export default function SignInScreen() {
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '' },
   });
-
-  const startCooldown = useCallback(() => {
-    let remaining = COOLDOWN_SECONDS;
-    setCooldownRemaining(remaining);
-    const id = setInterval(() => {
-      remaining -= 1;
-      setCooldownRemaining(remaining);
-      if (remaining <= 0) clearInterval(id);
-    }, 1000);
-  }, []);
 
   const onSubmit = useCallback(
     async (data: SignInFields) => {
@@ -97,71 +80,41 @@ export default function SignInScreen() {
       </AppText>
 
       {/* Email */}
-      <AppText variant="caption" muted style={styles.label}>
-        {t('auth.signIn.emailLabel')}
-      </AppText>
       <Controller
         control={control}
         name="email"
         render={({ field: { onChange, onBlur, value }, fieldState: { error: fe } }) => (
-          <>
-            <TextInput
-              style={[authStyles.input, fe && authStyles.inputError]}
-              placeholder={t('auth.signIn.emailPlaceholder')}
-              placeholderTextColor={colors.foregroundMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-            />
-            {fe && (
-              <AppText variant="caption" style={authStyles.fieldError}>
-                {fe.message}
-              </AppText>
-            )}
-          </>
+          <FormField
+            label={t('auth.signIn.emailLabel')}
+            placeholder={t('auth.signIn.emailPlaceholder')}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+            onBlur={onBlur}
+            onChangeText={onChange}
+            value={value}
+            error={fe}
+          />
         )}
       />
 
       {/* Password */}
-      <AppText variant="caption" muted style={styles.label}>
-        {t('auth.signIn.passwordLabel')}
-      </AppText>
       <Controller
         control={control}
         name="password"
         render={({ field: { onChange, onBlur, value }, fieldState: { error: fe } }) => (
-          <>
-            <View style={[authStyles.passwordRow, fe && authStyles.inputError]}>
-              <TextInput
-                style={authStyles.passwordInput}
-                placeholder="••••••••"
-                placeholderTextColor={colors.foregroundMuted}
-                secureTextEntry={!showPassword}
-                textContentType="password"
-                autoComplete="password"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-              <Pressable onPress={() => setShowPassword((p) => !p)} style={authStyles.eyeButton}>
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color={colors.foregroundMuted}
-                />
-              </Pressable>
-            </View>
-            {fe && (
-              <AppText variant="caption" style={authStyles.fieldError}>
-                {fe.message}
-              </AppText>
-            )}
-          </>
+          <PasswordInput
+            label={t('auth.signIn.passwordLabel')}
+            placeholder="••••••••"
+            textContentType="password"
+            autoComplete="password"
+            onBlur={onBlur}
+            onChangeText={onChange}
+            value={value}
+            error={fe}
+          />
         )}
       />
 
@@ -223,13 +176,6 @@ const styles = StyleSheet.create({
   },
   subheading: {
     marginBottom: spacing.xl,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
   },
   forgotLink: {
     fontSize: typography.body,

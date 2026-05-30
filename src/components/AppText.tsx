@@ -16,10 +16,7 @@ export function AppText({
   ...props
 }: AppTextProps) {
   return (
-    <Text
-      style={[styles.base, styles[variant], muted ? styles.muted : styles.default, style]}
-      {...props}
-    >
+    <Text style={[styles.base, styles[variant], muted && styles.muted, style]} {...props}>
       {children}
     </Text>
   );
@@ -27,9 +24,6 @@ export function AppText({
 
 const styles = StyleSheet.create({
   base: {
-    color: colors.foreground,
-  },
-  default: {
     color: colors.foreground,
   },
   muted: {

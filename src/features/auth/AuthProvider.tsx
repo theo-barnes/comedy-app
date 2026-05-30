@@ -36,6 +36,7 @@ type AuthContextValue = {
   continueAsGuest: () => void;
   exchangeCodeForSession: (code: string) => Promise<void>;
   updateUserRole: (role: UserRole) => Promise<void>;
+  resetPasswordForEmail: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -282,6 +283,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (error) throw error;
   }, []);
 
+  const resetPasswordForEmail = useCallback(async (email: string) => {
+    // Fire-and-forget — always show success to prevent email enumeration.
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'billd-tonight://auth-callback',
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -298,6 +306,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         continueAsGuest,
         exchangeCodeForSession,
         updateUserRole,
+        resetPasswordForEmail,
       }}
     >
       {children}

@@ -3,10 +3,8 @@ import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { colors, radii, spacing } from '@/theme';
 
-type CardProps = PropsWithChildren<{
-  onPress?: () => void;
-  style?: ViewStyle;
-}>;
+type CardProps = PropsWithChildren<{ style?: ViewStyle }> &
+  ({ onPress: () => void } | { onPress?: never });
 
 export function Card({ children, onPress, style }: CardProps) {
   if (onPress) {

@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { spacing } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 type Props = { message: string | null };
 
@@ -16,7 +16,7 @@ export function ErrorBanner({ message }: Props) {
 
 const styles = StyleSheet.create({
   banner: {
-    color: '#E05C5C',
+    color: colors.error,
     marginTop: spacing.md,
     textAlign: 'center',
   },
