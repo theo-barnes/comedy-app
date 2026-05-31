@@ -1,7 +1,7 @@
-import { act, render, renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 
-import { OnboardingContext, OnboardingProvider } from '@/providers/OnboardingProvider';
+import { OnboardingProvider } from '@/providers/OnboardingProvider';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 const mockGet = SecureStore.getItemAsync as jest.Mock;

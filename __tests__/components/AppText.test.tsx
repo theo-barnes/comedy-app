@@ -20,7 +20,7 @@ describe('AppText', () => {
     render(<AppText muted>Muted text</AppText>);
     const element = screen.getByText('Muted text');
     // The muted style applies a lighter foreground color — verify the flat style array contains it.
-    const flatStyle = element.props.style as Array<Record<string, unknown>>;
+    const flatStyle = element.props.style as Record<string, unknown>[];
     const hasMutedColor = flatStyle.some(
       (s) => s && typeof s === 'object' && 'color' in s && s.color !== undefined,
     );

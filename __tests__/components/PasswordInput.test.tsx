@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { TextInput } from 'react-native';
 import type { FieldError } from 'react-hook-form';
 
 import { PasswordInput } from '@/components/PasswordInput';
@@ -11,7 +12,7 @@ describe('PasswordInput', () => {
 
   it('masks the input by default (secureTextEntry = true)', () => {
     render(<PasswordInput label="Password" />);
-    const input = screen.UNSAFE_getByType(require('react-native').TextInput);
+    const input = screen.UNSAFE_getByType(TextInput);
     expect(input.props.secureTextEntry).toBe(true);
   });
 
@@ -19,7 +20,7 @@ describe('PasswordInput', () => {
     render(<PasswordInput label="Password" />);
     // Icon mock renders name as Text content; fireEvent bubbles to the Pressable.
     fireEvent.press(screen.getByText('eye-outline'));
-    const input = screen.UNSAFE_getByType(require('react-native').TextInput);
+    const input = screen.UNSAFE_getByType(TextInput);
     expect(input.props.secureTextEntry).toBe(false);
   });
 
@@ -28,7 +29,7 @@ describe('PasswordInput', () => {
     fireEvent.press(screen.getByText('eye-outline'));
     // After first press the icon flips to eye-off-outline
     fireEvent.press(screen.getByText('eye-off-outline'));
-    const input = screen.UNSAFE_getByType(require('react-native').TextInput);
+    const input = screen.UNSAFE_getByType(TextInput);
     expect(input.props.secureTextEntry).toBe(true);
   });
 

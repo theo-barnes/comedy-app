@@ -74,12 +74,16 @@ export default function OnboardingScreen() {
   );
 
   // One Animated.Value per segment, seeded for slide 0 being active on mount.
-  const segmentWidths = useRef(
-    Array.from(
-      { length: SLIDE_COUNT },
-      (_, i) => new Animated.Value(i === 0 ? ACTIVE_SEG_WIDTH : INACTIVE_SEG_WIDTH),
-    ),
-  ).current;
+  // useMemo with empty deps creates the array once — avoids accessing .current
+  // during render (react-hooks/refs).
+  const segmentWidths = useMemo(
+    () =>
+      Array.from(
+        { length: SLIDE_COUNT },
+        (_, i) => new Animated.Value(i === 0 ? ACTIVE_SEG_WIDTH : INACTIVE_SEG_WIDTH),
+      ),
+    [],
+  );
 
   // Spring-animate each segment to its new width whenever the active slide changes.
   // tension/friction chosen for a snappy feel with a very slight overshoot (bounce).
@@ -148,11 +152,11 @@ export default function OnboardingScreen() {
         </Pressable>
       </View>
     ),
-    [handleContinue, handleSkip],
+    [handleContinue, handleSkip, t],
   );
 
   const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
+    ({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
       if (viewableItems[0]?.index != null) {
         setActiveIndex(viewableItems[0].index);
       }

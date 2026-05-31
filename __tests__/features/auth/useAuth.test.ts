@@ -1,12 +1,12 @@
-// Prevent the transitive import chain (useAuth → AuthProvider → supabase → env)
-// from throwing a ZodError about missing environment variables.
-jest.mock('@/features/auth/AuthProvider', () => ({
-  AuthContext: require('react').createContext(null),
-}));
-
 import { renderHook } from '@testing-library/react-native';
 
 import { useAuth } from '@/features/auth/useAuth';
+
+// Prevent the transitive import chain (useAuth → AuthProvider → supabase → env)
+// from throwing a ZodError about missing environment variables.
+jest.mock('@/features/auth/AuthProvider', () => ({
+  AuthContext: require('react').createContext(null), // eslint-disable-line @typescript-eslint/no-require-imports
+}));
 
 describe('useAuth', () => {
   it('throws when used outside <AuthProvider>', () => {

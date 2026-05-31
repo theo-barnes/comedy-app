@@ -8,25 +8,6 @@ type Options = {
   appleErrorMessage: string;
 };
 
-function createAsyncHandler(
-  fn: () => Promise<void>,
-  setLoading: (v: boolean) => void,
-  setError: (msg: string | null) => void,
-  errorMessage: string,
-) {
-  return async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      await fn();
-    } catch {
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-}
-
 export function useSocialAuthHandlers({
   setError,
   googleErrorMessage,
@@ -36,15 +17,29 @@ export function useSocialAuthHandlers({
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
 
-  const handleGoogle = useCallback(
-    createAsyncHandler(signInWithGoogle, setGoogleLoading, setError, googleErrorMessage),
-    [signInWithGoogle, setError, googleErrorMessage],
-  );
+  const handleGoogle = useCallback(async () => {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch {
+      setError(googleErrorMessage);
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, [signInWithGoogle, setError, googleErrorMessage]);
 
-  const handleApple = useCallback(
-    createAsyncHandler(signInWithApple, setAppleLoading, setError, appleErrorMessage),
-    [signInWithApple, setError, appleErrorMessage],
-  );
+  const handleApple = useCallback(async () => {
+    setError(null);
+    setAppleLoading(true);
+    try {
+      await signInWithApple();
+    } catch {
+      setError(appleErrorMessage);
+    } finally {
+      setAppleLoading(false);
+    }
+  }, [signInWithApple, setError, appleErrorMessage]);
 
   return { handleGoogle, handleApple, googleLoading, appleLoading };
 }

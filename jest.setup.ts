@@ -1,7 +1,9 @@
 // Mock native modules that are not available in the Jest environment.
 
 jest.mock('@expo/vector-icons', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Text } = require('react-native');
   return new Proxy(
     {},

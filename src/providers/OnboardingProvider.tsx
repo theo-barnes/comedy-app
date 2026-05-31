@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type PropsWithChildren,
-} from 'react';
+import { createContext, useCallback, useEffect, useState, type PropsWithChildren } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 const ONBOARDING_KEY = 'has_seen_onboarding';
@@ -22,13 +15,14 @@ type OnboardingContextValue = {
 export const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: PropsWithChildren) {
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
+  // Initialise state directly from FORCE_ONBOARDING so we never call setState
+  // synchronously inside an effect (react-hooks/set-state-in-effect).
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(
+    FORCE_ONBOARDING ? false : null,
+  );
 
   useEffect(() => {
-    if (FORCE_ONBOARDING) {
-      setHasSeenOnboarding(false);
-      return;
-    }
+    if (FORCE_ONBOARDING) return;
     SecureStore.getItemAsync(ONBOARDING_KEY).then((value) => {
       setHasSeenOnboarding(value === 'true');
     });

@@ -14,11 +14,12 @@ export default function AuthCallbackScreen() {
   const { exchangeCodeForSession } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
+  // Derive the missing-code error at render time to avoid calling setState
+  // synchronously inside an effect (react-hooks/set-state-in-effect).
+  const displayError = !code ? t('auth.authCallback.errorBody') : error;
+
   useEffect(() => {
-    if (!code) {
-      setError(t('auth.authCallback.errorBody'));
-      return;
-    }
+    if (!code) return;
     exchangeCodeForSession(code)
       .then(() => {
         // On success: onAuthStateChange in AuthProvider sets the session →
@@ -29,13 +30,13 @@ export default function AuthCallbackScreen() {
       });
   }, [code, exchangeCodeForSession, t]);
 
-  if (error) {
+  if (displayError) {
     return (
       <StatusScreen
         icon="alert-circle-outline"
         iconColor={colors.error}
         title={t('auth.authCallback.errorTitle')}
-        body={t('auth.authCallback.errorBody')}
+        body={displayError}
         cta={{
           label: t('auth.authCallback.backToSignIn'),
           onPress: () => router.replace('/(auth)/sign-in' as Href),

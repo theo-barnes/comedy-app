@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { Text } from 'react-native';
 
 import { TabScreenTemplate } from '@/components/TabScreenTemplate';
 
@@ -21,7 +22,7 @@ describe('TabScreenTemplate', () => {
   it('renders children inside the template', () => {
     const { getByText } = render(
       <TabScreenTemplate title="Discover">
-        {require('react').createElement(require('react-native').Text, null, 'Child content')}
+        <Text>Child content</Text>
       </TabScreenTemplate>,
     );
     expect(getByText('Child content')).toBeTruthy();
