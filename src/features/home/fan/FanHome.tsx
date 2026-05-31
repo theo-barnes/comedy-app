@@ -37,28 +37,28 @@ const MOCK_FAN_DATA = {
     { id: '3', title: 'Thursday Late at the Creek', subtitle: 'Up The Creek · Greenwich' },
   ],
   performersNearYou: [
-    { id: '1', name: 'Asha Mehta', subtitle: 'The Comedy Store' },
-    { id: '2', name: 'Marcus Cole', subtitle: 'Up The Creek' },
-    { id: '3', name: 'Siobhan Gallagher', subtitle: 'Angel Comedy Club' },
+    { id: '1', name: 'Jane Smith', subtitle: 'The Comedy Store' },
+    { id: '2', name: 'John Doe', subtitle: 'Up The Creek' },
+    { id: '3', name: 'Sarah Brown', subtitle: 'Angel Comedy Club' },
   ],
   freshClips: [
     {
       id: '1',
       title: 'The Algorithm Knows Too Much',
-      comedianName: 'Asha Mehta',
+      comedianName: 'Jane Smith',
       viewCount: '128K views',
       duration: '3:42',
     },
     {
       id: '2',
       title: 'Peckham Is My Trauma Response',
-      comedianName: 'Marcus Cole',
+      comedianName: 'John Doe',
       viewCount: '84K views',
       duration: '4:17',
     },
   ],
   becauseYouSaved: {
-    name: 'Asha',
+    name: 'Jane',
     items: [
       {
         id: '1',

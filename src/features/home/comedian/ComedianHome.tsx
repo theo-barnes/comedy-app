@@ -25,7 +25,7 @@ function getTimeOfDay(): string {
 const MOCK_COMEDIAN_DATA = {
   city: 'London',
   notificationCount: 3,
-  comedianName: 'Asha',
+  comedianName: 'Jane',
   nextGig: {
     daysUntil: 4,
     hoursUntil: 6,
@@ -70,9 +70,9 @@ const MOCK_COMEDIAN_DATA = {
     { id: '2', title: 'Thursday Late at the Creek', subtitle: 'Up The Creek' },
   ],
   othersOnCircuit: [
-    { id: '1', name: 'Marcus Cole', subtitle: '29.1K' },
-    { id: '2', name: 'Siobhan Gallagher', subtitle: '18.4K' },
-    { id: '3', name: 'Tariq Hassan', subtitle: '11.2K' },
+    { id: '1', name: 'John Doe', subtitle: '29.1K' },
+    { id: '2', name: 'Sarah Brown', subtitle: '18.4K' },
+    { id: '3', name: 'Tom Jones', subtitle: '11.2K' },
   ],
 };
 

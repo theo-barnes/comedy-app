@@ -58,15 +58,20 @@ const MOCK_VENUE_DATA = {
   ],
   actsFilter: ['All', 'Observational', 'Alt-Comedy', 'Storytelling'],
   acts: [
-    { id: '1', name: 'Asha Mehta', rating: 4.9, tagline: 'Sharp. Absurdist. Unavoidable.' },
-    { id: '2', name: 'Marcus Cole', rating: 4.7, tagline: 'From Peckham. Not sorry.' },
+    { id: '1', name: 'Jane Smith', rating: 4.9, tagline: 'Sharp. Absurdist. Unavoidable.' },
+    { id: '2', name: 'John Doe', rating: 4.7, tagline: 'Deadpan delivery. Dry as toast.' },
     {
       id: '3',
-      name: 'Siobhan Gallagher',
+      name: 'Sarah Brown',
       rating: 4.8,
       tagline: 'Comedy for people with trust issues.',
     },
-    { id: '4', name: 'Tariq Hassan', rating: 4.6, tagline: 'British-Somali. Twice the material.' },
+    {
+      id: '4',
+      name: 'Tom Jones',
+      rating: 4.6,
+      tagline: 'Observational. Relentless. Oddly charming.',
+    },
   ],
   whatElse: [
     { id: '1', title: 'Store Nights: Friday Late', subtitle: 'The Comedy Store' },
