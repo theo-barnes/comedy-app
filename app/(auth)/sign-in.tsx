@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useAuth } from '@/features/auth/useAuth';
+import { DevLoginPanel } from '@/features/auth/DevLoginPanel';
 import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 import { AuthScreenWrapper } from '@/features/auth/AuthScreenWrapper';
 import { LogoHeader } from '@/features/auth/LogoHeader';
@@ -163,6 +164,8 @@ export default function SignInScreen() {
           </AppText>
         </Pressable>
       </View>
+
+      <DevLoginPanel />
     </AuthScreenWrapper>
   );
 }

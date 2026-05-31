@@ -172,5 +172,49 @@
       "errorBody": "This link is no longer valid. Please sign up again or request a new reset link.",
       "backToSignIn": "Back to sign in"
     }
+  },
+  "home": {
+    "fan": {
+      "tonightRooms": "Tonight's Rooms",
+      "showsNearYou": "{{count}} shows near you this week",
+      "thisWeek": "THIS WEEK",
+      "performingNearYou": "PERFORMING NEAR YOU",
+      "freshClips": "FRESH CLIPS",
+      "becauseYouSaved": "BECAUSE YOU SAVED {{name}}"
+    },
+    "comedian": {
+      "greeting": "Good {{timeOfDay}}, {{name}}.",
+      "nextGigIn": "Your next gig is in {{count}} days",
+      "yourGigs": "YOUR GIGS",
+      "manage": "Manage",
+      "sameNight": "ON THE SAME NIGHT AS YOU · {{date}}",
+      "othersOnCircuit": "OTHERS ON THE CIRCUIT",
+      "profileViews": "PROFILE VIEWS",
+      "clipPlays": "CLIP PLAYS",
+      "newFollowers": "NEW FOLLOWERS",
+      "tipTitle": "Add more clips.",
+      "tipBody": "Profiles with 3+ clips get 4× more enquiries from promoters. You have {{count}}.",
+      "upload": "Upload",
+      "viewGig": "VIEW →",
+      "onTheBill": "{{count}} on the bill",
+      "doors": "Doors {{time}}"
+    },
+    "venue": {
+      "yourShows": "Your shows.",
+      "salesSummary": "{{title}} — {{percent}}% sold",
+      "yourOtherEvents": "YOUR OTHER EVENTS",
+      "findActs": "FIND ACTS TO BOOK",
+      "whatElseOn": "WHAT ELSE IS ON THIS WEEK",
+      "yourNextEvent": "YOUR NEXT EVENT",
+      "onWaitlist": "{{count}} on waitlist",
+      "remaining": "{{count}} remaining",
+      "ticketsSold": "{{sold}} / {{total}} tickets sold",
+      "addAct": "ADD ACT",
+      "share": "SHARE",
+      "promote": "PROMOTE",
+      "edit": "EDIT",
+      "enquire": "ENQUIRE",
+      "browseAll": "Browse all"
+    }
   }
 }

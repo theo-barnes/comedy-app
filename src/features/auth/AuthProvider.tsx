@@ -36,6 +36,8 @@ type AuthContextValue = {
   exchangeCodeForSession: (code: string) => Promise<void>;
   updateUserRole: (role: UserRole) => Promise<void>;
   resetPasswordForEmail: (email: string) => Promise<void>;
+  /** Dev-only: bypasses Supabase and signs in locally as the given role. No-op in production. */
+  signInAsDevRole: (role: UserRole) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -289,6 +291,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
+  // ── Dev-only bypass ──────────────────────────────────────────────────────────
+  // Directly patches local state so the router guard opens the app without any
+  // Supabase call or email confirmation. No-op in production builds.
+  const signInAsDevRole = useCallback((role: UserRole) => {
+    if (!__DEV__) return;
+    const validatedRole = userRoleSchema.parse(role);
+    const label = validatedRole.charAt(0).toUpperCase() + validatedRole.slice(1);
+    setProfile({
+      id: 'dev-user',
+      display_name: `Dev ${label}`,
+      role: validatedRole,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    setIsGuest(true);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -306,6 +325,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         exchangeCodeForSession,
         updateUserRole,
         resetPasswordForEmail,
+        signInAsDevRole,
       }}
     >
       {children}
