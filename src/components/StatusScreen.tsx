@@ -3,7 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   icon: string;
@@ -19,7 +22,7 @@ type Props = {
 
 export function StatusScreen({
   icon,
-  iconColor = colors.primary,
+  iconColor,
   iconSize = 48,
   title,
   titleVariant = 'heading',
@@ -27,9 +30,12 @@ export function StatusScreen({
   cta,
   containerStyle,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const resolvedIconColor = iconColor ?? theme.colors.primaryRest;
   return (
     <View style={[styles.container, containerStyle]}>
-      <Ionicons name={icon as any} size={iconSize} color={iconColor} />
+      <Ionicons name={icon as any} size={iconSize} color={resolvedIconColor} />
       <AppText variant={titleVariant} style={styles.title}>
         {title}
       </AppText>
@@ -45,25 +51,26 @@ export function StatusScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  title: {
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  body: {
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  button: {
-    marginTop: spacing.md,
-    alignSelf: 'stretch',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      gap: spacing.md,
+    },
+    title: {
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    body: {
+      textAlign: 'center',
+      lineHeight: 24,
+    },
+    button: {
+      marginTop: spacing.md,
+      alignSelf: 'stretch',
+    },
+  });

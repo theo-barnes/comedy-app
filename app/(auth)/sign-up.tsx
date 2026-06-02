@@ -17,7 +17,9 @@ import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { FormField } from '@/components/FormField';
 import { PasswordInput } from '@/components/PasswordInput';
-import { colors, spacing, typography } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing, typography } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 import type { UserRole } from '@/types';
 import { useTranslation, Trans } from 'react-i18next';
 
@@ -29,6 +31,7 @@ export default function SignUpScreen() {
   const { signUp } = useAuth();
   const [selectedRole, setSelectedRole] = useState<UserRole>('fan');
   const [error, setError] = useState<string | null>(null);
+  const styles = useThemedStyles(createStyles);
 
   const { handleGoogle, handleApple, googleLoading, appleLoading } = useSocialAuthHandlers({
     setError,
@@ -171,26 +174,27 @@ export default function SignUpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  heading: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginBottom: spacing.xs,
-  },
-  subheading: {
-    marginBottom: spacing.lg,
-  },
-  submitButton: { marginTop: spacing.xl },
-  terms: {
-    fontSize: typography.caption,
-    color: colors.foregroundMuted,
-    textAlign: 'center',
-    marginTop: spacing.md,
-    lineHeight: 20,
-  },
-  termsLink: { color: colors.primary, fontWeight: '700' },
-  signinRow: { marginTop: spacing.lg, alignItems: 'center' },
-  signinText: { fontSize: typography.body, color: colors.foregroundMuted },
-  signinLink: { color: colors.primary, fontWeight: '700' },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    heading: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    subheading: {
+      marginBottom: spacing.lg,
+    },
+    submitButton: { marginTop: spacing.xl },
+    terms: {
+      fontSize: typography.caption,
+      color: theme.colors.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.md,
+      lineHeight: 20,
+    },
+    termsLink: { color: theme.colors.primaryRest, fontWeight: '700' },
+    signinRow: { marginTop: spacing.lg, alignItems: 'center' },
+    signinText: { fontSize: typography.body, color: theme.colors.textMuted },
+    signinLink: { color: theme.colors.primaryRest, fontWeight: '700' },
+  });

@@ -54,6 +54,7 @@
     "eslint-config-expo": "^56.0.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
+    "expo-module-scripts": "^56.0.3",
     "husky": "^9.1.7",
     "jest-expo": "^56.0.4",
     "lint-staged": "^17.0.5",
@@ -63,6 +64,10 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "__tests__/utils/"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg))"
     ],

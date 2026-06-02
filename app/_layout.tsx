@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { SplashScreen, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
 import { AppProviders } from '@/providers/AppProviders';
 import { useAuth } from '@/features/auth/useAuth';
@@ -11,6 +12,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   return (
     <AppProviders>
+      <StatusBar style="auto" />
       <RootNavigator />
     </AppProviders>
   );

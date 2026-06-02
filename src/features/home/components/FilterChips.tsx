@@ -1,7 +1,9 @@
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { colors, radii, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii, spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   options: string[];
@@ -10,6 +12,7 @@ type Props = {
 };
 
 export function FilterChips({ options, selected, onSelect }: Props) {
+  const styles = useThemedStyles(createStyles);
   return (
     <ScrollView
       horizontal
@@ -38,34 +41,35 @@ export function FilterChips({ options, selected, onSelect }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
-    gap: spacing.sm,
-    flexDirection: 'row',
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-  },
-  chipInactive: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: 'transparent',
-  },
-  label: {
-    fontWeight: '500',
-  },
-  labelActive: {
-    color: colors.background,
-    fontWeight: '600',
-  },
-  labelInactive: {
-    color: colors.foregroundMuted,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.xs,
+      gap: spacing.sm,
+      flexDirection: 'row',
+    },
+    chip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radii.pill,
+    },
+    chipActive: {
+      backgroundColor: theme.colors.primaryRest,
+    },
+    chipInactive: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: 'transparent',
+    },
+    label: {
+      fontWeight: '500',
+    },
+    labelActive: {
+      color: theme.colors.onPrimary,
+      fontWeight: '600',
+    },
+    labelInactive: {
+      color: theme.colors.textMuted,
+    },
+  });

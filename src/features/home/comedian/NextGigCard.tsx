@@ -5,7 +5,9 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { AvatarStack } from '@/features/home/components/AvatarStack';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
-import { colors, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   daysUntil: number;
@@ -31,6 +33,7 @@ export function NextGigCard({
   onTheBillCount,
 }: Props) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(createCardStyles);
   return (
     <Card style={styles.card}>
       <View style={styles.countdown}>
@@ -62,6 +65,7 @@ export function NextGigCard({
 }
 
 function CountdownUnit({ value, unit }: { value: number; unit: string }) {
+  const styles = useThemedStyles(createUnitStyles);
   return (
     <View style={styles.countdownUnit}>
       <AppText variant="title" style={styles.countdownValue}>
@@ -74,38 +78,43 @@ function CountdownUnit({ value, unit }: { value: number; unit: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  countdown: {
-    flexDirection: 'row',
-    gap: spacing.xl,
-  },
-  countdownUnit: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  countdownValue: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-  },
-  title: {
-    fontWeight: '700',
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  viewLink: {
-    color: colors.primary,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-});
+const createCardStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      marginHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    countdown: {
+      flexDirection: 'row',
+      gap: spacing.xl,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+    },
+    title: {
+      fontWeight: '700',
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: spacing.xs,
+    },
+    viewLink: {
+      color: theme.colors.primaryRest,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+    },
+  });
+
+const createUnitStyles = (theme: Theme) =>
+  StyleSheet.create({
+    countdownUnit: {
+      alignItems: 'center',
+      gap: 2,
+    },
+    countdownValue: {
+      color: theme.colors.primaryRest,
+      fontWeight: '700',
+    },
+  });

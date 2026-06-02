@@ -1,25 +1,26 @@
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithTheme } from '../../../utils/renderWithTheme';
 
 import { FanHome } from '@/features/home/fan/FanHome';
 
 describe('FanHome', () => {
   it('renders without crashing', () => {
-    expect(() => render(<FanHome />)).not.toThrow();
+    expect(() => renderWithTheme(<FanHome />)).not.toThrow();
   });
 
   it('renders the THIS WEEK section header', () => {
-    render(<FanHome />);
+    renderWithTheme(<FanHome />);
     // t('home.fan.thisWeek') returns the key in tests
     expect(screen.getByText('home.fan.thisWeek')).toBeTruthy();
   });
 
   it('renders the PERFORMING NEAR YOU section header', () => {
-    render(<FanHome />);
+    renderWithTheme(<FanHome />);
     expect(screen.getByText('home.fan.performingNearYou')).toBeTruthy();
   });
 
   it('renders the FRESH CLIPS section header', () => {
-    render(<FanHome />);
+    renderWithTheme(<FanHome />);
     expect(screen.getByText('home.fan.freshClips')).toBeTruthy();
   });
 });

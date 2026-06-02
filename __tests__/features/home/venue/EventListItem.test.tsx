@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { renderWithTheme } from '../../../utils/renderWithTheme';
 
 import { EventListItem } from '@/features/home/venue/EventListItem';
 
 describe('EventListItem', () => {
   it('renders without crashing', () => {
     expect(() =>
-      render(
+      renderWithTheme(
         <EventListItem
           title="Store Nights: Friday Late"
           venue="The Comedy Store"
@@ -18,7 +19,7 @@ describe('EventListItem', () => {
   });
 
   it('renders the title', () => {
-    render(
+    renderWithTheme(
       <EventListItem
         title="Store Nights: Friday Late"
         venue="The Comedy Store"
@@ -31,7 +32,7 @@ describe('EventListItem', () => {
   });
 
   it('renders venue and date', () => {
-    render(
+    renderWithTheme(
       <EventListItem
         title="Store Nights: Friday Late"
         venue="The Comedy Store"
@@ -45,7 +46,7 @@ describe('EventListItem', () => {
 
   it('calls onPress when tapped', () => {
     const onPress = jest.fn();
-    render(
+    renderWithTheme(
       <EventListItem
         title="Store Nights: Friday Late"
         venue="The Comedy Store"

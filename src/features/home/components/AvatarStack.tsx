@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { colors, radii, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii, spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 import { PlaceholderImage } from './PlaceholderImage';
 
 const AVATAR_SIZE = 28;
@@ -14,6 +16,7 @@ type Props = {
 };
 
 export function AvatarStack({ avatars, label }: Props) {
+  const styles = useThemedStyles(createStyles);
   const displayed = avatars.slice(0, 3);
   return (
     <View style={styles.container}>
@@ -31,26 +34,27 @@ export function AvatarStack({ avatars, label }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarWrapper: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: radii.pill,
-    borderWidth: 1.5,
-    borderColor: colors.background,
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatarWrapper: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: radii.pill,
+      borderWidth: 1.5,
+      borderColor: theme.colors.surface,
+      overflow: 'hidden',
+    },
+    avatar: {
+      width: '100%',
+      height: '100%',
+    },
+  });

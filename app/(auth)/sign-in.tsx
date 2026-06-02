@@ -17,7 +17,9 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { FormField } from '@/components/FormField';
 import { PasswordInput } from '@/components/PasswordInput';
 import { useCountdown } from '@/hooks/useCountdown';
-import { colors, spacing, typography } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing, typography } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 import { useTranslation } from 'react-i18next';
 
 // Types only — schema is built inside the component so validation messages
@@ -31,6 +33,7 @@ export default function SignInScreen() {
   const { t } = useTranslation();
   const { signInWithEmail, continueAsGuest } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const styles = useThemedStyles(createStyles);
 
   const schema = useMemo(() => createSignInSchema(t), [t]);
   const { handleGoogle, handleApple, googleLoading, appleLoading } = useSocialAuthHandlers({
@@ -170,35 +173,36 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  heading: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginBottom: spacing.xs,
-  },
-  subheading: {
-    marginBottom: spacing.xl,
-  },
-  forgotLink: {
-    fontSize: typography.body,
-    color: colors.primary,
-    fontWeight: '600',
-    textAlign: 'right',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  cooldownText: {
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  primaryButton: { marginTop: spacing.xs },
-  footer: {
-    marginTop: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  footerText: { fontSize: typography.body, color: colors.foregroundMuted },
-  footerLink: { color: colors.primary, fontWeight: '700' },
-  guestButton: { paddingVertical: spacing.xs },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    heading: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    subheading: {
+      marginBottom: spacing.xl,
+    },
+    forgotLink: {
+      fontSize: typography.body,
+      color: theme.colors.primaryRest,
+      fontWeight: '600',
+      textAlign: 'right',
+      marginTop: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    cooldownText: {
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    primaryButton: { marginTop: spacing.xs },
+    footer: {
+      marginTop: spacing.xl,
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    footerText: { fontSize: typography.body, color: theme.colors.textMuted },
+    footerLink: { color: theme.colors.primaryRest, fontWeight: '700' },
+    guestButton: { paddingVertical: spacing.xs },
+  });

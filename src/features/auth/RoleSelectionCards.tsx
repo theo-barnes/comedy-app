@@ -2,7 +2,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
-import { colors, radii, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii, spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 import { useRoleOptions } from '@/features/auth/useRoleOptions';
 import type { UserRole } from '@/types';
 
@@ -13,6 +16,8 @@ type Props = {
 
 export function RoleSelectionCards({ selectedRole, onRoleChange }: Props) {
   const roleOptions = useRoleOptions();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={styles.container}>
@@ -31,7 +36,7 @@ export function RoleSelectionCards({ selectedRole, onRoleChange }: Props) {
               <Ionicons
                 name={opt.icon as any}
                 size={22}
-                color={isSelected ? colors.background : colors.foregroundMuted}
+                color={isSelected ? theme.colors.onPrimary : theme.colors.textMuted}
               />
             </View>
             <View style={styles.textBlock}>
@@ -42,7 +47,7 @@ export function RoleSelectionCards({ selectedRole, onRoleChange }: Props) {
                 {opt.description}
               </AppText>
             </View>
-            {isSelected && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+            {isSelected && <Ionicons name="checkmark" size={18} color={theme.colors.primaryRest} />}
           </Pressable>
         );
       })}
@@ -50,29 +55,30 @@ export function RoleSelectionCards({ selectedRole, onRoleChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.sm, marginBottom: spacing.md },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.backgroundElevated,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  cardSelected: { borderColor: colors.primary },
-  icon: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.sm,
-    backgroundColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconSelected: { backgroundColor: colors.primary },
-  textBlock: { flex: 1 },
-  label: { fontWeight: '700' },
-  description: { marginTop: 2 },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: { gap: spacing.sm, marginBottom: spacing.md },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: theme.colors.card,
+      borderRadius: radii.md,
+      padding: spacing.md,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    cardSelected: { borderColor: theme.colors.primaryRest },
+    icon: {
+      width: 44,
+      height: 44,
+      borderRadius: radii.sm,
+      backgroundColor: theme.colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconSelected: { backgroundColor: theme.colors.primaryRest },
+    textBlock: { flex: 1 },
+    label: { fontWeight: '700' },
+    description: { marginTop: 2 },
+  });

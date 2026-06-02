@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import { AppText } from '@/components/AppText';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
-import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { spacing } from '@/theme';
@@ -18,7 +18,6 @@ import { SavedRecommendationItem } from './SavedRecommendationItem';
 
 const MOCK_FAN_DATA = {
   city: 'London',
-  notificationCount: 2,
   neighbourhoods: ['All', 'Soho', 'Islington', 'Hackney', 'Greenwich'],
   featured: {
     title: 'Store Nights: Friday Late',
@@ -96,11 +95,7 @@ export function FanHome() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <HomeHeader
-          city={MOCK_FAN_DATA.city}
-          role="fan"
-          notificationCount={MOCK_FAN_DATA.notificationCount}
-        />
+        <ScreenHeader city={MOCK_FAN_DATA.city} tabLabel="Home" />
 
         <View style={styles.titleBlock}>
           <AppText variant="title">{t('home.fan.tonightRooms')}</AppText>

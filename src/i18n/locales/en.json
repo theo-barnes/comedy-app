@@ -10,8 +10,15 @@
     "back": "Back",
     "close": "Close",
     "search": "Search",
+    "discover": "Discover",
     "noResults": "No results found",
     "seeAll": "See all"
+  },
+  "tabs": {
+    "home": "Home",
+    "discover": "Discover",
+    "saved": "Saved",
+    "profile": "Profile"
   },
   "events": {
     "title": "Comedy nights",
@@ -48,7 +55,7 @@
     "noEvents": "No upcoming events at this venue"
   },
   "search": {
-    "title": "Search",
+    "title": "Discover",
     "subtitle": "Search events, venues, and comedians.",
     "placeholder": "Events, venues, comedians…",
     "recent": "Recent searches",

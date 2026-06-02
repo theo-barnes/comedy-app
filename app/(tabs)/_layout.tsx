@@ -2,7 +2,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { ColorValue } from 'react-native';
 
-import { colors } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useTranslation } from 'react-i18next';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -13,43 +14,45 @@ function tabIcon(active: IoniconName, inactive: IoniconName) {
 }
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.foregroundMuted,
+        tabBarActiveTintColor: theme.colors.primaryRest,
+        tabBarInactiveTintColor: theme.colors.textMuted,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: tabIcon('calendar', 'calendar-outline'),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
+          title: t('tabs.discover'),
           tabBarIcon: tabIcon('search', 'search-outline'),
         }}
       />
       <Tabs.Screen
         name="saved"
         options={{
-          title: 'Saved',
+          title: t('tabs.saved'),
           tabBarIcon: tabIcon('bookmark', 'bookmark-outline'),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: tabIcon('person', 'person-outline'),
         }}
       />

@@ -7,7 +7,10 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
-import { colors, radii, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii, spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   name: string;
@@ -19,6 +22,8 @@ type Props = {
 
 export function ActCard({ name, rating, tagline, avatarUri, onEnquire }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Card style={styles.card}>
       <View style={styles.avatarContainer}>
@@ -29,7 +34,7 @@ export function ActCard({ name, rating, tagline, avatarUri, onEnquire }: Props) 
           {name}
         </AppText>
         <View style={styles.ratingRow}>
-          <Ionicons name="star" size={12} color={colors.primary} />
+          <Ionicons name="star" size={12} color={theme.colors.primaryRest} />
           <AppText variant="caption" style={styles.rating}>
             {rating.toFixed(1)}
           </AppText>
@@ -47,37 +52,38 @@ export function ActCard({ name, rating, tagline, avatarUri, onEnquire }: Props) 
 
 const AVATAR_SIZE = 48;
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginHorizontal: spacing.lg,
-  },
-  avatarContainer: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: radii.pill,
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
-  content: {
-    flex: 1,
-    gap: 2,
-  },
-  name: {
-    fontWeight: '600',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  rating: {
-    color: colors.foregroundMuted,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginHorizontal: spacing.lg,
+    },
+    avatarContainer: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: radii.pill,
+      overflow: 'hidden',
+      flexShrink: 0,
+    },
+    avatar: {
+      width: '100%',
+      height: '100%',
+    },
+    content: {
+      flex: 1,
+      gap: 2,
+    },
+    name: {
+      fontWeight: '600',
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+    },
+    rating: {
+      color: theme.colors.textMuted,
+    },
+  });

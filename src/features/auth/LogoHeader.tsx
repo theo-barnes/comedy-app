@@ -2,29 +2,35 @@ import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 export function LogoHeader() {
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.row}>
-      <Ionicons name="mic" size={20} color={colors.primary} />
+      <Ionicons name="mic" size={20} color={theme.colors.primaryRest} />
       <AppText variant="caption" style={styles.text}>
-        PUNCHLINE / BILLD
+        CUE
       </AppText>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xl,
-  },
-  text: {
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: 2,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginBottom: spacing.xl,
+    },
+    text: {
+      fontWeight: '700',
+      color: theme.colors.primaryRest,
+      letterSpacing: 2,
+    },
+  });

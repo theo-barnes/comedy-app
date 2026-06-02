@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithTheme } from '../../../utils/renderWithTheme';
 
 import { ClipCard } from '@/features/home/fan/ClipCard';
 
 describe('ClipCard', () => {
   it('renders without crashing', () => {
     expect(() =>
-      render(
+      renderWithTheme(
         <ClipCard
           title="Why I love public transport"
           comedianName="Asha Mehta"
@@ -17,7 +18,7 @@ describe('ClipCard', () => {
   });
 
   it('renders the clip title', () => {
-    render(
+    renderWithTheme(
       <ClipCard
         title="Why I love public transport"
         comedianName="Asha Mehta"
@@ -29,7 +30,7 @@ describe('ClipCard', () => {
   });
 
   it('renders the view count', () => {
-    render(
+    renderWithTheme(
       <ClipCard
         title="Why I love public transport"
         comedianName="Asha Mehta"

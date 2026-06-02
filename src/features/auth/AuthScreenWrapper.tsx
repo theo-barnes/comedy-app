@@ -8,13 +8,16 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = PropsWithChildren<{
   contentContainerStyle?: StyleProp<ViewStyle>;
 }>;
 
 export function AuthScreenWrapper({ children, contentContainerStyle }: Props) {
+  const styles = useThemedStyles(createStyles);
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -31,12 +34,13 @@ export function AuthScreenWrapper({ children, contentContainerStyle }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl * 2,
-    paddingBottom: spacing.xl,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: theme.colors.surface },
+    scroll: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xl * 2,
+      paddingBottom: spacing.xl,
+    },
+  });

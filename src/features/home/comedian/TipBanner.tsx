@@ -5,7 +5,9 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ProgressBar } from '@/features/home/components/ProgressBar';
-import { colors, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   title: string;
@@ -19,6 +21,7 @@ type Props = {
 
 export function TipBanner({ title, body, progress, step, totalSteps, ctaLabel }: Props) {
   const [visible, setVisible] = useState(true);
+  const styles = useThemedStyles(createStyles);
 
   if (!visible) return null;
 
@@ -50,33 +53,34 @@ export function TipBanner({ title, body, progress, step, totalSteps, ctaLabel }:
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  dismissButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.md,
-    zIndex: 1,
-    padding: spacing.xs,
-  },
-  dismissText: {
-    fontSize: 18,
-    color: colors.foregroundMuted,
-    lineHeight: 20,
-  },
-  content: {
-    gap: spacing.sm,
-    paddingRight: spacing.xl,
-  },
-  title: {
-    fontWeight: '700',
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      marginHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    dismissButton: {
+      position: 'absolute',
+      top: spacing.sm,
+      right: spacing.md,
+      zIndex: 1,
+      padding: spacing.xs,
+    },
+    dismissText: {
+      fontSize: 18,
+      color: theme.colors.textMuted,
+      lineHeight: 20,
+    },
+    content: {
+      gap: spacing.sm,
+      paddingRight: spacing.xl,
+    },
+    title: {
+      fontWeight: '700',
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+  });

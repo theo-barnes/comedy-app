@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import { AppText } from '@/components/AppText';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
-import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { spacing } from '@/theme';
 import type { BadgeVariant } from '@/features/home/components/Badge';
@@ -17,7 +17,6 @@ import { FeaturedShowCard } from './FeaturedShowCard';
 
 const MOCK_VENUE_DATA = {
   city: 'London',
-  notificationCount: 5,
   featuredShow: {
     title: 'The Moth Invitational',
     venue: 'The Moth Club',
@@ -92,11 +91,7 @@ export function VenueHome() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <HomeHeader
-          city={MOCK_VENUE_DATA.city}
-          role="venue"
-          notificationCount={MOCK_VENUE_DATA.notificationCount}
-        />
+        <ScreenHeader city={MOCK_VENUE_DATA.city} tabLabel="Home" />
 
         <View style={styles.titleBlock}>
           <AppText variant="title">{t('home.venue.yourShows')}</AppText>

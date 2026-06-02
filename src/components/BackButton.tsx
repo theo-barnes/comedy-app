@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { spacing } from '@/theme/tokens';
 
 type Props = {
   onPress?: () => void;
@@ -10,9 +11,10 @@ type Props = {
 };
 
 export function BackButton({ onPress, style }: Props) {
+  const { theme } = useTheme();
   return (
     <Pressable style={[styles.button, style]} onPress={onPress ?? (() => router.back())}>
-      <Ionicons name="arrow-back" size={22} color={colors.foreground} />
+      <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
     </Pressable>
   );
 }

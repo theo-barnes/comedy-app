@@ -14,7 +14,9 @@ import { useTranslation } from 'react-i18next';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
-import { colors, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -42,6 +44,7 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList<Slide>>(null);
   // Stores where to navigate once the guard has flipped (after React commit).
   const pendingDestination = useRef<Href | null>(null);
+  const styles = useThemedStyles(createStyles);
 
   const { t } = useTranslation();
 
@@ -200,67 +203,68 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  list: {
-    flex: 1,
-  },
-  // Sits at a fixed vertical position regardless of which slide is shown.
-  // bottom is anchored at 44% of screen height — just above the text/button content area.
-  progressOverlay: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    bottom: SCREEN_HEIGHT * 0.44,
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  // Width is driven by Animated.Value (ACTIVE_SEG_WIDTH / INACTIVE_SEG_WIDTH).
-  // flex is intentionally omitted — the Animated width handles sizing.
-  progressSegmentInactive: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-  },
-  progressSegmentActive: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
-  },
-  slide: {
-    width: SCREEN_WIDTH,
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
-    justifyContent: 'flex-end',
-  },
-  imagePlaceholder: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: '45%',
-    backgroundColor: colors.background,
-  },
-  title: {
-    fontSize: 38,
-    fontWeight: '900',
-    color: colors.foreground,
-    lineHeight: 44,
-    marginBottom: spacing.md,
-  },
-  body: {
-    lineHeight: 24,
-    marginBottom: spacing.xl,
-  },
-  ctaButton: {},
-  skipButton: {
-    marginTop: spacing.md,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+    },
+    list: {
+      flex: 1,
+    },
+    // Sits at a fixed vertical position regardless of which slide is shown.
+    // bottom is anchored at 44% of screen height — just above the text/button content area.
+    progressOverlay: {
+      position: 'absolute',
+      left: spacing.lg,
+      right: spacing.lg,
+      bottom: SCREEN_HEIGHT * 0.44,
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    // Width is driven by Animated.Value (ACTIVE_SEG_WIDTH / INACTIVE_SEG_WIDTH).
+    // flex is intentionally omitted — the Animated width handles sizing.
+    progressSegmentInactive: {
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: theme.colors.border,
+    },
+    progressSegmentActive: {
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: theme.colors.primaryRest,
+    },
+    slide: {
+      width: SCREEN_WIDTH,
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xl,
+      justifyContent: 'flex-end',
+    },
+    imagePlaceholder: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: '45%',
+      backgroundColor: theme.colors.surface,
+    },
+    title: {
+      fontSize: 38,
+      fontWeight: '900',
+      color: theme.colors.textPrimary,
+      lineHeight: 44,
+      marginBottom: spacing.md,
+    },
+    body: {
+      lineHeight: 24,
+      marginBottom: spacing.xl,
+    },
+    ctaButton: {},
+    skipButton: {
+      marginTop: spacing.md,
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+    },
+  });

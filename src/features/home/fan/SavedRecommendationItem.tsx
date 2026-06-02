@@ -4,7 +4,9 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
-import { colors, radii, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii, spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   title: string;
@@ -27,6 +29,7 @@ export function SavedRecommendationItem({
   imageUri,
   onPress,
 }: Props) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Card style={styles.card} onPress={onPress ?? (() => {})}>
       <PlaceholderImage uri={imageUri} style={styles.image} />
@@ -53,39 +56,40 @@ export function SavedRecommendationItem({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    padding: 0,
-    overflow: 'hidden',
-    marginHorizontal: spacing.lg,
-  },
-  image: {
-    width: 72,
-    borderTopLeftRadius: radii.md,
-    borderBottomLeftRadius: radii.md,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.sm,
-    gap: 4,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  title: {
-    fontWeight: '600',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  price: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      padding: 0,
+      overflow: 'hidden',
+      marginHorizontal: spacing.lg,
+    },
+    image: {
+      width: 72,
+      borderTopLeftRadius: radii.md,
+      borderBottomLeftRadius: radii.md,
+    },
+    content: {
+      flex: 1,
+      padding: spacing.sm,
+      gap: 4,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      flexWrap: 'wrap',
+    },
+    title: {
+      fontWeight: '600',
+    },
+    metaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 2,
+    },
+    price: {
+      color: theme.colors.primaryRest,
+      fontWeight: '600',
+    },
+  });

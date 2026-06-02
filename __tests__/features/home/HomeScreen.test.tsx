@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithTheme } from '../../utils/renderWithTheme';
 
 // Must be mocked before any transitive import of useAuth resolves
 jest.mock('@/features/auth/AuthProvider', () => ({
@@ -35,13 +36,13 @@ const mockUseAuth = useAuth as jest.Mock;
 describe('HomeScreen', () => {
   it('renders FanHome when profile is null (guest)', () => {
     mockUseAuth.mockReturnValue({ profile: null, isLoading: false, isGuest: true });
-    render(<HomeScreen />);
+    renderWithTheme(<HomeScreen />);
     expect(screen.getByText('FanHome')).toBeTruthy();
   });
 
   it('renders FanHome for fan role', () => {
     mockUseAuth.mockReturnValue({ profile: { role: 'fan' }, isLoading: false, isGuest: false });
-    render(<HomeScreen />);
+    renderWithTheme(<HomeScreen />);
     expect(screen.getByText('FanHome')).toBeTruthy();
   });
 
@@ -51,19 +52,19 @@ describe('HomeScreen', () => {
       isLoading: false,
       isGuest: false,
     });
-    render(<HomeScreen />);
+    renderWithTheme(<HomeScreen />);
     expect(screen.getByText('ComedianHome')).toBeTruthy();
   });
 
   it('renders VenueHome for venue role', () => {
     mockUseAuth.mockReturnValue({ profile: { role: 'venue' }, isLoading: false, isGuest: false });
-    render(<HomeScreen />);
+    renderWithTheme(<HomeScreen />);
     expect(screen.getByText('VenueHome')).toBeTruthy();
   });
 
   it('renders nothing (null) while loading', () => {
     mockUseAuth.mockReturnValue({ profile: null, isLoading: true, isGuest: false });
-    const { toJSON } = render(<HomeScreen />);
+    const { toJSON } = renderWithTheme(<HomeScreen />);
     expect(toJSON()).toBeNull();
   });
 });

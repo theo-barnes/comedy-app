@@ -6,13 +6,18 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/features/auth/useAuth';
 import { AppText } from '@/components/AppText';
 import { StatusScreen } from '@/components/StatusScreen';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 export default function AuthCallbackScreen() {
   const { t } = useTranslation();
   const { code } = useLocalSearchParams<{ code: string }>();
   const { exchangeCodeForSession } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   // Derive the missing-code error at render time to avoid calling setState
   // synchronously inside an effect (react-hooks/set-state-in-effect).
@@ -34,7 +39,7 @@ export default function AuthCallbackScreen() {
     return (
       <StatusScreen
         icon="alert-circle-outline"
-        iconColor={colors.error}
+        iconColor={theme.colors.errorInk}
         title={t('auth.authCallback.errorTitle')}
         body={displayError}
         cta={{
@@ -47,7 +52,7 @@ export default function AuthCallbackScreen() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
+      <ActivityIndicator size="large" color={theme.colors.primaryRest} />
       <AppText variant="body" muted style={styles.body}>
         {t('auth.authCallback.verifying')}
       </AppText>
@@ -55,17 +60,18 @@ export default function AuthCallbackScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  body: {
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      gap: spacing.md,
+    },
+    body: {
+      textAlign: 'center',
+      lineHeight: 24,
+    },
+  });

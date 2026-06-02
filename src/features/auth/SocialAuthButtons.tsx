@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   onGooglePress: () => void;
@@ -20,6 +23,8 @@ export function SocialAuthButtons({
   appleLoading = false,
 }: Props) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <>
@@ -36,7 +41,7 @@ export function SocialAuthButtons({
         size="lg"
         onPress={onGooglePress}
         loading={googleLoading}
-        icon={<Ionicons name="logo-google" size={18} color={colors.foreground} />}
+        icon={<Ionicons name="logo-google" size={18} color={theme.colors.textPrimary} />}
       >
         {t('auth.social.googleCta')}
       </Button>
@@ -47,7 +52,7 @@ export function SocialAuthButtons({
           size="lg"
           onPress={onApplePress}
           loading={appleLoading}
-          icon={<Ionicons name="logo-apple" size={18} color={colors.foreground} />}
+          icon={<Ionicons name="logo-apple" size={18} color={theme.colors.textPrimary} />}
           style={styles.appleButton}
         >
           {t('auth.social.appleCta')}
@@ -57,13 +62,14 @@ export function SocialAuthButtons({
   );
 }
 
-const styles = StyleSheet.create({
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.lg,
-    gap: spacing.sm,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  appleButton: { marginTop: spacing.md },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: spacing.lg,
+      gap: spacing.sm,
+    },
+    dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
+    appleButton: { marginTop: spacing.md },
+  });

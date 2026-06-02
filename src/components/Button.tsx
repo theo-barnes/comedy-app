@@ -9,7 +9,10 @@ import {
 } from 'react-native';
 import { type ReactNode } from 'react';
 
-import { colors, radii, spacing, typography } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii, spacing, typography } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -34,6 +37,8 @@ export function Button({
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <Pressable
@@ -50,7 +55,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.background : colors.primary}
+          color={variant === 'primary' ? theme.colors.onPrimary : theme.colors.primaryRest}
           size="small"
         />
       ) : (
@@ -65,74 +70,75 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.sm,
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  disabled: {
-    opacity: 0.45,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    base: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: radii.sm,
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    disabled: {
+      opacity: 0.45,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
 
-  // Variants
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
+    // Variants
+    primary: {
+      backgroundColor: theme.colors.primaryRest,
+    },
+    secondary: {
+      backgroundColor: theme.colors.card,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+    },
 
-  // Sizes
-  sm: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    minHeight: 36,
-  },
-  md: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
-  },
-  lg: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    minHeight: 52,
-  },
+    // Sizes
+    sm: {
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      minHeight: 36,
+    },
+    md: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      minHeight: 44,
+    },
+    lg: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      minHeight: 52,
+    },
 
-  // Labels
-  label: {
-    fontWeight: '600',
-  },
-  primaryLabel: {
-    color: colors.background,
-    fontSize: typography.body,
-  },
-  secondaryLabel: {
-    color: colors.foreground,
-    fontSize: typography.body,
-  },
-  ghostLabel: {
-    color: colors.primary,
-    fontSize: typography.body,
-  },
-  smLabel: {
-    fontSize: typography.caption,
-  },
-  mdLabel: {
-    fontSize: typography.body,
-  },
-  lgLabel: {
-    fontSize: typography.body,
-  },
-});
+    // Labels
+    label: {
+      fontWeight: '600',
+    },
+    primaryLabel: {
+      color: theme.colors.onPrimary,
+      fontSize: typography.body,
+    },
+    secondaryLabel: {
+      color: theme.colors.textPrimary,
+      fontSize: typography.body,
+    },
+    ghostLabel: {
+      color: theme.colors.primaryRest,
+      fontSize: typography.body,
+    },
+    smLabel: {
+      fontSize: typography.caption,
+    },
+    mdLabel: {
+      fontSize: typography.body,
+    },
+    lgLabel: {
+      fontSize: typography.body,
+    },
+  });

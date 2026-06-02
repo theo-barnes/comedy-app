@@ -12,7 +12,9 @@ import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/Button';
 import { FormField } from '@/components/FormField';
 import { StatusScreen } from '@/components/StatusScreen';
-import { colors, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 import { useTranslation } from 'react-i18next';
 
 // Type only — schema built inside the component so messages use the active locale.
@@ -22,6 +24,7 @@ export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
   const { resetPasswordForEmail } = useAuth();
   const [submitted, setSubmitted] = useState(false);
+  const styles = useThemedStyles(createStyles);
 
   const schema = useMemo(() => createForgotSchema(t), [t]);
 
@@ -96,23 +99,24 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  heading: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.foreground,
-    marginBottom: spacing.xs,
-  },
-  subheading: {
-    marginBottom: spacing.xl,
-  },
-  submitButton: { marginTop: spacing.xl },
-  successBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    paddingTop: spacing.xl,
-    backgroundColor: 'transparent',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    heading: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    subheading: {
+      marginBottom: spacing.xl,
+    },
+    submitButton: { marginTop: spacing.xl },
+    successBox: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.md,
+      paddingTop: spacing.xl,
+      backgroundColor: 'transparent',
+    },
+  });

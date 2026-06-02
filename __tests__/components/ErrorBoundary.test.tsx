@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { renderWithTheme } from '../utils/renderWithTheme';
 import { Text } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -19,7 +20,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('renders children when no error is thrown', () => {
-    render(
+    renderWithTheme(
       <ErrorBoundary>
         <Bomb shouldThrow={false} />
       </ErrorBoundary>,
@@ -28,7 +29,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('renders the error UI when a child throws', () => {
-    render(
+    renderWithTheme(
       <ErrorBoundary>
         <Bomb shouldThrow />
       </ErrorBoundary>,
@@ -39,7 +40,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('re-renders children after pressing the retry button', () => {
-    const { rerender } = render(
+    const { rerender } = renderWithTheme(
       <ErrorBoundary>
         <Bomb shouldThrow />
       </ErrorBoundary>,

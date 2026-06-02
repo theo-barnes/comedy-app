@@ -4,12 +4,16 @@ import i18n from '@/i18n';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
-import { colors, spacing } from '@/theme';
+import { useTheme } from '@/providers/ThemeProvider';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
-type Props = { children: ReactNode };
+// ─── Class component ──────────────────────────────────────────────────────────
+
+type ClassProps = { children: ReactNode; theme: Theme };
 type State = { hasError: boolean };
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryClass extends Component<ClassProps, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
@@ -21,9 +25,10 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   render() {
+    const { theme } = this.props;
     if (this.state.hasError) {
       return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
           <AppText variant="heading" style={styles.title}>
             {i18n.t('common.error')}
           </AppText>
@@ -40,12 +45,22 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
+// ─── Function wrapper — injects theme into the class component ─────────────
+
+type Props = { children: ReactNode };
+
+export function ErrorBoundary({ children }: Props) {
+  const { theme } = useTheme();
+  return <ErrorBoundaryClass theme={theme}>{children}</ErrorBoundaryClass>;
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
     padding: spacing.xl,
   },
   title: {

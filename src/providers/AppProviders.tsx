@@ -8,19 +8,22 @@ import '@/i18n';
 import { queryClient } from '@/lib/query-client';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { OnboardingProvider } from '@/providers/OnboardingProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <ErrorBoundary>
-            <OnboardingProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </OnboardingProvider>
-          </ErrorBoundary>
-        </QueryClientProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <ErrorBoundary>
+              <OnboardingProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </OnboardingProvider>
+            </ErrorBoundary>
+          </QueryClientProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

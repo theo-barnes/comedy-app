@@ -4,8 +4,9 @@ import type { FieldError } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
-import { authStyles } from '@/features/auth/authStyles';
-import { colors } from '@/theme';
+import { createAuthStyles } from '@/features/auth/authStyles';
+import { useTheme } from '@/providers/ThemeProvider';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
 
 type Props = Omit<TextInputProps, 'secureTextEntry' | 'style'> & {
   label: string;
@@ -14,6 +15,8 @@ type Props = Omit<TextInputProps, 'secureTextEntry' | 'style'> & {
 
 export function PasswordInput({ label, error, ...inputProps }: Props) {
   const [visible, setVisible] = useState(false);
+  const { theme } = useTheme();
+  const authStyles = useThemedStyles(createAuthStyles);
 
   return (
     <>
@@ -23,7 +26,7 @@ export function PasswordInput({ label, error, ...inputProps }: Props) {
       <View style={[authStyles.passwordRow, error && authStyles.inputError]}>
         <TextInput
           style={authStyles.passwordInput}
-          placeholderTextColor={colors.foregroundMuted}
+          placeholderTextColor={theme.colors.textMuted}
           secureTextEntry={!visible}
           {...inputProps}
         />
@@ -31,7 +34,7 @@ export function PasswordInput({ label, error, ...inputProps }: Props) {
           <Ionicons
             name={visible ? 'eye-off-outline' : 'eye-outline'}
             size={20}
-            color={colors.foregroundMuted}
+            color={theme.colors.textMuted}
           />
         </Pressable>
       </View>

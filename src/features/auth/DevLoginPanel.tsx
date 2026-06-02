@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { useAuth } from '@/features/auth/useAuth';
-import { colors, radii, spacing } from '@/theme';
+import { radii, spacing } from '@/theme/tokens';
 import type { UserRole } from '@/types';
 
 const DEV_ROLES: { role: UserRole; label: string }[] = [

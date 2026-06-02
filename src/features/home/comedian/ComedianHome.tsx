@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 
 import { AppText } from '@/components/AppText';
 import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { EventCard } from '@/features/home/components/EventCard';
-import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { spacing } from '@/theme';
@@ -24,7 +24,6 @@ function getTimeOfDay(): string {
 
 const MOCK_COMEDIAN_DATA = {
   city: 'London',
-  notificationCount: 3,
   comedianName: 'Jane',
   nextGig: {
     daysUntil: 4,
@@ -88,11 +87,7 @@ export function ComedianHome() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <HomeHeader
-          city={MOCK_COMEDIAN_DATA.city}
-          role="comedian"
-          notificationCount={MOCK_COMEDIAN_DATA.notificationCount}
-        />
+        <ScreenHeader city={MOCK_COMEDIAN_DATA.city} tabLabel="Home" />
 
         <View style={styles.titleBlock}>
           <AppText variant="title">

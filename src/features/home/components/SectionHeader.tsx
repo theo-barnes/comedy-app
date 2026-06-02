@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { colors, spacing } from '@/theme';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { spacing } from '@/theme/tokens';
+import type { Theme } from '@/theme/types';
 
 type Props = {
   label: string;
@@ -10,6 +12,7 @@ type Props = {
 };
 
 export function SectionHeader({ label, actionLabel, onAction }: Props) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <AppText variant="caption" style={styles.label}>
@@ -26,22 +29,23 @@ export function SectionHeader({ label, actionLabel, onAction }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  label: {
-    color: colors.foregroundMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontWeight: '600',
-  },
-  action: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    label: {
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      fontWeight: '600',
+    },
+    action: {
+      color: theme.colors.primaryRest,
+      fontWeight: '500',
+    },
+  });
