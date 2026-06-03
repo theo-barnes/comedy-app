@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { AppText } from '@/components/AppText';
-import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
+import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { spacing } from '@/theme';
@@ -89,116 +87,95 @@ export function FanHome() {
   const { featured, thisWeek, performersNearYou, freshClips, becauseYouSaved } = MOCK_FAN_DATA;
 
   return (
-    <Screen>
+    <HomeScreenLayout
+      city={MOCK_FAN_DATA.city}
+      heroTitle={t('home.fan.tonightRooms')}
+      heroSubtitle={t('home.fan.showsNearYou', { count: thisWeek.length + 1 })}
+    >
+      <FilterChips
+        options={MOCK_FAN_DATA.neighbourhoods}
+        selected={selectedNeighbourhood}
+        onSelect={setSelectedNeighbourhood}
+      />
+
+      <FeaturedEventCard
+        title={featured.title}
+        venue={featured.venue}
+        neighbourhood={featured.neighbourhood}
+        date={featured.date}
+        time={featured.time}
+        price={featured.price}
+        badges={featured.badges}
+        performerAvatars={featured.performerAvatars}
+        performerLabel={featured.performerLabel}
+      />
+
+      {/* THIS WEEK */}
+      <SectionHeader
+        label={t('home.fan.thisWeek')}
+        actionLabel={t('common.seeAll')}
+        onAction={() => {}}
+      />
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
       >
-        <ScreenHeader city={MOCK_FAN_DATA.city} tabLabel="Home" />
-
-        <View style={styles.titleBlock}>
-          <AppText variant="title">{t('home.fan.tonightRooms')}</AppText>
-          <AppText muted>{t('home.fan.showsNearYou', { count: thisWeek.length + 1 })}</AppText>
-        </View>
-
-        <FilterChips
-          options={MOCK_FAN_DATA.neighbourhoods}
-          selected={selectedNeighbourhood}
-          onSelect={setSelectedNeighbourhood}
-        />
-
-        <FeaturedEventCard
-          title={featured.title}
-          venue={featured.venue}
-          neighbourhood={featured.neighbourhood}
-          date={featured.date}
-          time={featured.time}
-          price={featured.price}
-          badges={featured.badges}
-          performerAvatars={featured.performerAvatars}
-          performerLabel={featured.performerLabel}
-        />
-
-        {/* THIS WEEK */}
-        <SectionHeader
-          label={t('home.fan.thisWeek')}
-          actionLabel={t('common.seeAll')}
-          onAction={() => {}}
-        />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-        >
-          {thisWeek.map((event) => (
-            <EventCard key={event.id} title={event.title} subtitle={event.subtitle} />
-          ))}
-        </ScrollView>
-
-        {/* PERFORMING NEAR YOU */}
-        <SectionHeader
-          label={t('home.fan.performingNearYou')}
-          actionLabel={t('common.seeAll')}
-          onAction={() => {}}
-        />
-        <View style={styles.threeColGrid}>
-          {performersNearYou.map((p) => (
-            <PerformerCard key={p.id} name={p.name} subtitle={p.subtitle} />
-          ))}
-        </View>
-
-        {/* FRESH CLIPS */}
-        <SectionHeader label={t('home.fan.freshClips')} actionLabel="Browse" onAction={() => {}} />
-        <View style={styles.twoColGrid}>
-          {freshClips.map((clip) => (
-            <ClipCard
-              key={clip.id}
-              title={clip.title}
-              comedianName={clip.comedianName}
-              viewCount={clip.viewCount}
-              duration={clip.duration}
-            />
-          ))}
-        </View>
-
-        {/* BECAUSE YOU SAVED */}
-        <SectionHeader
-          label={t('home.fan.becauseYouSaved', { name: becauseYouSaved.name.toUpperCase() })}
-          actionLabel="More"
-          onAction={() => {}}
-        />
-        <View style={styles.savedList}>
-          {becauseYouSaved.items.map((item) => (
-            <SavedRecommendationItem
-              key={item.id}
-              title={item.title}
-              venue={item.venue}
-              neighbourhood={item.neighbourhood}
-              date={item.date}
-              price={item.price}
-              badges={item.badges}
-            />
-          ))}
-        </View>
+        {thisWeek.map((event) => (
+          <EventCard key={event.id} title={event.title} subtitle={event.subtitle} />
+        ))}
       </ScrollView>
-    </Screen>
+
+      {/* PERFORMING NEAR YOU */}
+      <SectionHeader
+        label={t('home.fan.performingNearYou')}
+        actionLabel={t('common.seeAll')}
+        onAction={() => {}}
+      />
+      <View style={styles.threeColGrid}>
+        {performersNearYou.map((p) => (
+          <PerformerCard key={p.id} name={p.name} subtitle={p.subtitle} />
+        ))}
+      </View>
+
+      {/* FRESH CLIPS */}
+      <SectionHeader label={t('home.fan.freshClips')} actionLabel="Browse" onAction={() => {}} />
+      <View style={styles.twoColGrid}>
+        {freshClips.map((clip) => (
+          <ClipCard
+            key={clip.id}
+            title={clip.title}
+            comedianName={clip.comedianName}
+            viewCount={clip.viewCount}
+            duration={clip.duration}
+          />
+        ))}
+      </View>
+
+      {/* BECAUSE YOU SAVED */}
+      <SectionHeader
+        label={t('home.fan.becauseYouSaved', { name: becauseYouSaved.name.toUpperCase() })}
+        actionLabel="More"
+        onAction={() => {}}
+      />
+      <View style={styles.savedList}>
+        {becauseYouSaved.items.map((item) => (
+          <SavedRecommendationItem
+            key={item.id}
+            title={item.title}
+            venue={item.venue}
+            neighbourhood={item.neighbourhood}
+            date={item.date}
+            price={item.price}
+            badges={item.badges}
+          />
+        ))}
+      </View>
+    </HomeScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
-  },
-  titleBlock: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.xs,
-  },
   horizontalList: {
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,

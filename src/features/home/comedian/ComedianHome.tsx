@@ -1,10 +1,8 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { AppText } from '@/components/AppText';
-import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { EventCard } from '@/features/home/components/EventCard';
+import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { spacing } from '@/theme';
@@ -81,102 +79,83 @@ export function ComedianHome() {
   const timeOfDay = getTimeOfDay();
 
   return (
-    <Screen>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <ScreenHeader city={MOCK_COMEDIAN_DATA.city} tabLabel="Home" />
+    <HomeScreenLayout
+      city={MOCK_COMEDIAN_DATA.city}
+      heroTitle={t('home.comedian.greeting', {
+        timeOfDay,
+        name: MOCK_COMEDIAN_DATA.comedianName,
+      })}
+      heroSubtitle={t('home.comedian.nextGigIn', { count: nextGig.daysUntil })}
+      contentContainerStyle={styles.content}
+    >
+      <NextGigCard
+        daysUntil={nextGig.daysUntil}
+        hoursUntil={nextGig.hoursUntil}
+        roleBadge={nextGig.roleBadge}
+        showTitle={nextGig.showTitle}
+        venue={nextGig.venue}
+        date={nextGig.date}
+        doorsTime={nextGig.doorsTime}
+        performerAvatars={nextGig.performerAvatars}
+        onTheBillCount={nextGig.onTheBillCount}
+      />
 
-        <View style={styles.titleBlock}>
-          <AppText variant="title">
-            {t('home.comedian.greeting', {
-              timeOfDay,
-              name: MOCK_COMEDIAN_DATA.comedianName,
-            })}
-          </AppText>
-          <AppText muted>{t('home.comedian.nextGigIn', { count: nextGig.daysUntil })}</AppText>
-        </View>
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        {stats.map((s) => (
+          <StatCard key={s.id} value={s.value} label={s.label} delta={s.delta} />
+        ))}
+      </View>
 
-        <NextGigCard
-          daysUntil={nextGig.daysUntil}
-          hoursUntil={nextGig.hoursUntil}
-          roleBadge={nextGig.roleBadge}
-          showTitle={nextGig.showTitle}
-          venue={nextGig.venue}
-          date={nextGig.date}
-          doorsTime={nextGig.doorsTime}
-          performerAvatars={nextGig.performerAvatars}
-          onTheBillCount={nextGig.onTheBillCount}
-        />
+      <TipBanner
+        title={tip.title}
+        body={tip.body}
+        progress={tip.progress}
+        step={tip.step}
+        totalSteps={tip.totalSteps}
+        ctaLabel={tip.ctaLabel}
+      />
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          {stats.map((s) => (
-            <StatCard key={s.id} value={s.value} label={s.label} delta={s.delta} />
-          ))}
-        </View>
+      {/* YOUR GIGS */}
+      <SectionHeader
+        label={t('home.comedian.yourGigs')}
+        actionLabel={t('home.comedian.manage')}
+        onAction={() => {}}
+      />
+      <View style={styles.gigList}>
+        {gigs.map((g) => (
+          <GigListItem key={g.id} venue={g.venue} date={g.date} roleBadge={g.roleBadge} />
+        ))}
+      </View>
 
-        <TipBanner
-          title={tip.title}
-          body={tip.body}
-          progress={tip.progress}
-          step={tip.step}
-          totalSteps={tip.totalSteps}
-          ctaLabel={tip.ctaLabel}
-        />
+      {/* ON THE SAME NIGHT AS YOU */}
+      <SectionHeader
+        label={t('home.comedian.sameNight', { date: MOCK_COMEDIAN_DATA.sameNightDate })}
+      />
+      <View style={styles.twoColGrid}>
+        {sameNightEvents.map((e) => (
+          <EventCard key={e.id} title={e.title} subtitle={e.subtitle} />
+        ))}
+      </View>
 
-        {/* YOUR GIGS */}
-        <SectionHeader
-          label={t('home.comedian.yourGigs')}
-          actionLabel={t('home.comedian.manage')}
-          onAction={() => {}}
-        />
-        <View style={styles.gigList}>
-          {gigs.map((g) => (
-            <GigListItem key={g.id} venue={g.venue} date={g.date} roleBadge={g.roleBadge} />
-          ))}
-        </View>
-
-        {/* ON THE SAME NIGHT AS YOU */}
-        <SectionHeader
-          label={t('home.comedian.sameNight', { date: MOCK_COMEDIAN_DATA.sameNightDate })}
-        />
-        <View style={styles.twoColGrid}>
-          {sameNightEvents.map((e) => (
-            <EventCard key={e.id} title={e.title} subtitle={e.subtitle} />
-          ))}
-        </View>
-
-        {/* OTHERS ON THE CIRCUIT */}
-        <SectionHeader
-          label={t('home.comedian.othersOnCircuit')}
-          actionLabel={t('common.seeAll')}
-          onAction={() => {}}
-        />
-        <View style={styles.threeColGrid}>
-          {othersOnCircuit.map((p) => (
-            <PerformerCard key={p.id} name={p.name} subtitle={p.subtitle} />
-          ))}
-        </View>
-      </ScrollView>
-    </Screen>
+      {/* OTHERS ON THE CIRCUIT */}
+      <SectionHeader
+        label={t('home.comedian.othersOnCircuit')}
+        actionLabel={t('common.seeAll')}
+        onAction={() => {}}
+      />
+      <View style={styles.threeColGrid}>
+        {othersOnCircuit.map((p) => (
+          <PerformerCard key={p.id} name={p.name} subtitle={p.subtitle} />
+        ))}
+      </View>
+    </HomeScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
   content: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
     gap: spacing.md,
-  },
-  titleBlock: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',

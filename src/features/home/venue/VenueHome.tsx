@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { AppText } from '@/components/AppText';
-import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
+import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { spacing } from '@/theme';
 import type { BadgeVariant } from '@/features/home/components/Badge';
@@ -85,101 +83,82 @@ export function VenueHome() {
   const { featuredShow, otherEvents, acts, whatElse } = MOCK_VENUE_DATA;
 
   return (
-    <Screen>
+    <HomeScreenLayout
+      city={MOCK_VENUE_DATA.city}
+      heroTitle={t('home.venue.yourShows')}
+      heroSubtitle={t('home.venue.salesSummary', {
+        title: featuredShow.title,
+        percent: Math.round(featuredShow.progress * 100),
+      })}
+      contentContainerStyle={styles.content}
+    >
+      <FeaturedShowCard
+        title={featuredShow.title}
+        venue={featuredShow.venue}
+        date={featuredShow.date}
+        statusBadge={featuredShow.statusBadge}
+        ticketsSold={featuredShow.ticketsSold}
+        totalTickets={featuredShow.totalTickets}
+        revenue={featuredShow.revenue}
+        remaining={featuredShow.remaining}
+        onWaitlist={featuredShow.onWaitlist}
+        progress={featuredShow.progress}
+      />
+
+      {/* YOUR OTHER EVENTS */}
+      <SectionHeader
+        label={t('home.venue.yourOtherEvents')}
+        actionLabel={t('common.seeAll')}
+        onAction={() => {}}
+      />
+      <View style={styles.list}>
+        {otherEvents.map((e) => (
+          <EventListItem
+            key={e.id}
+            title={e.title}
+            venue={e.venue}
+            date={e.date}
+            statusBadge={e.statusBadge}
+            progress={e.progress}
+          />
+        ))}
+      </View>
+
+      {/* FIND ACTS TO BOOK */}
+      <SectionHeader
+        label={t('home.venue.findActs')}
+        actionLabel={t('home.venue.browseAll')}
+        onAction={() => {}}
+      />
+      <FilterChips
+        options={MOCK_VENUE_DATA.actsFilter}
+        selected={selectedActFilter}
+        onSelect={setSelectedActFilter}
+      />
+      <View style={styles.list}>
+        {acts.map((act) => (
+          <ActCard key={act.id} name={act.name} rating={act.rating} tagline={act.tagline} />
+        ))}
+      </View>
+
+      {/* WHAT ELSE IS ON THIS WEEK */}
+      <SectionHeader label={t('home.venue.whatElseOn')} />
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
       >
-        <ScreenHeader city={MOCK_VENUE_DATA.city} tabLabel="Home" />
-
-        <View style={styles.titleBlock}>
-          <AppText variant="title">{t('home.venue.yourShows')}</AppText>
-          <AppText muted>
-            {t('home.venue.salesSummary', {
-              title: featuredShow.title,
-              percent: Math.round(featuredShow.progress * 100),
-            })}
-          </AppText>
-        </View>
-
-        <FeaturedShowCard
-          title={featuredShow.title}
-          venue={featuredShow.venue}
-          date={featuredShow.date}
-          statusBadge={featuredShow.statusBadge}
-          ticketsSold={featuredShow.ticketsSold}
-          totalTickets={featuredShow.totalTickets}
-          revenue={featuredShow.revenue}
-          remaining={featuredShow.remaining}
-          onWaitlist={featuredShow.onWaitlist}
-          progress={featuredShow.progress}
-        />
-
-        {/* YOUR OTHER EVENTS */}
-        <SectionHeader
-          label={t('home.venue.yourOtherEvents')}
-          actionLabel={t('common.seeAll')}
-          onAction={() => {}}
-        />
-        <View style={styles.list}>
-          {otherEvents.map((e) => (
-            <EventListItem
-              key={e.id}
-              title={e.title}
-              venue={e.venue}
-              date={e.date}
-              statusBadge={e.statusBadge}
-              progress={e.progress}
-            />
-          ))}
-        </View>
-
-        {/* FIND ACTS TO BOOK */}
-        <SectionHeader
-          label={t('home.venue.findActs')}
-          actionLabel={t('home.venue.browseAll')}
-          onAction={() => {}}
-        />
-        <FilterChips
-          options={MOCK_VENUE_DATA.actsFilter}
-          selected={selectedActFilter}
-          onSelect={setSelectedActFilter}
-        />
-        <View style={styles.list}>
-          {acts.map((act) => (
-            <ActCard key={act.id} name={act.name} rating={act.rating} tagline={act.tagline} />
-          ))}
-        </View>
-
-        {/* WHAT ELSE IS ON THIS WEEK */}
-        <SectionHeader label={t('home.venue.whatElseOn')} />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-        >
-          {whatElse.map((e) => (
-            <EventCard key={e.id} title={e.title} subtitle={e.subtitle} />
-          ))}
-        </ScrollView>
+        {whatElse.map((e) => (
+          <EventCard key={e.id} title={e.title} subtitle={e.subtitle} />
+        ))}
       </ScrollView>
-    </Screen>
+    </HomeScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
   content: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
     gap: spacing.md,
-  },
-  titleBlock: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.xs,
   },
   list: {
     gap: spacing.sm,
