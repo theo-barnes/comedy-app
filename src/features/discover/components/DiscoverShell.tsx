@@ -45,31 +45,14 @@ export function DiscoverShell({ config, avatarUri }: Props) {
   return (
     <Screen>
       <View style={styles.root}>
-        <ScreenHeader city={config.city} tabLabel="Discover" avatarUri={avatarUri} />
-
-        <View style={styles.modeSwitcherRow}>
-          <View style={styles.modeSwitcher}>
-            {config.modes.map((mode) => {
-              const selected = activeView === mode.id;
-              return (
-                <Pressable
-                  key={mode.id}
-                  onPress={() => setActiveView(mode.id)}
-                  style={[styles.modeButton, selected && styles.modeButtonActive]}
-                >
-                  <Ionicons
-                    name={mode.icon}
-                    size={16}
-                    color={selected ? theme.colors.onPrimary : theme.colors.textMuted}
-                  />
-                  <AppText style={[styles.modeLabel, selected && styles.modeLabelActive]}>
-                    {mode.label}
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <ScreenHeader
+          city={config.city}
+          tabLabel="Discover"
+          avatarUri={avatarUri}
+          inlineTabs={config.modes.map((mode) => ({ id: mode.id, label: mode.label }))}
+          activeInlineTabId={activeView}
+          onInlineTabPress={(tabId) => setActiveView(tabId as DiscoverView)}
+        />
 
         {activeView === 'clips' && (
           <View style={styles.clipsTabs}>
@@ -314,40 +297,6 @@ const createStyles = (theme: Theme, view: DiscoverView) =>
     root: {
       flex: 1,
       backgroundColor: view === 'clips' ? theme.colors.surface : '#F5F3EE',
-    },
-    modeSwitcherRow: {
-      paddingHorizontal: spacing.md,
-      paddingBottom: spacing.md,
-      alignItems: 'flex-end',
-    },
-    modeSwitcher: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: view === 'clips' ? theme.colors.card : '#EEEBE4',
-      borderRadius: radii.pill,
-      borderWidth: 1,
-      borderColor: view === 'clips' ? theme.colors.border : 'rgba(0,0,0,0.06)',
-      padding: 3,
-      gap: 3,
-    },
-    modeButton: {
-      height: 36,
-      borderRadius: radii.pill,
-      paddingHorizontal: spacing.sm,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6,
-    },
-    modeButtonActive: {
-      backgroundColor: view === 'clips' ? theme.colors.primaryRest : '#1A1A1A',
-    },
-    modeLabel: {
-      color: view === 'clips' ? theme.colors.textMuted : '#6B6B6B',
-      fontWeight: '600',
-    },
-    modeLabelActive: {
-      color: view === 'clips' ? theme.colors.onPrimary : '#FFFFFF',
     },
     clipsTabs: {
       flexDirection: 'row',
