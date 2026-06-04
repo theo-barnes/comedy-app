@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+
 import type { BadgeVariant } from '@/features/home/components/Badge';
 
 export type DiscoverView = 'browse' | 'clips' | 'map';
@@ -68,6 +70,32 @@ export type ClipFeedItem = {
   imageUri?: string;
 };
 
+export type DiscoverMapVenueMarker = {
+  id: string;
+  title: string;
+  latitude: number;
+  longitude: number;
+  venue?: string;
+  price?: string;
+  badges?: BadgeVariant[];
+};
+
+export type DiscoverMapCameraState = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+export type DiscoverMapAdapterProps = {
+  markers: DiscoverMapVenueMarker[];
+  camera: DiscoverMapCameraState;
+  onCameraChange?: (camera: DiscoverMapCameraState) => void;
+  onMarkerPress?: (markerId: string) => void;
+};
+
+export type DiscoverMapAdapter = ComponentType<DiscoverMapAdapterProps>;
+
 export type DiscoverConfig = {
   city: string;
   sectionLabel: string;
@@ -93,5 +121,7 @@ export type DiscoverConfig = {
   map: {
     searchPlaceholder: string;
     filters: string[];
+    initialCamera?: DiscoverMapCameraState;
+    markers?: DiscoverMapVenueMarker[];
   };
 };

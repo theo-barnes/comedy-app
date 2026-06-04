@@ -1,11 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState, type ComponentType } from 'react';
+import { useState, type ComponentType } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
-import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { FilterChips } from '@/features/home/components/FilterChips';
 import { FeaturedEventCard } from '@/features/home/fan/FeaturedEventCard';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -15,6 +13,7 @@ import type { Theme } from '@/theme/types';
 
 import { CuratorSection, FullBillSection, LiveNowSection, TrendingSection } from './BrowseSections';
 import { ClipsFeed } from './ClipsFeed';
+import { DiscoverScreenLayout } from './DiscoverScreenLayout';
 import type { DiscoverConfig, DiscoverView } from '../types';
 
 type Props = {
@@ -24,7 +23,6 @@ type Props = {
 
 type ViewRendererProps = {
   config: DiscoverConfig;
-  colorScheme: Theme['colorScheme'];
   iconColor: string;
 };
 
@@ -39,50 +37,19 @@ export function DiscoverShell({ config, avatarUri }: Props) {
   const [activeView, setActiveView] = useState<DiscoverView>(config.defaultView);
   const [activeClipCategory, setActiveClipCategory] = useState(config.clips.defaultCategory);
 
-  const styles = useMemo(() => createStyles(theme, activeView), [theme, activeView]);
   const ActiveView = VIEW_RENDERERS[activeView];
 
   return (
-    <Screen>
-      <View style={styles.root}>
-        <ScreenHeader
-          city={config.city}
-          tabLabel="Discover"
-          avatarUri={avatarUri}
-          inlineTabs={config.modes.map((mode) => ({ id: mode.id, label: mode.label }))}
-          activeInlineTabId={activeView}
-          onInlineTabPress={(tabId) => setActiveView(tabId as DiscoverView)}
-        />
-
-        {activeView === 'clips' && (
-          <View style={styles.clipsTabs}>
-            {config.clips.categories.map((category) => {
-              const selected = activeClipCategory === category;
-              return (
-                <Pressable
-                  key={category}
-                  style={styles.clipTabButton}
-                  onPress={() => setActiveClipCategory(category)}
-                >
-                  <AppText style={[styles.clipTabLabel, selected && styles.clipTabLabelActive]}>
-                    {category}
-                  </AppText>
-                  <View
-                    style={[styles.clipTabUnderline, selected && styles.clipTabUnderlineActive]}
-                  />
-                </Pressable>
-              );
-            })}
-          </View>
-        )}
-
-        <ActiveView
-          config={config}
-          colorScheme={theme.colorScheme}
-          iconColor={theme.colors.textMuted}
-        />
-      </View>
-    </Screen>
+    <DiscoverScreenLayout
+      config={config}
+      activeView={activeView}
+      onViewChange={setActiveView}
+      activeClipCategory={activeClipCategory}
+      onClipCategoryChange={setActiveClipCategory}
+      avatarUri={avatarUri}
+    >
+      <ActiveView config={config} iconColor={theme.colors.textMuted} />
+    </DiscoverScreenLayout>
   );
 }
 
@@ -271,7 +238,6 @@ const stylesSheet = StyleSheet.create({
 const createBrowseViewStyles = (theme: Theme) =>
   StyleSheet.create({
     scrollContent: {
-      paddingBottom: spacing.xl,
       gap: spacing.sm,
     },
     searchWrap: {
@@ -289,44 +255,5 @@ const createBrowseViewStyles = (theme: Theme) =>
     },
     heroBlock: {
       paddingHorizontal: spacing.lg,
-    },
-  });
-
-const createStyles = (theme: Theme, view: DiscoverView) =>
-  StyleSheet.create({
-    root: {
-      flex: 1,
-      backgroundColor: view === 'clips' ? theme.colors.surface : '#F5F3EE',
-    },
-    clipsTabs: {
-      flexDirection: 'row',
-      justifyContent: 'space-evenly',
-      alignItems: 'center',
-      marginTop: spacing.xs,
-      marginBottom: spacing.sm,
-      paddingHorizontal: spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: view === 'clips' ? theme.colors.border : 'rgba(255,255,255,0.08)',
-    },
-    clipTabButton: {
-      alignItems: 'center',
-      minWidth: 90,
-    },
-    clipTabLabel: {
-      color: theme.colors.textMuted,
-      fontSize: 30 / 2,
-      fontWeight: '600',
-      marginBottom: 10,
-    },
-    clipTabLabelActive: {
-      color: theme.colors.textPrimary,
-    },
-    clipTabUnderline: {
-      height: 2,
-      width: '100%',
-      backgroundColor: 'transparent',
-    },
-    clipTabUnderlineActive: {
-      backgroundColor: theme.colors.primaryRest,
     },
   });

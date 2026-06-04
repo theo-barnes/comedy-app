@@ -1,11 +1,8 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
+import { AppTabScreenLayout } from '@/components/layouts/AppTabScreenLayout';
 import { HomeHeroHeader } from '@/components/HomeHeroHeader';
-import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { spacing } from '@/theme';
 
 export type HomeScreenLayoutProps = PropsWithChildren<{
   city: string;
@@ -24,29 +21,15 @@ export function HomeScreenLayout({
   children,
 }: HomeScreenLayoutProps) {
   return (
-    <Screen>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, contentContainerStyle]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View>
-          <ScreenHeader city={city} tabLabel="Home" avatarUri={avatarUri} />
-          <HomeHeroHeader title={heroTitle} subtitle={heroSubtitle} />
-        </View>
-
-        {children}
-      </ScrollView>
-    </Screen>
+    <AppTabScreenLayout
+      city={city}
+      tabLabel="Home"
+      avatarUri={avatarUri}
+      hero={<HomeHeroHeader title={heroTitle} subtitle={heroSubtitle} />}
+      bodyMode="scroll"
+      scrollContentContainerStyle={contentContainerStyle}
+    >
+      {children}
+    </AppTabScreenLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
-  },
-});

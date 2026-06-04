@@ -15,6 +15,7 @@ export type ScreenHeaderProps = {
   city: string;
   tabLabel: string;
   avatarUri?: string;
+  onAvatarPress?: () => void;
   inlineTabs?: readonly {
     id: string;
     label: string;
@@ -28,6 +29,7 @@ export function ScreenHeader({
   city,
   tabLabel,
   avatarUri,
+  onAvatarPress,
   inlineTabs,
   activeInlineTabId,
   onInlineTabPress,
@@ -35,8 +37,13 @@ export function ScreenHeader({
   const router = useRouter();
   const styles = useThemedStyles(createStyles);
   const handleAvatarPress = useCallback(() => {
+    if (onAvatarPress) {
+      onAvatarPress();
+      return;
+    }
+
     router.replace('/(tabs)/profile');
-  }, [router]);
+  }, [onAvatarPress, router]);
 
   const hasInlineTabs = Boolean(inlineTabs?.length);
 

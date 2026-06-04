@@ -79,4 +79,15 @@ describe('ScreenHeader', () => {
     expect(screen.getByRole('button', { name: 'Map' })).toBeTruthy();
     expect(screen.getByText('City of Westminster and Kensington').props.numberOfLines).toBe(1);
   });
+
+  it('uses custom avatar handler when provided', () => {
+    const onAvatarPress = jest.fn();
+
+    renderWithTheme(
+      <ScreenHeader city="London" tabLabel="Discover" onAvatarPress={onAvatarPress} />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Open profile' }));
+    expect(onAvatarPress).toHaveBeenCalledTimes(1);
+  });
 });

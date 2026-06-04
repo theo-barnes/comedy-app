@@ -65,10 +65,6 @@ function ClipCard({ item, height }: ClipCardProps) {
         <View style={styles.bgFallback} />
       )}
 
-      {/* Two-layer scrim: mid-card fade + heavy bottom */}
-      <View style={styles.midScrim} />
-      <View style={styles.bottomScrim} />
-
       {/* Right-side action rail */}
       <View style={styles.actionRail}>
         <ActionButton icon="heart-outline" label={item.likeCount ?? '·'} />
@@ -126,22 +122,6 @@ const styles = StyleSheet.create({
   bgFallback: {
     ...StyleSheet.absoluteFill,
     backgroundColor: '#0D0D14',
-  },
-  midScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-  },
-  bottomScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '55%',
-    backgroundColor: 'rgba(0,0,0,0.62)',
   },
   actionRail: {
     position: 'absolute',
