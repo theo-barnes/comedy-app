@@ -46,20 +46,36 @@ const createStyles = (theme: Theme) =>
     container: {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.xs,
-      gap: spacing.sm,
+      gap: spacing.xs,
       flexDirection: 'row',
     },
+    // chip: {
+    //   paddingHorizontal: spacing.md,
+    //   paddingVertical: spacing.sm,
+    //   borderRadius: radii.pill,
+    // },
     chip: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: radii.pill,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm + 1,
+      borderRadius: 999,
     },
+    // chipActive: {
+    //   backgroundColor: theme.colors.primaryPressed,
+    // },
     chipActive: {
-      backgroundColor: theme.colors.primaryRest,
+      backgroundColor: theme.colors.primaryPressed,
+      shadowColor: theme.colors.buttonShadow,
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      shadowOffset: {
+        width: 0,
+        height: 3,
+      },
+      elevation: 2,
     },
     chipInactive: {
-      borderWidth: 1,
-      borderColor: theme.colors.border,
+      //borderWidth: 1,
+      //borderColor: theme.colors.border,
       backgroundColor: 'transparent',
     },
     label: {

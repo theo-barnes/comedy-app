@@ -20,7 +20,7 @@ export function HomeHeroHeader({ title, subtitle }: HomeHeroHeaderProps) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
     gap: spacing.xs,
   },
 });

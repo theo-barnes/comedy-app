@@ -37,6 +37,9 @@ export const darkTokens: ColorTokens = {
   focusRing: curtain[500],
   // Curtain red is always dark enough — white text/icons pass WCAG AA on primaryRest.
   onPrimary: '#FFFFFF',
+
+  // Shadows
+  buttonShadow: '#000',
 };
 
 /**
@@ -74,6 +77,9 @@ export const lightTokens: ColorTokens = {
   link: curtain[700],
   focusRing: curtain[600],
   onPrimary: '#FFFFFF',
+
+  // Shadows
+  buttonShadow: '#FFFFFF',
 };
 
 export const spacing = {

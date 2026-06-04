@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
+import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
 import { spacing } from '@/theme';
 import type { BadgeVariant } from '@/features/home/components/Badge';
 
@@ -110,21 +110,12 @@ export function FanHome() {
         performerLabel={featured.performerLabel}
       />
 
-      {/* THIS WEEK */}
-      <SectionHeader
-        label={t('home.fan.thisWeek')}
+      <ThisWeekSection
+        events={thisWeek}
+        sectionLabel={t('home.fan.thisWeek')}
         actionLabel={t('common.seeAll')}
         onAction={() => {}}
       />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
-      >
-        {thisWeek.map((event) => (
-          <EventCard key={event.id} title={event.title} subtitle={event.subtitle} />
-        ))}
-      </ScrollView>
 
       {/* PERFORMING NEAR YOU */}
       <SectionHeader
@@ -176,11 +167,6 @@ export function FanHome() {
 }
 
 const styles = StyleSheet.create({
-  horizontalList: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
   threeColGrid: {
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,

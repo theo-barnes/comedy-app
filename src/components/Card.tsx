@@ -30,7 +30,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.card,
       borderRadius: radii.md,
       padding: spacing.md,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: theme.colors.border,
     },
     pressed: {

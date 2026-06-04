@@ -81,6 +81,8 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.card,
       justifyContent: 'space-between',
       marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+      marginBottom: spacing.md,
     },
     absoluteFill: {
       position: 'absolute',

@@ -57,6 +57,8 @@ export interface ColorTokens {
    * Named semantically so a future palette change is one-line safe.
    */
   onPrimary: string;
+
+  buttonShadow: string;
 }
 
 /** Spacing scale — mode-agnostic */
