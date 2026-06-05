@@ -10,7 +10,6 @@ describe('FanHome', () => {
 
   it('renders the THIS WEEK section header', () => {
     renderWithTheme(<FanHome />);
-    // t('home.fan.thisWeek') returns the key in tests
     expect(screen.getByText('home.fan.thisWeek')).toBeTruthy();
   });
 
@@ -19,9 +18,10 @@ describe('FanHome', () => {
     expect(screen.getByText('home.fan.performingNearYou')).toBeTruthy();
   });
 
-  it('renders the FRESH CLIPS section header', () => {
+  it('renders the FRESH CLIPS section header without a Browse action label', () => {
     renderWithTheme(<FanHome />);
     expect(screen.getByText('home.fan.freshClips')).toBeTruthy();
+    expect(screen.queryByText('Browse')).toBeNull();
   });
 
   it('renders the standardized body sections', () => {
@@ -31,5 +31,13 @@ describe('FanHome', () => {
     expect(screen.getByTestId('fan-home-performers-section')).toBeTruthy();
     expect(screen.getByTestId('fan-home-clips-section')).toBeTruthy();
     expect(screen.getByTestId('fan-home-saved-section')).toBeTruthy();
+  });
+
+  it('renders browse sections appended below existing content', () => {
+    renderWithTheme(<FanHome />);
+    expect(screen.getByText('Trending Tonight')).toBeTruthy();
+    expect(screen.getByText("This Week's Spotlight")).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'View on map' })).toBeTruthy();
+    expect(screen.getByText('LIVE NOW')).toBeTruthy();
   });
 });

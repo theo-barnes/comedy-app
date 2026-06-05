@@ -1,12 +1,22 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 
 import { EventCard } from '@/features/home/components/EventCard';
+import { FilterChips } from '@/features/home/components/FilterChips';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
+import {
+  CuratorSection,
+  FullBillSection,
+  LiveNowSection,
+  TrendingSection,
+  getBrowseConfig,
+} from '@/features/browse';
 
 import { GigListItem } from './GigListItem';
 import { NextGigCard } from './NextGigCard';
@@ -75,8 +85,12 @@ const MOCK_COMEDIAN_DATA = {
 
 export function ComedianHome() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { nextGig, stats, tip, gigs, sameNightEvents, othersOnCircuit } = MOCK_COMEDIAN_DATA;
   const timeOfDay = getTimeOfDay();
+  const browse = getBrowseConfig('comedian');
+  const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
+  const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
 
   return (
     <HomeScreenLayout
@@ -152,6 +166,25 @@ export function ComedianHome() {
           <PerformerCard key={p.id} name={p.name} subtitle={p.subtitle} />
         ))}
       </View>
+
+      {/* BROWSE — day filter + trending + curator + full bill + live now */}
+      <FilterChips options={dayLabels} selected={selectedDay} onSelect={setSelectedDay} />
+      <View style={styles.browseSection}>
+        <TrendingSection sectionTitle="Trending Tonight" shows={browse.trendingShows} />
+      </View>
+      <View style={styles.browseSection}>
+        <CuratorSection curator={browse.curator} />
+      </View>
+      <View style={styles.browseSection}>
+        <FullBillSection
+          sectionTitle={browse.fullBillKicker}
+          shows={browse.fullBillShows}
+          onMapPress={() => router.push('/map')}
+        />
+      </View>
+      <View style={styles.browseSection}>
+        <LiveNowSection panel={browse.liveNow} />
+      </View>
     </HomeScreenLayout>
   );
 }
@@ -184,5 +217,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
     gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
+  },
+  browseSection: {
+    marginBottom: HOME_SPACING.sectionBottom,
   },
 });

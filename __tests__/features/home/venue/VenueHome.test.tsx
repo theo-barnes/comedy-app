@@ -24,4 +24,12 @@ describe('VenueHome', () => {
     expect(screen.getByTestId('venue-home-other-events-section')).toBeTruthy();
     expect(screen.getByTestId('venue-home-acts-section')).toBeTruthy();
   });
+
+  it('renders browse sections appended below existing content', () => {
+    renderWithTheme(<VenueHome />);
+    expect(screen.getByText('Trending Tonight')).toBeTruthy();
+    expect(screen.getByText("This Week's Spotlight")).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'View on map' })).toBeTruthy();
+    expect(screen.getByText('LIVE NOW')).toBeTruthy();
+  });
 });

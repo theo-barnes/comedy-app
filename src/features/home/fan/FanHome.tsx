@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 
 import { FilterChips } from '@/features/home/components/FilterChips';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
@@ -9,6 +10,13 @@ import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
 import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
+import {
+  CuratorSection,
+  FullBillSection,
+  LiveNowSection,
+  TrendingSection,
+  getBrowseConfig,
+} from '@/features/browse';
 
 import { ClipCard } from './ClipCard';
 import { FeaturedEventCard } from './FeaturedEventCard';
@@ -81,10 +89,14 @@ const MOCK_FAN_DATA = {
 
 export function FanHome() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState(
     MOCK_FAN_DATA.neighbourhoods[0],
   );
   const { featured, thisWeek, performersNearYou, freshClips, becauseYouSaved } = MOCK_FAN_DATA;
+  const browse = getBrowseConfig('fan');
+  const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
+  const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
 
   return (
     <HomeScreenLayout
@@ -134,7 +146,7 @@ export function FanHome() {
       </View>
 
       {/* FRESH CLIPS */}
-      <SectionHeader label={t('home.fan.freshClips')} actionLabel="Browse" onAction={() => {}} />
+      <SectionHeader label={t('home.fan.freshClips')} />
       <View style={styles.twoColGrid} testID="fan-home-clips-section">
         {freshClips.map((clip) => (
           <ClipCard
@@ -166,6 +178,25 @@ export function FanHome() {
           />
         ))}
       </View>
+
+      {/* BROWSE — day filter + trending + curator + full bill + live now */}
+      <FilterChips options={dayLabels} selected={selectedDay} onSelect={setSelectedDay} />
+      <View style={styles.browseSection}>
+        <TrendingSection sectionTitle="Trending Tonight" shows={browse.trendingShows} />
+      </View>
+      <View style={styles.browseSection}>
+        <CuratorSection curator={browse.curator} />
+      </View>
+      <View style={styles.browseSection}>
+        <FullBillSection
+          sectionTitle={browse.fullBillKicker}
+          shows={browse.fullBillShows}
+          onMapPress={() => router.push('/map')}
+        />
+      </View>
+      <View style={styles.browseSection}>
+        <LiveNowSection panel={browse.liveNow} />
+      </View>
     </HomeScreenLayout>
   );
 }
@@ -185,5 +216,9 @@ const styles = StyleSheet.create({
   },
   savedList: {
     gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
+  },
+  browseSection: {
+    marginBottom: HOME_SPACING.sectionBottom,
   },
 });

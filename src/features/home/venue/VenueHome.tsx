@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 
 import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
@@ -8,6 +9,13 @@ import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
+import {
+  CuratorSection,
+  FullBillSection,
+  LiveNowSection,
+  TrendingSection,
+  getBrowseConfig,
+} from '@/features/browse';
 
 import { ActCard } from './ActCard';
 import { EventListItem } from './EventListItem';
@@ -79,8 +87,12 @@ const MOCK_VENUE_DATA = {
 
 export function VenueHome() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [selectedActFilter, setSelectedActFilter] = useState(MOCK_VENUE_DATA.actsFilter[0]);
   const { featuredShow, otherEvents, acts, whatElse } = MOCK_VENUE_DATA;
+  const browse = getBrowseConfig('venue');
+  const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
+  const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
 
   return (
     <HomeScreenLayout
@@ -153,6 +165,25 @@ export function VenueHome() {
           <EventCard key={e.id} title={e.title} subtitle={e.subtitle} />
         ))}
       </ScrollView>
+
+      {/* BROWSE — day filter + trending + curator + full bill + live now */}
+      <FilterChips options={dayLabels} selected={selectedDay} onSelect={setSelectedDay} />
+      <View style={styles.browseSection}>
+        <TrendingSection sectionTitle="Trending Tonight" shows={browse.trendingShows} />
+      </View>
+      <View style={styles.browseSection}>
+        <CuratorSection curator={browse.curator} />
+      </View>
+      <View style={styles.browseSection}>
+        <FullBillSection
+          sectionTitle={browse.fullBillKicker}
+          shows={browse.fullBillShows}
+          onMapPress={() => router.push('/map')}
+        />
+      </View>
+      <View style={styles.browseSection}>
+        <LiveNowSection panel={browse.liveNow} />
+      </View>
     </HomeScreenLayout>
   );
 }
@@ -170,5 +201,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
     gap: HOME_SPACING.sectionGap,
     paddingBottom: HOME_SPACING.sectionBottom,
+  },
+  browseSection: {
+    marginBottom: HOME_SPACING.sectionBottom,
   },
 });

@@ -39,7 +39,7 @@ export default function TabsLayout() {
         name="search"
         options={{
           title: t('tabs.discover'),
-          tabBarIcon: tabIcon('search', 'search-outline'),
+          tabBarIcon: tabIcon('play-circle', 'play-circle-outline'),
         }}
       />
       <Tabs.Screen

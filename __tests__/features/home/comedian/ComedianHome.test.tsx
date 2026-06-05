@@ -26,4 +26,12 @@ describe('ComedianHome', () => {
     expect(screen.getByTestId('comedian-home-gigs-section')).toBeTruthy();
     expect(screen.getByTestId('comedian-home-same-night-section')).toBeTruthy();
   });
+
+  it('renders browse sections appended below existing content', () => {
+    renderWithTheme(<ComedianHome />);
+    expect(screen.getByText('Trending Tonight')).toBeTruthy();
+    expect(screen.getByText("This Week's Spotlight")).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'View on map' })).toBeTruthy();
+    expect(screen.getByText('LIVE NOW')).toBeTruthy();
+  });
 });

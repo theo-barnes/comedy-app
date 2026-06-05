@@ -24,6 +24,7 @@ type CuratorSectionProps = {
 type FullBillSectionProps = {
   sectionTitle: string;
   shows: BrowseShow[];
+  onMapPress?: () => void;
 };
 
 type LiveNowSectionProps = {
@@ -67,10 +68,23 @@ export function CuratorSection({ curator }: CuratorSectionProps) {
   );
 }
 
-export function FullBillSection({ sectionTitle, shows }: FullBillSectionProps) {
+export function FullBillSection({ sectionTitle, shows, onMapPress }: FullBillSectionProps) {
   return (
     <View>
-      <SectionHeader label={sectionTitle} actionLabel="See all" onAction={() => {}} />
+      <SectionHeader
+        label={sectionTitle}
+        actionLabel="See all"
+        onAction={() => {}}
+        iconAction={
+          onMapPress
+            ? {
+                iconName: 'map-outline',
+                onPress: onMapPress,
+                accessibilityLabel: 'View on map',
+              }
+            : undefined
+        }
+      />
       <View style={sharedStyles.billStack}>
         {shows.map((show) => (
           <SavedRecommendationItem
@@ -95,6 +109,7 @@ export function LiveNowSection({ panel }: LiveNowSectionProps) {
     <View>
       <SectionHeader label={panel.kicker} />
       <View style={styles.wrap}>
+        {/* Live Now panel is intentionally always-dark — a real-time accent regardless of system theme */}
         <View style={styles.panel}>
           <AppText variant="caption" style={styles.timeLabel}>
             {panel.timeLabel}

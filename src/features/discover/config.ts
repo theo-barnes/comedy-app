@@ -1,17 +1,12 @@
 import type { BadgeVariant } from '@/features/home/components/Badge';
 import type { UserRole } from '@/types';
 
+import { getBrowseConfig } from '@/features/browse/config';
 import type { DiscoverConfig } from './types';
 
 const BASE_DISCOVER_CONFIG: DiscoverConfig = {
   city: 'London',
   sectionLabel: 'DISCOVER',
-  defaultView: 'browse',
-  modes: [
-    { id: 'browse', label: 'Browse', icon: 'home-outline' },
-    { id: 'clips', label: 'Clips', icon: 'grid-outline' },
-    { id: 'map', label: 'Map', icon: 'map-outline' },
-  ],
   browse: {
     heroTitle: 'Tonight, London is laughing.',
     searchPlaceholder: 'Comics, venues, postcodes...',
@@ -187,19 +182,9 @@ const BASE_DISCOVER_CONFIG: DiscoverConfig = {
   },
 };
 
-const ROLE_CONFIG_OVERRIDES: Record<UserRole, Partial<DiscoverConfig>> = {
-  fan: {},
-  comedian: {
-    sectionLabel: 'DISCOVER',
-  },
-  venue: {
-    sectionLabel: 'DISCOVER',
-  },
-};
-
 export function getDiscoverConfig(role: UserRole): DiscoverConfig {
   return {
     ...BASE_DISCOVER_CONFIG,
-    ...ROLE_CONFIG_OVERRIDES[role],
+    browse: getBrowseConfig(role),
   };
 }
