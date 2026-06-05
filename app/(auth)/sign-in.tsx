@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Link, router, type Href } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,7 @@ import { FormField } from '@/components/FormField';
 import { PasswordInput } from '@/components/PasswordInput';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
-import { spacing, typography } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 import { useTranslation } from 'react-i18next';
 
@@ -154,12 +154,12 @@ export default function SignInScreen() {
 
       {/* Footer links */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
+        <AppText style={styles.footerText}>
           {t('auth.signIn.noAccount')}{' '}
           <Link href={'/(auth)/sign-up' as Href} style={styles.footerLink}>
             {t('auth.signIn.createAccount')}
           </Link>
-        </Text>
+        </AppText>
 
         <Pressable onPress={continueAsGuest} style={styles.guestButton}>
           <AppText variant="body" muted>
@@ -185,9 +185,10 @@ const createStyles = (theme: Theme) =>
       marginBottom: spacing.xl,
     },
     forgotLink: {
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
       color: theme.colors.primaryRest,
       fontWeight: '600',
+      fontFamily: theme.typography.fontFamily.roles.button,
       textAlign: 'right',
       marginTop: spacing.sm,
       marginBottom: spacing.lg,
@@ -202,7 +203,15 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
       gap: spacing.md,
     },
-    footerText: { fontSize: typography.body, color: theme.colors.textMuted },
-    footerLink: { color: theme.colors.primaryRest, fontWeight: '700' },
+    footerText: {
+      fontSize: theme.typography.body,
+      color: theme.colors.textMuted,
+      fontFamily: theme.typography.fontFamily.roles.body,
+    },
+    footerLink: {
+      color: theme.colors.primaryRest,
+      fontWeight: '700',
+      fontFamily: theme.typography.fontFamily.roles.link,
+    },
     guestButton: { paddingVertical: spacing.xs },
   });

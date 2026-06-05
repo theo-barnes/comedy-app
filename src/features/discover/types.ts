@@ -114,8 +114,6 @@ export type DiscoverConfig = {
     liveNow: LiveNowPanel;
   };
   clips: {
-    categories: string[];
-    defaultCategory: string;
     feed: ClipFeedItem[];
   };
   map: {

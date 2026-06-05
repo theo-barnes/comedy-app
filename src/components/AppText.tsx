@@ -2,7 +2,8 @@ import type { PropsWithChildren } from 'react';
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemedStyles } from '@/hooks/useThemedStyles';
-import { typography } from '@/theme/tokens';
+import { useTheme } from '@/providers/ThemeProvider';
+import { resolveFontWeightFamily } from '@/theme/FontRegister';
 import type { Theme } from '@/theme/types';
 
 type AppTextProps = PropsWithChildren<TextProps> & {
@@ -17,9 +18,37 @@ export function AppText({
   style,
   ...props
 }: AppTextProps) {
+  const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const flattenedStyle = StyleSheet.flatten(style);
+  const explicitFamily = flattenedStyle?.fontFamily;
+  const familyFromWeight = resolveFontWeightFamily(
+    theme.typography.fontFamily,
+    flattenedStyle?.fontWeight,
+  );
+
+  const variantFamily =
+    variant === 'title'
+      ? theme.typography.fontFamily.roles.title
+      : variant === 'heading'
+        ? theme.typography.fontFamily.roles.heading
+        : variant === 'caption'
+          ? theme.typography.fontFamily.roles.caption
+          : theme.typography.fontFamily.roles.body;
+
+  const resolvedFontFamily = explicitFamily ?? familyFromWeight ?? variantFamily;
+
   return (
-    <Text style={[styles.base, styles[variant], muted && styles.muted, style]} {...props}>
+    <Text
+      style={[
+        styles.base,
+        styles[variant],
+        muted && styles.muted,
+        resolvedFontFamily ? { fontFamily: resolvedFontFamily } : null,
+        style,
+      ]}
+      {...props}
+    >
       {children}
     </Text>
   );
@@ -34,19 +63,19 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.textMuted,
     },
     title: {
-      fontSize: typography.title,
+      fontSize: theme.typography.title,
       fontWeight: '700',
     },
     heading: {
-      fontSize: typography.heading,
+      fontSize: theme.typography.heading,
       fontWeight: '600',
     },
     body: {
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
       fontWeight: '400',
     },
     caption: {
-      fontSize: typography.caption,
+      fontSize: theme.typography.caption,
       fontWeight: '400',
     },
   });

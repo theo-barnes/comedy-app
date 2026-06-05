@@ -18,6 +18,26 @@ jest.mock('@expo/vector-icons', () => {
   );
 });
 
+jest.mock('react-native-reanimated', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View, Text, ScrollView } = require('react-native');
+
+  return {
+    __esModule: true,
+    default: {
+      View,
+      Text,
+      ScrollView,
+      createAnimatedComponent: (Component: React.ComponentType) => Component,
+    },
+    useSharedValue: <T>(initialValue: T) => ({ value: initialValue }),
+    useAnimatedStyle: (updater: () => Record<string, unknown>) => updater(),
+    withSpring: <T>(toValue: T) => toValue,
+  };
+});
+
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn().mockResolvedValue(null),
   setItemAsync: jest.fn().mockResolvedValue(undefined),
@@ -49,4 +69,13 @@ jest.mock('react-i18next', () => ({
 jest.mock('@/i18n', () => ({
   default: { t: (key: string) => key },
   t: (key: string) => key,
+}));
+
+jest.mock('@expo-google-fonts/inter', () => ({
+  Inter_400Regular: 'Inter_400Regular',
+  Inter_500Medium: 'Inter_500Medium',
+  Inter_600SemiBold: 'Inter_600SemiBold',
+  Inter_700Bold: 'Inter_700Bold',
+  Inter_800ExtraBold: 'Inter_800ExtraBold',
+  useFonts: () => [true, null],
 }));

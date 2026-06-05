@@ -6,7 +6,7 @@ import { EventCard } from '@/features/home/components/EventCard';
 import { FilterChips } from '@/features/home/components/FilterChips';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
-import { spacing } from '@/theme';
+import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
 
 import { ActCard } from './ActCard';
@@ -90,20 +90,21 @@ export function VenueHome() {
         title: featuredShow.title,
         percent: Math.round(featuredShow.progress * 100),
       })}
-      contentContainerStyle={styles.content}
     >
-      <FeaturedShowCard
-        title={featuredShow.title}
-        venue={featuredShow.venue}
-        date={featuredShow.date}
-        statusBadge={featuredShow.statusBadge}
-        ticketsSold={featuredShow.ticketsSold}
-        totalTickets={featuredShow.totalTickets}
-        revenue={featuredShow.revenue}
-        remaining={featuredShow.remaining}
-        onWaitlist={featuredShow.onWaitlist}
-        progress={featuredShow.progress}
-      />
+      <View style={styles.featuredSection} testID="venue-home-featured-section">
+        <FeaturedShowCard
+          title={featuredShow.title}
+          venue={featuredShow.venue}
+          date={featuredShow.date}
+          statusBadge={featuredShow.statusBadge}
+          ticketsSold={featuredShow.ticketsSold}
+          totalTickets={featuredShow.totalTickets}
+          revenue={featuredShow.revenue}
+          remaining={featuredShow.remaining}
+          onWaitlist={featuredShow.onWaitlist}
+          progress={featuredShow.progress}
+        />
+      </View>
 
       {/* YOUR OTHER EVENTS */}
       <SectionHeader
@@ -111,7 +112,7 @@ export function VenueHome() {
         actionLabel={t('common.seeAll')}
         onAction={() => {}}
       />
-      <View style={styles.list}>
+      <View style={styles.list} testID="venue-home-other-events-section">
         {otherEvents.map((e) => (
           <EventListItem
             key={e.id}
@@ -135,7 +136,7 @@ export function VenueHome() {
         selected={selectedActFilter}
         onSelect={setSelectedActFilter}
       />
-      <View style={styles.list}>
+      <View style={styles.list} testID="venue-home-acts-section">
         {acts.map((act) => (
           <ActCard key={act.id} name={act.name} rating={act.rating} tagline={act.tagline} />
         ))}
@@ -157,15 +158,17 @@ export function VenueHome() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.md,
+  featuredSection: {
+    marginTop: HOME_SPACING.featuredTop,
+    marginBottom: HOME_SPACING.featuredBottom,
   },
   list: {
-    gap: spacing.sm,
+    gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
   },
   horizontalList: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
+    paddingBottom: HOME_SPACING.sectionBottom,
   },
 });

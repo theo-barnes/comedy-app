@@ -20,6 +20,7 @@ export type AppTabScreenLayoutProps = PropsWithChildren<{
   activeInlineTabId?: string;
   onInlineTabPress?: (tabId: string) => void;
   onAvatarPress?: () => void;
+  topControls?: ReactNode;
   hero?: ReactNode;
   controls?: ReactNode;
   bodyMode?: 'scroll' | 'static';
@@ -37,6 +38,7 @@ export function AppTabScreenLayout({
   activeInlineTabId,
   onInlineTabPress,
   onAvatarPress,
+  topControls,
   hero,
   controls,
   bodyMode = 'static',
@@ -68,6 +70,7 @@ export function AppTabScreenLayout({
             showsVerticalScrollIndicator={false}
           >
             {header}
+            {topControls}
             {hero}
             {controls}
             {children}
@@ -84,6 +87,7 @@ export function AppTabScreenLayout({
           <View style={[styles.staticBody, bodyStyle]}>{children}</View>
           <View style={styles.overlayHeader} pointerEvents="box-none">
             {header}
+            {topControls}
             {controls}
           </View>
         </View>
@@ -95,6 +99,7 @@ export function AppTabScreenLayout({
     <Screen>
       <View style={[styles.root, backgroundStyle]}>
         {header}
+        {topControls}
         {hero}
         {controls}
         <View style={[styles.staticBody, bodyStyle]}>{children}</View>

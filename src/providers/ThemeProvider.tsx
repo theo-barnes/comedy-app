@@ -10,7 +10,8 @@ import {
 import { useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-import { darkTokens, lightTokens, spacing, radii, typography } from '@/theme/tokens';
+import { darkTokens, lightTokens, spacing, radii, createTypography } from '@/theme/tokens';
+import { useAppFonts } from '@/theme/FontRegister';
 import type { Theme, ThemeMode } from '@/theme/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ type ThemeProviderProps = PropsWithChildren<{
 export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
   const rawScheme = useColorScheme();
   const systemScheme: 'light' | 'dark' = rawScheme === 'light' ? 'light' : 'dark';
+  const fontsLoaded = useAppFonts();
   const [themeMode, setThemeModeState] = useState<ThemeMode>(initialMode ?? 'system');
 
   // Rehydrate persisted preference on mount.
@@ -81,10 +83,10 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
       colors: colorScheme === 'dark' ? darkTokens : lightTokens,
       spacing,
       radii,
-      typography,
+      typography: createTypography(fontsLoaded),
       colorScheme,
     }),
-    [colorScheme],
+    [colorScheme, fontsLoaded],
   );
 
   const value = useMemo<ThemeContextValue>(

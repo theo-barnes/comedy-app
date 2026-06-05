@@ -11,7 +11,7 @@ import { type ReactNode } from 'react';
 
 import { useTheme } from '@/providers/ThemeProvider';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
-import { radii, spacing, typography } from '@/theme/tokens';
+import { radii, spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -119,26 +119,27 @@ const createStyles = (theme: Theme) =>
     // Labels
     label: {
       fontWeight: '600',
+      fontFamily: theme.typography.fontFamily.roles.button,
     },
     primaryLabel: {
       color: theme.colors.onPrimary,
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
     },
     secondaryLabel: {
       color: theme.colors.textPrimary,
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
     },
     ghostLabel: {
       color: theme.colors.primaryRest,
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
     },
     smLabel: {
-      fontSize: typography.caption,
+      fontSize: theme.typography.caption,
     },
     mdLabel: {
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
     },
     lgLabel: {
-      fontSize: typography.body,
+      fontSize: theme.typography.body,
     },
   });

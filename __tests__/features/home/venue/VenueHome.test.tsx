@@ -17,4 +17,11 @@ describe('VenueHome', () => {
     renderWithTheme(<VenueHome />);
     expect(screen.getByText('home.venue.findActs')).toBeTruthy();
   });
+
+  it('renders the standardized body sections', () => {
+    renderWithTheme(<VenueHome />);
+    expect(screen.getByTestId('venue-home-featured-section')).toBeTruthy();
+    expect(screen.getByTestId('venue-home-other-events-section')).toBeTruthy();
+    expect(screen.getByTestId('venue-home-acts-section')).toBeTruthy();
+  });
 });

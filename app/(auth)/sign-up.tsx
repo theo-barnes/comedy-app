@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Link, router, type Href } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { FormField } from '@/components/FormField';
 import { PasswordInput } from '@/components/PasswordInput';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
-import { spacing, typography } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 import type { UserRole } from '@/types';
 import { useTranslation, Trans } from 'react-i18next';
@@ -152,23 +152,23 @@ export default function SignUpScreen() {
         appleLoading={appleLoading}
       />
 
-      <Text style={styles.terms}>
+      <AppText style={styles.terms}>
         <Trans
           i18nKey="auth.signUp.termsAgreement"
           components={{
-            termsLink: <Text style={styles.termsLink} />,
-            privacyLink: <Text style={styles.termsLink} />,
+            termsLink: <AppText style={styles.termsLink} />,
+            privacyLink: <AppText style={styles.termsLink} />,
           }}
         />
-      </Text>
+      </AppText>
 
       <View style={styles.signinRow}>
-        <Text style={styles.signinText}>
+        <AppText style={styles.signinText}>
           {t('auth.signUp.alreadyHaveAccount')}{' '}
           <Link href={'/(auth)/sign-in' as Href} style={styles.signinLink}>
             {t('auth.signUp.signIn')}
           </Link>
-        </Text>
+        </AppText>
       </View>
     </AuthScreenWrapper>
   );
@@ -187,14 +187,27 @@ const createStyles = (theme: Theme) =>
     },
     submitButton: { marginTop: spacing.xl },
     terms: {
-      fontSize: typography.caption,
+      fontSize: theme.typography.caption,
       color: theme.colors.textMuted,
+      fontFamily: theme.typography.fontFamily.roles.caption,
       textAlign: 'center',
       marginTop: spacing.md,
       lineHeight: 20,
     },
-    termsLink: { color: theme.colors.primaryRest, fontWeight: '700' },
+    termsLink: {
+      color: theme.colors.primaryRest,
+      fontWeight: '700',
+      fontFamily: theme.typography.fontFamily.roles.link,
+    },
     signinRow: { marginTop: spacing.lg, alignItems: 'center' },
-    signinText: { fontSize: typography.body, color: theme.colors.textMuted },
-    signinLink: { color: theme.colors.primaryRest, fontWeight: '700' },
+    signinText: {
+      fontSize: theme.typography.body,
+      color: theme.colors.textMuted,
+      fontFamily: theme.typography.fontFamily.roles.body,
+    },
+    signinLink: {
+      color: theme.colors.primaryRest,
+      fontWeight: '700',
+      fontFamily: theme.typography.fontFamily.roles.link,
+    },
   });

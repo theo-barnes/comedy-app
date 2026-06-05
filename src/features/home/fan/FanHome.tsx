@@ -7,7 +7,7 @@ import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
-import { spacing } from '@/theme';
+import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
 
 import { ClipCard } from './ClipCard';
@@ -98,24 +98,28 @@ export function FanHome() {
         onSelect={setSelectedNeighbourhood}
       />
 
-      <FeaturedEventCard
-        title={featured.title}
-        venue={featured.venue}
-        neighbourhood={featured.neighbourhood}
-        date={featured.date}
-        time={featured.time}
-        price={featured.price}
-        badges={featured.badges}
-        performerAvatars={featured.performerAvatars}
-        performerLabel={featured.performerLabel}
-      />
+      <View testID="fan-home-featured-section">
+        <FeaturedEventCard
+          title={featured.title}
+          venue={featured.venue}
+          neighbourhood={featured.neighbourhood}
+          date={featured.date}
+          time={featured.time}
+          price={featured.price}
+          badges={featured.badges}
+          performerAvatars={featured.performerAvatars}
+          performerLabel={featured.performerLabel}
+        />
+      </View>
 
-      <ThisWeekSection
-        events={thisWeek}
-        sectionLabel={t('home.fan.thisWeek')}
-        actionLabel={t('common.seeAll')}
-        onAction={() => {}}
-      />
+      <View testID="fan-home-this-week-section">
+        <ThisWeekSection
+          events={thisWeek}
+          sectionLabel={t('home.fan.thisWeek')}
+          actionLabel={t('common.seeAll')}
+          onAction={() => {}}
+        />
+      </View>
 
       {/* PERFORMING NEAR YOU */}
       <SectionHeader
@@ -123,7 +127,7 @@ export function FanHome() {
         actionLabel={t('common.seeAll')}
         onAction={() => {}}
       />
-      <View style={styles.threeColGrid}>
+      <View style={styles.threeColGrid} testID="fan-home-performers-section">
         {performersNearYou.map((p) => (
           <PerformerCard key={p.id} name={p.name} subtitle={p.subtitle} />
         ))}
@@ -131,7 +135,7 @@ export function FanHome() {
 
       {/* FRESH CLIPS */}
       <SectionHeader label={t('home.fan.freshClips')} actionLabel="Browse" onAction={() => {}} />
-      <View style={styles.twoColGrid}>
+      <View style={styles.twoColGrid} testID="fan-home-clips-section">
         {freshClips.map((clip) => (
           <ClipCard
             key={clip.id}
@@ -149,7 +153,7 @@ export function FanHome() {
         actionLabel="More"
         onAction={() => {}}
       />
-      <View style={styles.savedList}>
+      <View style={styles.savedList} testID="fan-home-saved-section">
         {becauseYouSaved.items.map((item) => (
           <SavedRecommendationItem
             key={item.id}
@@ -169,17 +173,17 @@ export function FanHome() {
 const styles = StyleSheet.create({
   threeColGrid: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
   },
   twoColGrid: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
   },
   savedList: {
-    gap: spacing.sm,
+    gap: HOME_SPACING.sectionGap,
   },
 });

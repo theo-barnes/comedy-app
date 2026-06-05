@@ -23,4 +23,13 @@ describe('FanHome', () => {
     renderWithTheme(<FanHome />);
     expect(screen.getByText('home.fan.freshClips')).toBeTruthy();
   });
+
+  it('renders the standardized body sections', () => {
+    renderWithTheme(<FanHome />);
+    expect(screen.getByTestId('fan-home-featured-section')).toBeTruthy();
+    expect(screen.getByTestId('fan-home-this-week-section')).toBeTruthy();
+    expect(screen.getByTestId('fan-home-performers-section')).toBeTruthy();
+    expect(screen.getByTestId('fan-home-clips-section')).toBeTruthy();
+    expect(screen.getByTestId('fan-home-saved-section')).toBeTruthy();
+  });
 });

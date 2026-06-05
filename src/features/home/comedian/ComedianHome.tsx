@@ -5,7 +5,7 @@ import { EventCard } from '@/features/home/components/EventCard';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
-import { spacing } from '@/theme';
+import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
 
 import { GigListItem } from './GigListItem';
@@ -86,35 +86,38 @@ export function ComedianHome() {
         name: MOCK_COMEDIAN_DATA.comedianName,
       })}
       heroSubtitle={t('home.comedian.nextGigIn', { count: nextGig.daysUntil })}
-      contentContainerStyle={styles.content}
     >
-      <NextGigCard
-        daysUntil={nextGig.daysUntil}
-        hoursUntil={nextGig.hoursUntil}
-        roleBadge={nextGig.roleBadge}
-        showTitle={nextGig.showTitle}
-        venue={nextGig.venue}
-        date={nextGig.date}
-        doorsTime={nextGig.doorsTime}
-        performerAvatars={nextGig.performerAvatars}
-        onTheBillCount={nextGig.onTheBillCount}
-      />
+      <View style={styles.featuredSection} testID="comedian-home-featured-section">
+        <NextGigCard
+          daysUntil={nextGig.daysUntil}
+          hoursUntil={nextGig.hoursUntil}
+          roleBadge={nextGig.roleBadge}
+          showTitle={nextGig.showTitle}
+          venue={nextGig.venue}
+          date={nextGig.date}
+          doorsTime={nextGig.doorsTime}
+          performerAvatars={nextGig.performerAvatars}
+          onTheBillCount={nextGig.onTheBillCount}
+        />
+      </View>
 
       {/* Stats */}
-      <View style={styles.statsRow}>
+      <View style={styles.statsRow} testID="comedian-home-stats-section">
         {stats.map((s) => (
           <StatCard key={s.id} value={s.value} label={s.label} delta={s.delta} />
         ))}
       </View>
 
-      <TipBanner
-        title={tip.title}
-        body={tip.body}
-        progress={tip.progress}
-        step={tip.step}
-        totalSteps={tip.totalSteps}
-        ctaLabel={tip.ctaLabel}
-      />
+      <View style={styles.tipSection} testID="comedian-home-tip-section">
+        <TipBanner
+          title={tip.title}
+          body={tip.body}
+          progress={tip.progress}
+          step={tip.step}
+          totalSteps={tip.totalSteps}
+          ctaLabel={tip.ctaLabel}
+        />
+      </View>
 
       {/* YOUR GIGS */}
       <SectionHeader
@@ -122,7 +125,7 @@ export function ComedianHome() {
         actionLabel={t('home.comedian.manage')}
         onAction={() => {}}
       />
-      <View style={styles.gigList}>
+      <View style={styles.gigList} testID="comedian-home-gigs-section">
         {gigs.map((g) => (
           <GigListItem key={g.id} venue={g.venue} date={g.date} roleBadge={g.roleBadge} />
         ))}
@@ -132,7 +135,7 @@ export function ComedianHome() {
       <SectionHeader
         label={t('home.comedian.sameNight', { date: MOCK_COMEDIAN_DATA.sameNightDate })}
       />
-      <View style={styles.twoColGrid}>
+      <View style={styles.twoColGrid} testID="comedian-home-same-night-section">
         {sameNightEvents.map((e) => (
           <EventCard key={e.id} title={e.title} subtitle={e.subtitle} />
         ))}
@@ -154,25 +157,32 @@ export function ComedianHome() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    gap: spacing.md,
+  featuredSection: {
+    marginTop: HOME_SPACING.featuredTop,
+    marginBottom: HOME_SPACING.featuredBottom,
   },
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
+  },
+  tipSection: {
+    marginBottom: HOME_SPACING.featuredBottom,
   },
   gigList: {
-    gap: spacing.sm,
+    gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
   },
   twoColGrid: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
+    marginBottom: HOME_SPACING.sectionBottom,
   },
   threeColGrid: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
   },
 });

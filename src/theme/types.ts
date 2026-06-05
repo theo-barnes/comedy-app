@@ -57,6 +57,12 @@ export interface ColorTokens {
    * Named semantically so a future palette change is one-line safe.
    */
   onPrimary: string;
+  /** Overlay border on top of media surfaces */
+  overlayBorder: string;
+  /** Active overlay border on top of media surfaces */
+  overlayBorderActive: string;
+  /** Foreground text/icon colour on top of media surfaces */
+  onOverlay: string;
 
   buttonShadow: string;
 }

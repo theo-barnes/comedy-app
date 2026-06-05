@@ -128,8 +128,6 @@ const BASE_DISCOVER_CONFIG: DiscoverConfig = {
     },
   },
   clips: {
-    categories: ['Following', 'For you', 'Local'],
-    defaultCategory: 'For you',
     feed: [
       {
         id: 'clip-1',

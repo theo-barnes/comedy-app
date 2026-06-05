@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { EventCard } from '@/features/home/components/EventCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
-import { spacing } from '@/theme';
+import { HOME_SPACING } from '@/features/home/home-spacing';
 
 type ThisWeekEvent = {
   id: string;
@@ -36,8 +36,8 @@ export function ThisWeekSection({ events, sectionLabel, actionLabel, onAction }:
 
 const styles = StyleSheet.create({
   horizontalList: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: HOME_SPACING.sectionHorizontalPadding,
+    gap: HOME_SPACING.sectionGap,
+    paddingBottom: HOME_SPACING.sectionBottom,
   },
 });

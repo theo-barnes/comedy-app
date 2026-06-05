@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState, type ComponentType } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { AppText } from '@/components/AppText';
-import { Card } from '@/components/Card';
 import { FilterChips } from '@/features/home/components/FilterChips';
 import { FeaturedEventCard } from '@/features/home/fan/FeaturedEventCard';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -13,6 +13,7 @@ import type { Theme } from '@/theme/types';
 
 import { CuratorSection, FullBillSection, LiveNowSection, TrendingSection } from './BrowseSections';
 import { ClipsFeed } from './ClipsFeed';
+import { DiscoverSegmentedActionBar } from './DiscoverSegmentedActionBar';
 import { DiscoverScreenLayout } from './DiscoverScreenLayout';
 import type { DiscoverConfig, DiscoverView } from '../types';
 
@@ -33,43 +34,66 @@ const VIEW_RENDERERS: Record<DiscoverView, ComponentType<ViewRendererProps>> = {
 };
 
 export function DiscoverShell({ config, avatarUri }: Props) {
+  const router = useRouter();
   const { theme } = useTheme();
   const [activeView, setActiveView] = useState<DiscoverView>(config.defaultView);
-  const [activeClipCategory, setActiveClipCategory] = useState(config.clips.defaultCategory);
 
   const ActiveView = VIEW_RENDERERS[activeView];
+
+  const searchDestinationByView: Record<DiscoverView, string> = {
+    browse: 'browse',
+    clips: 'clips',
+    map: 'map',
+  };
+
+  function handleSearchPress(view: DiscoverView) {
+    router.push({
+      pathname: '/discover-search',
+      params: {
+        context: searchDestinationByView[view],
+      },
+    });
+  }
+
+  function handleFilterPress(view: DiscoverView) {
+    if (view !== 'map') return;
+
+    router.push({
+      pathname: '/discover-search',
+      params: {
+        context: 'map-filter',
+      },
+    });
+  }
 
   return (
     <DiscoverScreenLayout
       config={config}
       activeView={activeView}
-      onViewChange={setActiveView}
-      activeClipCategory={activeClipCategory}
-      onClipCategoryChange={setActiveClipCategory}
       avatarUri={avatarUri}
+      topControls={
+        <DiscoverSegmentedActionBar
+          modes={config.modes}
+          activeView={activeView}
+          onViewChange={setActiveView}
+          onSearchPress={handleSearchPress}
+          onFilterPress={handleFilterPress}
+          filterEnabled={activeView === 'map'}
+        />
+      }
     >
       <ActiveView config={config} iconColor={theme.colors.textMuted} />
     </DiscoverScreenLayout>
   );
 }
 
-function BrowseView({ config, iconColor }: ViewRendererProps) {
+function BrowseView({ config }: ViewRendererProps) {
   const browseStyles = useThemedStyles(createBrowseViewStyles);
   const dayLabels = config.browse.days.map((d) => `${d.day} ${d.date}`);
   const [selectedDay, setSelectedDay] = useState(dayLabels[1] ?? dayLabels[0] ?? '');
 
   return (
     <ScrollView style={stylesSheet.flex} contentContainerStyle={browseStyles.scrollContent}>
-      {/* Search */}
-      <View style={browseStyles.searchWrap}>
-        <Card style={browseStyles.searchCard}>
-          <Ionicons name="search-outline" size={18} color={iconColor} />
-          <AppText variant="caption" style={browseStyles.searchText}>
-            {config.browse.searchPlaceholder}
-          </AppText>
-        </Card>
-      </View>
-
       {/* Hero title */}
       <View style={browseStyles.heroBlock}>
         <AppText variant="title">{config.browse.heroTitle}</AppText>
@@ -104,19 +128,9 @@ function ClipsView({ config }: ViewRendererProps) {
   return <ClipsFeed items={config.clips.feed} />;
 }
 
-function MapView({ config, iconColor }: ViewRendererProps) {
+function MapView({ config }: ViewRendererProps) {
   return (
     <View style={stylesSheet.flex}>
-      <View style={stylesSheet.searchRow}>
-        <View style={stylesSheet.searchInputLike}>
-          <Ionicons name="search-outline" size={20} color={iconColor} />
-          <AppText style={stylesSheet.searchText}>{config.map.searchPlaceholder}</AppText>
-        </View>
-        <Pressable style={stylesSheet.iconFilterButton}>
-          <Ionicons name="options-outline" size={20} color={iconColor} />
-        </Pressable>
-      </View>
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -154,33 +168,6 @@ function MapView({ config, iconColor }: ViewRendererProps) {
 const stylesSheet = StyleSheet.create({
   flex: {
     flex: 1,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  searchInputLike: {
-    flex: 1,
-    height: 52,
-    borderRadius: radii.md,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  searchText: {
-    color: '#6B6B6B',
-    fontSize: 30 / 2,
-  },
-  iconFilterButton: {
-    width: 52,
-    height: 52,
-    borderRadius: radii.md,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   filterRowContent: {
     gap: spacing.sm,
@@ -235,23 +222,10 @@ const stylesSheet = StyleSheet.create({
   },
 });
 
-const createBrowseViewStyles = (theme: Theme) =>
+const createBrowseViewStyles = (_theme: Theme) =>
   StyleSheet.create({
     scrollContent: {
       gap: spacing.sm,
-    },
-    searchWrap: {
-      paddingHorizontal: spacing.lg,
-    },
-    searchCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      paddingVertical: spacing.sm,
-    },
-    searchText: {
-      flex: 1,
-      color: theme.colors.textMuted,
     },
     heroBlock: {
       paddingHorizontal: spacing.lg,

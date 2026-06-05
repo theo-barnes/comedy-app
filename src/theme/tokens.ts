@@ -1,4 +1,5 @@
 import { curtain } from './scale';
+import { createRegisteredFontFamilies } from './FontRegister';
 import type { ColorTokens } from './types';
 
 /**
@@ -37,6 +38,9 @@ export const darkTokens: ColorTokens = {
   focusRing: curtain[500],
   // Curtain red is always dark enough — white text/icons pass WCAG AA on primaryRest.
   onPrimary: '#FFFFFF',
+  overlayBorder: 'rgba(255,255,255,0.18)',
+  overlayBorderActive: 'rgba(255,255,255,0.4)',
+  onOverlay: '#FFFFFF',
 
   // Shadows
   buttonShadow: '#000',
@@ -77,9 +81,12 @@ export const lightTokens: ColorTokens = {
   link: curtain[700],
   focusRing: curtain[600],
   onPrimary: '#FFFFFF',
+  overlayBorder: 'rgba(255,255,255,0.18)',
+  overlayBorderActive: 'rgba(255,255,255,0.4)',
+  onOverlay: '#FFFFFF',
 
   // Shadows
-  buttonShadow: '#FFFFFF',
+  buttonShadow: '#000',
 };
 
 export const spacing = {
@@ -97,9 +104,16 @@ export const radii = {
   pill: 999,
 };
 
-export const typography = {
+const typographyScale = {
   title: 28,
   heading: 22,
   body: 16,
   caption: 13,
-};
+} as const;
+
+export const createTypography = (fontsLoaded: boolean) => ({
+  ...typographyScale,
+  fontFamily: createRegisteredFontFamilies(fontsLoaded),
+});
+
+export const typography = createTypography(false);

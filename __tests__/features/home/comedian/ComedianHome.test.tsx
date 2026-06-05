@@ -17,4 +17,13 @@ describe('ComedianHome', () => {
     renderWithTheme(<ComedianHome />);
     expect(screen.getByText('home.comedian.othersOnCircuit')).toBeTruthy();
   });
+
+  it('renders the standardized body sections', () => {
+    renderWithTheme(<ComedianHome />);
+    expect(screen.getByTestId('comedian-home-featured-section')).toBeTruthy();
+    expect(screen.getByTestId('comedian-home-stats-section')).toBeTruthy();
+    expect(screen.getByTestId('comedian-home-tip-section')).toBeTruthy();
+    expect(screen.getByTestId('comedian-home-gigs-section')).toBeTruthy();
+    expect(screen.getByTestId('comedian-home-same-night-section')).toBeTruthy();
+  });
 });
