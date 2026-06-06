@@ -2,7 +2,6 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
-import { radii, spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 
 type Props = {
@@ -25,11 +24,12 @@ export function FilterChips({ options, selected, onSelect }: Props) {
           <Pressable
             key={option}
             onPress={() => onSelect(option)}
+            hitSlop={8}
             style={[styles.chip, isActive ? styles.chipActive : styles.chipInactive]}
             accessibilityState={{ selected: isActive }}
           >
             <AppText
-              variant="caption"
+              variant="body"
               style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}
             >
               {option}
@@ -44,46 +44,35 @@ export function FilterChips({ options, selected, onSelect }: Props) {
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.xs,
-      gap: spacing.xs,
+      paddingHorizontal: theme.navigationTabs.containerHorizontalPadding,
+      paddingTop: theme.navigationTabs.containerTopPadding,
+      borderBottomWidth: theme.navigationTabs.containerBorderWidth,
+      borderBottomColor: theme.colors.border,
       flexDirection: 'row',
     },
-    // chip: {
-    //   paddingHorizontal: spacing.md,
-    //   paddingVertical: spacing.sm,
-    //   borderRadius: radii.pill,
-    // },
     chip: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm + 1,
-      borderRadius: 999,
+      paddingHorizontal: theme.navigationTabs.itemHorizontalPadding,
+      paddingBottom: theme.navigationTabs.itemBottomPadding,
+      marginRight: theme.navigationTabs.itemGap,
+      borderBottomWidth: theme.navigationTabs.indicatorThickness,
     },
-    // chipActive: {
-    //   backgroundColor: theme.colors.primaryPressed,
-    // },
     chipActive: {
-      backgroundColor: theme.colors.primaryPressed,
-      shadowColor: theme.colors.buttonShadow,
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      shadowOffset: {
-        width: 0,
-        height: 3,
-      },
-      elevation: 2,
+      borderBottomColor: theme.colors.primaryRest,
     },
     chipInactive: {
-      //borderWidth: 1,
-      //borderColor: theme.colors.border,
-      backgroundColor: 'transparent',
+      borderBottomColor: 'transparent',
     },
     label: {
-      fontWeight: '500',
+      fontSize: theme.navigationTabs.labelFontSize,
+      lineHeight: theme.navigationTabs.labelLineHeight,
+      fontWeight: theme.navigationTabs.inactiveLabelWeight,
     },
     labelActive: {
-      color: theme.colors.onPrimary,
-      fontWeight: '600',
+      color: theme.colors.primaryRest,
+      fontWeight: theme.navigationTabs.activeLabelWeight,
+      // textShadowColor: 'rgba(0, 0, 0, 0.28)',
+      // textShadowOffset: { width: 0, height: 1 },
+      // textShadowRadius: 0.15,
     },
     labelInactive: {
       color: theme.colors.textMuted,

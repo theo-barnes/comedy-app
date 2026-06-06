@@ -49,8 +49,10 @@ export default function ForgotPasswordScreen() {
     <AuthScreenWrapper contentContainerStyle={{ paddingTop: spacing.xl * 1.5 }}>
       <BackButton />
 
-      <AppText style={styles.heading}>{t('auth.forgotPassword.heading')}</AppText>
-      <AppText variant="body" muted style={styles.subheading}>
+      <AppText variant="display" style={styles.heading}>
+        {t('auth.forgotPassword.heading')}
+      </AppText>
+      <AppText variant="subheading" muted style={styles.subheading}>
         {t('auth.forgotPassword.subheading')}
       </AppText>
 
@@ -102,8 +104,6 @@ export default function ForgotPasswordScreen() {
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     heading: {
-      fontSize: 32,
-      fontWeight: '800',
       color: theme.colors.textPrimary,
       marginBottom: spacing.xs,
     },

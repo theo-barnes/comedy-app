@@ -110,16 +110,21 @@ export function LiveNowSection({ panel }: LiveNowSectionProps) {
       <SectionHeader label={panel.kicker} />
       <View style={styles.wrap}>
         {/* Live Now panel is intentionally always-dark — a real-time accent regardless of system theme */}
-        <View style={styles.panel}>
-          <AppText variant="caption" style={styles.timeLabel}>
+        <View testID="live-now-panel" style={styles.panel}>
+          <AppText testID="live-now-time-label" variant="caption" style={styles.timeLabel}>
             {panel.timeLabel}
           </AppText>
-          <AppText variant="heading" style={styles.title}>
+          <AppText testID="live-now-title" variant="heading" style={styles.title}>
             {panel.title}
           </AppText>
           <View style={styles.venueStack}>
-            {panel.venues.map((venue) => (
-              <VenueAvailabilityRow key={venue.name} name={venue.name} value={venue.value} />
+            {panel.venues.map((venue, index) => (
+              <VenueAvailabilityRow
+                key={venue.name}
+                rowIndex={index}
+                name={venue.name}
+                value={venue.value}
+              />
             ))}
           </View>
         </View>
@@ -172,18 +177,19 @@ function TrendingShowCard({ show }: TrendingShowCardProps) {
 }
 
 type VenueAvailabilityRowProps = {
+  rowIndex: number;
   name: string;
   value: string;
 };
 
-function VenueAvailabilityRow({ name, value }: VenueAvailabilityRowProps) {
+function VenueAvailabilityRow({ rowIndex, name, value }: VenueAvailabilityRowProps) {
   const styles = useThemedStyles(createVenueRowStyles);
   return (
-    <View style={styles.row}>
-      <AppText variant="caption" style={styles.name}>
+    <View testID={`live-now-row-${rowIndex}`} style={styles.row}>
+      <AppText testID={`live-now-row-name-${rowIndex}`} variant="caption" style={styles.name}>
         {name}
       </AppText>
-      <AppText variant="caption" style={styles.value}>
+      <AppText testID={`live-now-row-value-${rowIndex}`} variant="caption" style={styles.value}>
         {value}
       </AppText>
     </View>
@@ -266,17 +272,17 @@ const createLiveStyles = (theme: Theme) =>
     },
     panel: {
       borderRadius: radii.lg,
-      backgroundColor: '#181818',
+      backgroundColor: theme.colors.livePanelSurface,
       padding: spacing.md,
       gap: spacing.sm,
     },
     timeLabel: {
-      color: 'rgba(255,255,255,0.45)',
+      color: theme.colors.livePanelTextMuted,
       letterSpacing: 1.5,
       alignSelf: 'flex-end',
     },
     title: {
-      color: '#F6F2EA',
+      color: theme.colors.livePanelTextPrimary,
       fontWeight: '700',
     },
     venueStack: {
@@ -301,7 +307,7 @@ const createVenueRowStyles = (_theme: Theme) =>
   StyleSheet.create({
     row: {
       borderRadius: radii.sm,
-      backgroundColor: 'rgba(255,255,255,0.07)',
+      backgroundColor: _theme.colors.livePanelRow,
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
       flexDirection: 'row',
@@ -309,11 +315,11 @@ const createVenueRowStyles = (_theme: Theme) =>
       alignItems: 'center',
     },
     name: {
-      color: '#EFEAE0',
+      color: _theme.colors.livePanelTextPrimary,
       fontWeight: '600',
     },
     value: {
-      color: '#EE9A9C',
+      color: _theme.colors.livePanelAccent,
       fontWeight: '700',
     },
   });

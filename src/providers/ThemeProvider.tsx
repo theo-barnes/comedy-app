@@ -10,7 +10,14 @@ import {
 import { useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-import { darkTokens, lightTokens, spacing, radii, createTypography } from '@/theme/tokens';
+import {
+  darkTokens,
+  lightTokens,
+  spacing,
+  radii,
+  navigationTabs,
+  createTypography,
+} from '@/theme/tokens';
 import { useAppFonts } from '@/theme/FontRegister';
 import type { Theme, ThemeMode } from '@/theme/types';
 
@@ -26,6 +33,8 @@ interface ThemeContextValue {
   colorScheme: 'light' | 'dark';
   /** The user-selected mode (may be 'system') */
   themeMode: ThemeMode;
+  /** True once stored preference has been loaded from SecureStore. */
+  isHydrated: boolean;
   /** Persist a new mode preference; 'system' removes the stored override */
   setThemeMode: (mode: ThemeMode) => Promise<void>;
 }
@@ -47,6 +56,7 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
   const systemScheme: 'light' | 'dark' = rawScheme === 'light' ? 'light' : 'dark';
   const fontsLoaded = useAppFonts();
   const [themeMode, setThemeModeState] = useState<ThemeMode>(initialMode ?? 'system');
+  const [isHydrated, setIsHydrated] = useState(initialMode != null);
 
   // Rehydrate persisted preference on mount.
   // The `cancelled` flag prevents a stale async callback from calling setState
@@ -61,6 +71,9 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
       })
       .catch((err) => {
         if (__DEV__) console.warn('[ThemeProvider] SecureStore unavailable:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setIsHydrated(true);
       });
     return () => {
       cancelled = true;
@@ -84,14 +97,15 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
       spacing,
       radii,
       typography: createTypography(fontsLoaded),
+      navigationTabs,
       colorScheme,
     }),
     [colorScheme, fontsLoaded],
   );
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, colorScheme, themeMode, setThemeMode }),
-    [theme, colorScheme, themeMode, setThemeMode],
+    () => ({ theme, colorScheme, themeMode, isHydrated, setThemeMode }),
+    [theme, colorScheme, themeMode, isHydrated, setThemeMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

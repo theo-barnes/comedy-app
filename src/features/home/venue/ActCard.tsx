@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -30,7 +31,11 @@ export function ActCard({ name, rating, tagline, avatarUri, onEnquire }: Props) 
         <PlaceholderImage uri={avatarUri} style={styles.avatar} />
       </View>
       <View style={styles.content}>
-        <AppText variant="body" style={styles.name}>
+        <AppText
+          variant={homeCardTypography.rowTitle.variant}
+          style={homeCardTypography.rowTitle.style}
+          numberOfLines={homeCardTypography.rowTitle.numberOfLines}
+        >
           {name}
         </AppText>
         <View style={styles.ratingRow}>
@@ -39,7 +44,11 @@ export function ActCard({ name, rating, tagline, avatarUri, onEnquire }: Props) 
             {rating.toFixed(1)}
           </AppText>
         </View>
-        <AppText variant="caption" muted numberOfLines={1}>
+        <AppText
+          variant={homeCardTypography.rowSubtitle.variant}
+          muted
+          numberOfLines={homeCardTypography.rowSubtitle.numberOfLines}
+        >
           {tagline}
         </AppText>
       </View>
@@ -74,9 +83,6 @@ const createStyles = (theme: Theme) =>
     content: {
       flex: 1,
       gap: 2,
-    },
-    name: {
-      fontWeight: '600',
     },
     ratingRow: {
       flexDirection: 'row',

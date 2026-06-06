@@ -43,7 +43,7 @@ export const createAuthStyles = (theme: Theme) =>
       marginTop: 4,
     },
     label: {
-      fontSize: 11,
+      fontSize: typography.label,
       fontWeight: '700' as const,
       letterSpacing: 1,
       marginBottom: spacing.xs,

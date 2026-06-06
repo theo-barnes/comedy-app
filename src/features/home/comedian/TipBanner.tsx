@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { ProgressBar } from '@/features/home/components/ProgressBar';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { spacing } from '@/theme/tokens';
@@ -35,7 +36,11 @@ export function TipBanner({ title, body, progress, step, totalSteps, ctaLabel }:
         <AppText style={styles.dismissText}>{'×'}</AppText>
       </Pressable>
       <View style={styles.content}>
-        <AppText variant="body" style={styles.title}>
+        <AppText
+          variant={homeCardTypography.bannerTitle.variant}
+          style={homeCardTypography.bannerTitle.style}
+          numberOfLines={homeCardTypography.bannerTitle.numberOfLines}
+        >
           {title}
         </AppText>
         <AppText variant="caption" muted>
@@ -74,9 +79,6 @@ const createStyles = (theme: Theme) =>
     content: {
       gap: spacing.sm,
       paddingRight: spacing.xl,
-    },
-    title: {
-      fontWeight: '700',
     },
     footer: {
       flexDirection: 'row',

@@ -99,7 +99,6 @@ export function ComedianHome() {
         timeOfDay,
         name: MOCK_COMEDIAN_DATA.comedianName,
       })}
-      heroSubtitle={t('home.comedian.nextGigIn', { count: nextGig.daysUntil })}
     >
       <View style={styles.featuredSection} testID="comedian-home-featured-section">
         <NextGigCard

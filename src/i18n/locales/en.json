@@ -182,7 +182,7 @@
   },
   "home": {
     "fan": {
-      "tonightRooms": "Tonight's Rooms",
+      "findYourNextRoom": "Tonight in {{city}}",
       "showsNearYou": "{{count}} shows near you this week",
       "thisWeek": "THIS WEEK",
       "performingNearYou": "PERFORMING NEAR YOU",

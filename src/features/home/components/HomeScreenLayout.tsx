@@ -7,7 +7,6 @@ import { HomeHeroHeader } from '@/components/HomeHeroHeader';
 export type HomeScreenLayoutProps = PropsWithChildren<{
   city: string;
   heroTitle: string;
-  heroSubtitle: string;
   avatarUri?: string;
   contentContainerStyle?: StyleProp<ViewStyle>;
 }>;
@@ -15,7 +14,6 @@ export type HomeScreenLayoutProps = PropsWithChildren<{
 export function HomeScreenLayout({
   city,
   heroTitle,
-  heroSubtitle,
   avatarUri,
   contentContainerStyle,
   children,
@@ -25,7 +23,7 @@ export function HomeScreenLayout({
       city={city}
       tabLabel="Home"
       avatarUri={avatarUri}
-      hero={<HomeHeroHeader title={heroTitle} subtitle={heroSubtitle} />}
+      hero={<HomeHeroHeader title={heroTitle} />}
       bodyMode="scroll"
       scrollContentContainerStyle={contentContainerStyle}
     >

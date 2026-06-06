@@ -133,13 +133,15 @@ export default function OnboardingScreen() {
 
   const renderSlide = useCallback(
     ({ item, index }: ListRenderItemInfo<Slide>) => (
-      <View style={styles.slide}>
+      <View testID={`onboarding-slide-${index}`} style={styles.slide}>
         {/* Image placeholder — replace with <Image> once assets are available */}
         <View style={styles.imagePlaceholder} />
 
         {/* Copy */}
-        <AppText style={styles.title}>{item.title}</AppText>
-        <AppText variant="body" muted style={styles.body}>
+        <AppText testID={`onboarding-title-${index}`} variant="display" style={styles.title}>
+          {item.title}
+        </AppText>
+        <AppText testID={`onboarding-body-${index}`} variant="body" muted style={styles.body}>
           {item.body}
         </AppText>
 
@@ -155,7 +157,7 @@ export default function OnboardingScreen() {
         </Pressable>
       </View>
     ),
-    [handleContinue, handleSkip, t],
+    [handleContinue, handleSkip, styles, t],
   );
 
   const onViewableItemsChanged = useCallback(
@@ -168,7 +170,7 @@ export default function OnboardingScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View testID="onboarding-container" style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -251,10 +253,6 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.surface,
     },
     title: {
-      fontSize: 38,
-      fontWeight: '900',
-      color: theme.colors.textPrimary,
-      lineHeight: 44,
       marginBottom: spacing.md,
     },
     body: {

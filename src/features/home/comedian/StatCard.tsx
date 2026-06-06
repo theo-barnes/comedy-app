@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
@@ -16,7 +17,11 @@ export function StatCard({ value, label, delta }: Props) {
   const styles = useThemedStyles(createStyles);
   return (
     <Card style={styles.card}>
-      <AppText variant="title" style={styles.value}>
+      <AppText
+        variant={homeCardTypography.metricValue.variant}
+        style={homeCardTypography.metricValue.style}
+        numberOfLines={homeCardTypography.metricValue.numberOfLines}
+      >
         {value}
       </AppText>
       <AppText variant="caption" style={styles.label}>
@@ -35,9 +40,6 @@ const createStyles = (theme: Theme) =>
       flex: 1,
       gap: 4,
       paddingVertical: spacing.md,
-    },
-    value: {
-      fontWeight: '700',
     },
     label: {
       color: theme.colors.textMuted,

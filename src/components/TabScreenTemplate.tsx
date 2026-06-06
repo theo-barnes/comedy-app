@@ -7,7 +7,7 @@ import { spacing } from '@/theme';
 
 type Props = PropsWithChildren<{
   title: string;
-  titleVariant?: 'title' | 'heading';
+  titleVariant?: 'display' | 'title' | 'heading';
   subtitle?: string;
 }>;
 
@@ -16,7 +16,11 @@ export function TabScreenTemplate({ title, titleVariant = 'heading', subtitle, c
     <Screen>
       <View style={styles.container}>
         <AppText variant={titleVariant}>{title}</AppText>
-        {subtitle && <AppText muted>{subtitle}</AppText>}
+        {subtitle && (
+          <AppText variant="subheading" muted>
+            {subtitle}
+          </AppText>
+        )}
         {children}
       </View>
     </Screen>

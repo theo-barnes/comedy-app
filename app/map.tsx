@@ -38,7 +38,10 @@ export default function MapScreen() {
               accessibilityRole="button"
               style={[styles.filterChip, index === 0 && styles.filterChipActive]}
             >
-              <AppText style={[styles.filterChipText, index === 0 && styles.filterChipTextActive]}>
+              <AppText
+                variant="label"
+                style={[styles.filterChipText, index === 0 && styles.filterChipTextActive]}
+              >
                 {filter}
               </AppText>
             </Pressable>

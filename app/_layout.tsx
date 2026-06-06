@@ -3,10 +3,11 @@ import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { AppProviders } from '@/providers/AppProviders';
+import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/features/auth/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
-// Keep the splash screen visible until auth + onboarding state have both resolved.
+// Keep the splash screen visible until auth, onboarding, and theme state have resolved.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -21,8 +22,9 @@ export default function RootLayout() {
 function RootNavigator() {
   const { isLoading, session, isGuest, profile } = useAuth();
   const { hasSeenOnboarding } = useOnboarding();
+  const { isHydrated: isThemeHydrated } = useTheme();
 
-  const isReady = !isLoading && hasSeenOnboarding !== null;
+  const isReady = !isLoading && hasSeenOnboarding !== null && isThemeHydrated;
 
   useEffect(() => {
     if (isReady) SplashScreen.hideAsync();

@@ -101,8 +101,7 @@ export function FanHome() {
   return (
     <HomeScreenLayout
       city={MOCK_FAN_DATA.city}
-      heroTitle={t('home.fan.tonightRooms')}
-      heroSubtitle={t('home.fan.showsNearYou', { count: thisWeek.length + 1 })}
+      heroTitle={t('home.fan.findYourNextRoom', { city: MOCK_FAN_DATA.city })}
     >
       <FilterChips
         options={MOCK_FAN_DATA.neighbourhoods}

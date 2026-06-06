@@ -13,7 +13,7 @@ type Props = {
   iconColor?: string;
   iconSize?: number;
   title: string;
-  titleVariant?: 'title' | 'heading';
+  titleVariant?: 'display' | 'title' | 'heading';
   body: string;
   cta?: { label: string; onPress: () => void };
   /** Override container styles — use when embedding inside another screen rather than rendering standalone. */

@@ -22,16 +22,17 @@ export type BadgeVariant =
 type BadgeStyle = { bg: string; text: string };
 
 function getBadgeStyles(theme: Theme): Record<BadgeVariant, BadgeStyle> {
+  const standard = { bg: theme.colors.badgeFill, text: theme.colors.badgeInk };
   return {
-    hotTicket: { bg: '#5C1A1A', text: theme.colors.textPrimary },
-    lateNight: { bg: '#1A1A3D', text: theme.colors.textPrimary },
-    soldOut: { bg: '#5C1A1A', text: theme.colors.textPrimary },
-    headliner: { bg: theme.colors.primaryRest, text: '#FFFFFF' },
-    weekly: { bg: '#2A3D1A', text: theme.colors.textPrimary },
-    onSale: { bg: '#1A5C2A', text: theme.colors.textPrimary },
-    emerging: { bg: '#1A4040', text: theme.colors.textPrimary },
-    curated: { bg: '#3D3A1A', text: theme.colors.textPrimary },
-    premium: { bg: '#2D1A5C', text: theme.colors.textPrimary },
+    hotTicket: standard,
+    lateNight: standard,
+    soldOut: { bg: theme.colors.errorFill, text: theme.colors.errorInk },
+    headliner: { bg: theme.colors.primaryRest, text: theme.colors.onPrimary },
+    weekly: standard,
+    onSale: standard,
+    emerging: standard,
+    curated: standard,
+    premium: standard,
     support: { bg: theme.colors.card, text: theme.colors.textMuted },
   };
 }
@@ -57,8 +58,12 @@ export function Badge({ variant }: Props) {
   const badgeStyleMap = useMemo(() => getBadgeStyles(theme), [theme]);
   const { bg, text } = badgeStyleMap[variant];
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
-      <AppText variant="caption" style={[styles.label, { color: text }]}>
+    <View testID={`badge-pill-${variant}`} style={[styles.pill, { backgroundColor: bg }]}>
+      <AppText
+        testID={`badge-label-${variant}`}
+        variant="caption"
+        style={[styles.label, { color: text }]}
+      >
         {BADGE_LABELS[variant]}
       </AppText>
     </View>

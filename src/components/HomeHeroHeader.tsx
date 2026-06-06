@@ -5,14 +5,12 @@ import { spacing } from '@/theme';
 
 export type HomeHeroHeaderProps = {
   title: string;
-  subtitle: string;
 };
 
-export function HomeHeroHeader({ title, subtitle }: HomeHeroHeaderProps) {
+export function HomeHeroHeader({ title }: HomeHeroHeaderProps) {
   return (
     <View style={styles.container}>
       <AppText variant="title">{title}</AppText>
-      <AppText muted>{subtitle}</AppText>
     </View>
   );
 }
@@ -20,7 +18,8 @@ export function HomeHeroHeader({ title, subtitle }: HomeHeroHeaderProps) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.xs,
+    paddingTop: 0,
+    paddingBottom: spacing.xs,
+    //gap: spacing.xs,
   },
 });

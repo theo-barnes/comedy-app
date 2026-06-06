@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { AvatarStack } from '@/features/home/components/AvatarStack';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -53,15 +54,27 @@ export function FeaturedEventCard({
         </Pressable>
       </View>
       {/* Bottom info */}
-      <View style={styles.bottom}>
-        <AppText variant="heading" style={styles.title}>
+      <View testID="featured-event-bottom-overlay" style={styles.bottom}>
+        <AppText
+          variant={homeCardTypography.featuredTitle.variant}
+          style={homeCardTypography.featuredTitle.style}
+          numberOfLines={homeCardTypography.featuredTitle.numberOfLines}
+        >
           {title}
         </AppText>
-        <AppText variant="caption" muted>{`${venue} · ${neighbourhood}`}</AppText>
+        <AppText
+          variant={homeCardTypography.featuredMeta.variant}
+          muted
+          numberOfLines={homeCardTypography.featuredMeta.numberOfLines}
+        >{`${venue} · ${neighbourhood}`}</AppText>
         <View style={styles.metaRow}>
           <AvatarStack avatars={performerAvatars} label={performerLabel} />
           <View style={styles.datePrice}>
-            <AppText variant="caption" muted>{`${date}  ·  ${time}`}</AppText>
+            <AppText
+              variant={homeCardTypography.featuredMeta.variant}
+              muted
+              numberOfLines={homeCardTypography.featuredMeta.numberOfLines}
+            >{`${date}  ·  ${time}`}</AppText>
             <AppText variant="body" style={styles.price}>
               {price}
             </AppText>
@@ -109,10 +122,7 @@ const createStyles = (theme: Theme) =>
     bottom: {
       padding: spacing.md,
       gap: spacing.xs,
-      backgroundColor: 'rgba(0,0,0,0.55)',
-    },
-    title: {
-      fontWeight: '700',
+      backgroundColor: theme.colors.mediaScrimSoft,
     },
     metaRow: {
       flexDirection: 'row',

@@ -75,13 +75,17 @@ function ClipCard({ item, height }: ClipCardProps) {
 
       {/* Bottom info strip */}
       <View style={styles.bottomInfo}>
-        <AppText style={styles.venueLabel}>{item.venueLine}</AppText>
-        <AppText style={styles.clipTitle} numberOfLines={2}>
+        <AppText variant="label" style={styles.venueLabel}>
+          {item.venueLine}
+        </AppText>
+        <AppText variant="heading" style={styles.clipTitle} numberOfLines={2}>
           {item.title}
         </AppText>
         <View style={styles.statRow}>
           <Ionicons name="eye-outline" size={14} color="rgba(255,255,255,0.55)" />
-          <AppText style={styles.statText}>{item.viewerStat}</AppText>
+          <AppText variant="caption" style={styles.statText}>
+            {item.viewerStat}
+          </AppText>
         </View>
       </View>
     </View>
@@ -99,7 +103,9 @@ function ActionButton({ icon, label }: ActionButtonProps) {
   return (
     <Pressable style={styles.actionButton}>
       <Ionicons name={icon} size={28} color="#FFFFFF" />
-      <AppText style={styles.actionLabel}>{label}</AppText>
+      <AppText variant="caption" style={styles.actionLabel}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
@@ -136,7 +142,6 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     color: '#FFFFFF',
-    fontSize: 12,
     fontWeight: '700',
   },
   bottomInfo: {
@@ -148,16 +153,12 @@ const styles = StyleSheet.create({
   },
   venueLabel: {
     color: 'rgba(255,255,255,0.65)',
-    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1.5,
-    textTransform: 'uppercase',
   },
   clipTitle: {
     color: '#FFFFFF',
-    fontSize: 22,
     fontWeight: '700',
-    lineHeight: 28,
   },
   statRow: {
     flexDirection: 'row',
@@ -166,7 +167,6 @@ const styles = StyleSheet.create({
   },
   statText: {
     color: 'rgba(255,255,255,0.55)',
-    fontSize: 13,
     fontWeight: '600',
   },
 });

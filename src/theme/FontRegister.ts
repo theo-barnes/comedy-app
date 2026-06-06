@@ -9,6 +9,9 @@ import {
 import type { TextStyle } from 'react-native';
 
 export const fontRegister = {
+  frauncesRegular: 'Fraunces-Regular',
+  frauncesSemibold: 'Fraunces-SemiBold',
+  frauncesBold: 'Fraunces-Bold',
   regular: 'Inter_400Regular',
   medium: 'Inter_500Medium',
   semibold: 'Inter_600SemiBold',
@@ -19,6 +22,9 @@ export const fontRegister = {
 export type FontRegisterKey = keyof typeof fontRegister;
 
 type FontWeights = {
+  frauncesRegular: string | undefined;
+  frauncesSemibold: string | undefined;
+  frauncesBold: string | undefined;
   regular: string | undefined;
   medium: string | undefined;
   semibold: string | undefined;
@@ -41,6 +47,9 @@ export type RegisteredFontFamilies = {
 function buildFontFamilyMap(fontsLoaded: boolean): FontWeights {
   if (!fontsLoaded) {
     return {
+      frauncesRegular: undefined,
+      frauncesSemibold: undefined,
+      frauncesBold: undefined,
       regular: undefined,
       medium: undefined,
       semibold: undefined,
@@ -50,6 +59,9 @@ function buildFontFamilyMap(fontsLoaded: boolean): FontWeights {
   }
 
   return {
+    frauncesRegular: fontRegister.frauncesRegular,
+    frauncesSemibold: fontRegister.frauncesSemibold,
+    frauncesBold: fontRegister.frauncesBold,
     regular: fontRegister.regular,
     medium: fontRegister.medium,
     semibold: fontRegister.semibold,
@@ -63,8 +75,8 @@ export function createRegisteredFontFamilies(fontsLoaded: boolean): RegisteredFo
   return {
     weights,
     roles: {
-      title: weights.bold,
-      heading: weights.semibold,
+      title: weights.frauncesBold,
+      heading: weights.frauncesSemibold,
       body: weights.regular,
       caption: weights.regular,
       button: weights.semibold,
@@ -80,10 +92,13 @@ export function useAppFonts() {
     Inter_600SemiBold,
     Inter_700Bold,
     Inter_800ExtraBold,
+    'Fraunces-Regular': require('../../assets/fonts/Fraunces-Regular.ttf'),
+    'Fraunces-SemiBold': require('../../assets/fonts/Fraunces-SemiBold.ttf'),
+    'Fraunces-Bold': require('../../assets/fonts/Fraunces-Bold.ttf'),
   });
 
   if (__DEV__ && fontError) {
-    console.warn('[FontRegister] Unable to load Inter fonts:', fontError);
+    console.warn('[FontRegister] Unable to load app fonts:', fontError);
   }
 
   return fontsLoaded;

@@ -5,6 +5,7 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { AvatarStack } from '@/features/home/components/AvatarStack';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
@@ -43,10 +44,18 @@ export function NextGigCard({
       <View style={styles.badgeRow}>
         <Badge variant={roleBadge} />
       </View>
-      <AppText variant="heading" style={styles.title}>
+      <AppText
+        variant={homeCardTypography.nextGigTitle.variant}
+        style={homeCardTypography.nextGigTitle.style}
+        numberOfLines={homeCardTypography.nextGigTitle.numberOfLines}
+      >
         {showTitle}
       </AppText>
-      <AppText variant="caption" muted>
+      <AppText
+        variant={homeCardTypography.rowSubtitle.variant}
+        muted
+        numberOfLines={homeCardTypography.rowSubtitle.numberOfLines}
+      >
         {`${venue} · ${date} · ${t('home.comedian.doors', { time: doorsTime })}`}
       </AppText>
       <View style={styles.footer}>
@@ -68,7 +77,11 @@ function CountdownUnit({ value, unit }: { value: number; unit: string }) {
   const styles = useThemedStyles(createUnitStyles);
   return (
     <View style={styles.countdownUnit}>
-      <AppText variant="title" style={styles.countdownValue}>
+      <AppText
+        variant={homeCardTypography.nextGigCountdownValue.variant}
+        style={[homeCardTypography.nextGigCountdownValue.style, styles.countdownValue]}
+        numberOfLines={homeCardTypography.nextGigCountdownValue.numberOfLines}
+      >
         {String(value)}
       </AppText>
       <AppText variant="caption" muted>
@@ -91,9 +104,6 @@ const createCardStyles = (theme: Theme) =>
     badgeRow: {
       flexDirection: 'row',
     },
-    title: {
-      fontWeight: '700',
-    },
     footer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -115,6 +125,5 @@ const createUnitStyles = (theme: Theme) =>
     },
     countdownValue: {
       color: theme.colors.primaryRest,
-      fontWeight: '700',
     },
   });

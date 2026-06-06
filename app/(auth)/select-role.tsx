@@ -39,8 +39,10 @@ export default function SelectRoleScreen() {
     <AuthScreenWrapper>
       <LogoHeader />
 
-      <AppText style={styles.heading}>{t('auth.selectRole.heading')}</AppText>
-      <AppText variant="body" muted style={styles.subheading}>
+      <AppText variant="display" style={styles.heading}>
+        {t('auth.selectRole.heading')}
+      </AppText>
+      <AppText variant="subheading" muted style={styles.subheading}>
         {t('auth.selectRole.subheading')}
       </AppText>
 
@@ -58,8 +60,6 @@ export default function SelectRoleScreen() {
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     heading: {
-      fontSize: 32,
-      fontWeight: '800',
       color: theme.colors.textPrimary,
       marginBottom: spacing.xs,
     },

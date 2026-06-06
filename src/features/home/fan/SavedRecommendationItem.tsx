@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { radii, spacing } from '@/theme/tokens';
@@ -39,12 +40,20 @@ export function SavedRecommendationItem({
             <Badge key={b} variant={b} />
           ))}
         </View>
-        <AppText variant="body" style={styles.title} numberOfLines={2}>
+        <AppText
+          variant={homeCardTypography.compactTileTitle.variant}
+          style={homeCardTypography.compactTileTitle.style}
+          numberOfLines={homeCardTypography.compactTileTitle.numberOfLines}
+        >
           {title}
         </AppText>
-        <AppText variant="caption" muted numberOfLines={1}>{`${venue} · ${neighbourhood}`}</AppText>
+        <AppText
+          variant={homeCardTypography.rowSubtitle.variant}
+          muted
+          numberOfLines={homeCardTypography.rowSubtitle.numberOfLines}
+        >{`${venue} · ${neighbourhood}`}</AppText>
         <View style={styles.metaRow}>
-          <AppText variant="caption" muted>
+          <AppText variant={homeCardTypography.rowSubtitle.variant} muted>
             {date}
           </AppText>
           <AppText variant="caption" style={styles.price}>
@@ -78,9 +87,6 @@ const createStyles = (theme: Theme) =>
       flexDirection: 'row',
       gap: spacing.xs,
       flexWrap: 'wrap',
-    },
-    title: {
-      fontWeight: '600',
     },
     metaRow: {
       flexDirection: 'row',

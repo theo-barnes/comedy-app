@@ -140,6 +140,6 @@ const createStyles = (theme: Theme) =>
       fontSize: theme.typography.body,
     },
     lgLabel: {
-      fontSize: theme.typography.body,
+      fontSize: theme.typography.subheading,
     },
   });

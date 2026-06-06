@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
 import { ProgressBar } from '@/features/home/components/ProgressBar';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -69,17 +70,25 @@ export function FeaturedShowCard({
       <PlaceholderImage uri={imageUri} style={styles.image} />
 
       <View style={styles.info}>
-        <AppText variant="heading" style={styles.title}>
+        <AppText
+          variant={homeCardTypography.featuredTitle.variant}
+          style={homeCardTypography.featuredTitle.style}
+          numberOfLines={homeCardTypography.featuredTitle.numberOfLines}
+        >
           {title}
         </AppText>
-        <AppText variant="caption" muted>{`${venue} · ${date}`}</AppText>
+        <AppText
+          variant={homeCardTypography.featuredMeta.variant}
+          muted
+          numberOfLines={homeCardTypography.featuredMeta.numberOfLines}
+        >{`${venue} · ${date}`}</AppText>
       </View>
 
       <View style={styles.ticketRow}>
-        <AppText variant="caption" muted>
+        <AppText variant={homeCardTypography.rowSubtitle.variant} muted>
           {t('home.venue.ticketsSold', { sold: ticketsSold, total: totalTickets })}
         </AppText>
-        <AppText variant="body" style={styles.revenue}>
+        <AppText variant={homeCardTypography.rowTitle.variant} style={styles.revenue}>
           {revenue}
         </AppText>
       </View>
@@ -97,7 +106,7 @@ export function FeaturedShowCard({
         {actions.map((action) => (
           <Pressable key={action.label} style={styles.actionButton} onPress={action.onPress}>
             <Ionicons name={action.icon} size={20} color={theme.colors.textPrimary} />
-            <AppText variant="caption" style={styles.actionLabel}>
+            <AppText variant="label" style={styles.actionLabel}>
               {action.label}
             </AppText>
           </Pressable>
@@ -132,9 +141,6 @@ const createStyles = (theme: Theme) =>
     info: {
       gap: 4,
     },
-    title: {
-      fontWeight: '700',
-    },
     ticketRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -166,6 +172,5 @@ const createStyles = (theme: Theme) =>
     actionLabel: {
       fontWeight: '600',
       letterSpacing: 0.3,
-      fontSize: 10,
     },
   });

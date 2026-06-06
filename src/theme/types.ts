@@ -1,4 +1,4 @@
-import type { spacing, radii, typography } from './tokens';
+import type { spacing, radii, typography, navigationTabs } from './tokens';
 
 /**
  * Semantic colour roles — every key has a clearly defined job.
@@ -64,6 +64,22 @@ export interface ColorTokens {
   /** Foreground text/icon colour on top of media surfaces */
   onOverlay: string;
 
+  /** Soft media scrim (e.g. image footer overlays) */
+  mediaScrimSoft: string;
+  /** Strong media scrim (e.g. compact duration pills) */
+  mediaScrimStrong: string;
+
+  /** Live panel elevated surface used in browse sections */
+  livePanelSurface: string;
+  /** Row surface within live panel cards */
+  livePanelRow: string;
+  /** Primary text on live panel surfaces */
+  livePanelTextPrimary: string;
+  /** Muted text on live panel surfaces */
+  livePanelTextMuted: string;
+  /** Accent text on live panel surfaces */
+  livePanelAccent: string;
+
   buttonShadow: string;
 }
 
@@ -73,6 +89,8 @@ export type Spacing = typeof spacing;
 export type Radii = typeof radii;
 /** Typography scale — mode-agnostic */
 export type Typography = typeof typography;
+/** Navigation tab metrics — mode-agnostic */
+export type NavigationTabs = typeof navigationTabs;
 
 /**
  * A complete resolved theme — the abstraction all components depend on.
@@ -83,6 +101,7 @@ export interface Theme {
   spacing: Spacing;
   radii: Radii;
   typography: Typography;
+  navigationTabs: NavigationTabs;
   /** Resolved colour scheme for the current mode */
   colorScheme: 'light' | 'dark';
 }

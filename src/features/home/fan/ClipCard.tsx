@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { radii, spacing } from '@/theme/tokens';
@@ -22,15 +23,25 @@ export function ClipCard({ title, comedianName, viewCount, duration, imageUri, o
     <Card style={styles.card} onPress={onPress ?? (() => {})}>
       <View style={styles.imageContainer}>
         <PlaceholderImage uri={imageUri} style={styles.image} />
-        <View style={styles.durationBadge}>
-          <AppText style={styles.durationText}>{duration}</AppText>
+        <View testID="clip-duration-badge" style={styles.durationBadge}>
+          <AppText variant="label" style={styles.durationText}>
+            {duration}
+          </AppText>
         </View>
       </View>
       <View style={styles.info}>
-        <AppText variant="caption" muted numberOfLines={1}>
+        <AppText
+          variant={homeCardTypography.clipCardSubtitle.variant}
+          muted
+          numberOfLines={homeCardTypography.clipCardSubtitle.numberOfLines}
+        >
           {comedianName}
         </AppText>
-        <AppText variant="caption" style={styles.title} numberOfLines={2}>
+        <AppText
+          variant={homeCardTypography.clipCardTitle.variant}
+          style={homeCardTypography.clipCardTitle.style}
+          numberOfLines={homeCardTypography.clipCardTitle.numberOfLines}
+        >
           {title}
         </AppText>
         <AppText variant="caption" muted>
@@ -61,21 +72,17 @@ const createStyles = (theme: Theme) =>
       position: 'absolute',
       bottom: spacing.xs,
       right: spacing.xs,
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      backgroundColor: theme.colors.mediaScrimStrong,
       paddingHorizontal: spacing.xs,
       paddingVertical: 2,
       borderRadius: radii.sm,
     },
     durationText: {
-      fontSize: 11,
       color: theme.colors.textPrimary,
       fontWeight: '500',
     },
     info: {
       padding: spacing.sm,
-      gap: 2,
-    },
-    title: {
-      fontWeight: '600',
+      gap: 4,
     },
   });

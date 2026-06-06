@@ -95,14 +95,7 @@ export function VenueHome() {
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
 
   return (
-    <HomeScreenLayout
-      city={MOCK_VENUE_DATA.city}
-      heroTitle={t('home.venue.yourShows')}
-      heroSubtitle={t('home.venue.salesSummary', {
-        title: featuredShow.title,
-        percent: Math.round(featuredShow.progress * 100),
-      })}
-    >
+    <HomeScreenLayout city={MOCK_VENUE_DATA.city} heroTitle={t('home.venue.yourShows')}>
       <View style={styles.featuredSection} testID="venue-home-featured-section">
         <FeaturedShowCard
           title={featuredShow.title}

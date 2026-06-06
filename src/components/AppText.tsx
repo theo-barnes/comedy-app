@@ -7,7 +7,7 @@ import { resolveFontWeightFamily } from '@/theme/FontRegister';
 import type { Theme } from '@/theme/types';
 
 type AppTextProps = PropsWithChildren<TextProps> & {
-  variant?: 'title' | 'heading' | 'body' | 'caption';
+  variant?: 'display' | 'title' | 'heading' | 'subheading' | 'body' | 'caption' | 'label';
   muted?: boolean;
 };
 
@@ -28,15 +28,20 @@ export function AppText({
   );
 
   const variantFamily =
-    variant === 'title'
+    variant === 'display' || variant === 'title'
       ? theme.typography.fontFamily.roles.title
       : variant === 'heading'
         ? theme.typography.fontFamily.roles.heading
-        : variant === 'caption'
+        : variant === 'caption' || variant === 'label'
           ? theme.typography.fontFamily.roles.caption
           : theme.typography.fontFamily.roles.body;
 
-  const resolvedFontFamily = explicitFamily ?? familyFromWeight ?? variantFamily;
+  const lockVariantFamily = variant === 'display' || variant === 'title' || variant === 'heading';
+  const resolvedFontFamily = explicitFamily
+    ? explicitFamily
+    : lockVariantFamily
+      ? variantFamily
+      : (familyFromWeight ?? variantFamily);
 
   return (
     <Text
@@ -62,20 +67,41 @@ const createStyles = (theme: Theme) =>
     muted: {
       color: theme.colors.textMuted,
     },
+    display: {
+      fontSize: theme.typography.display,
+      lineHeight: 38,
+      fontWeight: '800',
+    },
     title: {
       fontSize: theme.typography.title,
+      lineHeight: 34,
       fontWeight: '700',
     },
     heading: {
       fontSize: theme.typography.heading,
+      lineHeight: 28,
       fontWeight: '600',
+    },
+    subheading: {
+      fontSize: theme.typography.subheading,
+      lineHeight: 24,
+      fontWeight: '500',
     },
     body: {
       fontSize: theme.typography.body,
+      lineHeight: 21,
       fontWeight: '400',
     },
     caption: {
       fontSize: theme.typography.caption,
+      lineHeight: 17,
       fontWeight: '400',
+    },
+    label: {
+      fontSize: theme.typography.label,
+      lineHeight: 16,
+      fontWeight: '600',
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
     },
   });

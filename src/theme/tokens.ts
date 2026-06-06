@@ -41,6 +41,13 @@ export const darkTokens: ColorTokens = {
   overlayBorder: 'rgba(255,255,255,0.18)',
   overlayBorderActive: 'rgba(255,255,255,0.4)',
   onOverlay: '#FFFFFF',
+  mediaScrimSoft: 'rgba(0, 0, 0, 0.13)',
+  mediaScrimStrong: 'rgba(0,0,0,0.7)',
+  livePanelSurface: '#181818',
+  livePanelRow: 'rgba(255,255,255,0.07)',
+  livePanelTextPrimary: '#F6F2EA',
+  livePanelTextMuted: 'rgba(255,255,255,0.45)',
+  livePanelAccent: curtain[300],
 
   // Shadows
   buttonShadow: '#000',
@@ -81,9 +88,16 @@ export const lightTokens: ColorTokens = {
   link: curtain[700],
   focusRing: curtain[600],
   onPrimary: '#FFFFFF',
-  overlayBorder: 'rgba(255,255,255,0.18)',
-  overlayBorderActive: 'rgba(255,255,255,0.4)',
+  overlayBorder: 'rgba(0,0,0,0.18)',
+  overlayBorderActive: 'rgba(0,0,0,0.4)',
   onOverlay: '#FFFFFF',
+  mediaScrimSoft: 'rgba(127, 125, 125, 0)',
+  mediaScrimStrong: 'rgba(0,0,0,0.7)',
+  livePanelSurface: '#181818',
+  livePanelRow: 'rgba(255,255,255,0.07)',
+  livePanelTextPrimary: '#F6F2EA',
+  livePanelTextMuted: 'rgba(255,255,255,0.45)',
+  livePanelAccent: curtain[300],
 
   // Shadows
   buttonShadow: '#000',
@@ -104,11 +118,32 @@ export const radii = {
   pill: 999,
 };
 
+/**
+ * Shared metrics for top-level tab strips (e.g. FilterChips in browse/home).
+ * These values are tuned to match the compact, editorial tab look used in app shells.
+ */
+export const navigationTabs = {
+  containerHorizontalPadding: spacing.lg,
+  containerTopPadding: spacing.xs,
+  containerBorderWidth: 0,
+  itemHorizontalPadding: 2,
+  itemBottomPadding: 0,
+  itemGap: spacing.lg,
+  indicatorThickness: 1,
+  labelFontSize: 14,
+  labelLineHeight: 22,
+  inactiveLabelWeight: '300',
+  activeLabelWeight: '400',
+} as const;
+
 const typographyScale = {
+  display: 32,
   title: 28,
   heading: 22,
-  body: 16,
-  caption: 13,
+  subheading: 18,
+  body: 14,
+  caption: 12,
+  label: 11,
 } as const;
 
 export const createTypography = (fontsLoaded: boolean) => ({

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { Badge, type BadgeVariant } from '@/features/home/components/Badge';
+import { homeCardTypography } from '@/features/home/cardTypography';
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';
 import { ProgressBar } from '@/features/home/components/ProgressBar';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -34,12 +35,20 @@ export function EventListItem({
       <PlaceholderImage uri={imageUri} style={styles.image} />
       <View style={styles.content}>
         <View style={styles.header}>
-          <AppText variant="body" style={styles.title} numberOfLines={1}>
+          <AppText
+            variant={homeCardTypography.eventListTitle.variant}
+            style={[homeCardTypography.eventListTitle.style, styles.title]}
+            numberOfLines={homeCardTypography.eventListTitle.numberOfLines}
+          >
             {title}
           </AppText>
           <Badge variant={statusBadge} />
         </View>
-        <AppText variant="caption" muted>{`${venue} · ${date}`}</AppText>
+        <AppText
+          variant={homeCardTypography.eventListMeta.variant}
+          muted
+          numberOfLines={homeCardTypography.eventListMeta.numberOfLines}
+        >{`${venue} · ${date}`}</AppText>
         <View style={styles.progressRow}>
           <View style={styles.progressBar}>
             <ProgressBar progress={progress} />
@@ -73,7 +82,7 @@ const createStyles = (theme: Theme) =>
       flex: 1,
       paddingVertical: spacing.sm,
       paddingRight: spacing.md,
-      gap: 4,
+      gap: 3,
     },
     header: {
       flexDirection: 'row',
@@ -82,7 +91,6 @@ const createStyles = (theme: Theme) =>
       gap: spacing.sm,
     },
     title: {
-      fontWeight: '600',
       flex: 1,
     },
     progressRow: {
