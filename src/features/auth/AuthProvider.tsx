@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type PropsWithChildren,
-} from 'react';
+import { useCallback, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { z } from 'zod/v3';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
@@ -16,31 +9,10 @@ import type { Session, User } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
 import type { UserProfile, UserRole } from '@/types';
+import { AuthContext, type AuthContextValue } from '@/features/auth/context';
 
 // ─── Zod guard — role must be one of the three valid values ──────────────────
 const userRoleSchema = z.enum(['fan', 'comedian', 'venue']);
-
-// ─── Context shape ────────────────────────────────────────────────────────────
-type AuthContextValue = {
-  session: Session | null;
-  user: User | null;
-  profile: UserProfile | null;
-  isLoading: boolean;
-  isGuest: boolean;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
-  signUp: (displayName: string, email: string, password: string, role: UserRole) => Promise<void>;
-  signOut: () => Promise<void>;
-  continueAsGuest: () => void;
-  exchangeCodeForSession: (code: string) => Promise<void>;
-  updateUserRole: (role: UserRole) => Promise<void>;
-  resetPasswordForEmail: (email: string) => Promise<void>;
-  /** Dev-only: bypasses Supabase and signs in locally as the given role. No-op in production. */
-  signInAsDevRole: (role: UserRole) => void;
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: PropsWithChildren) {

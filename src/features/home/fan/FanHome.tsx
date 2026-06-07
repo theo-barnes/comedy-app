@@ -99,10 +99,7 @@ export function FanHome() {
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
 
   return (
-    <HomeScreenLayout
-      city={MOCK_FAN_DATA.city}
-      heroTitle={t('home.fan.findYourNextRoom', { city: MOCK_FAN_DATA.city })}
-    >
+    <HomeScreenLayout heroTitle={t('home.fan.findYourNextRoom', { city: MOCK_FAN_DATA.city })}>
       <FilterChips
         options={MOCK_FAN_DATA.neighbourhoods}
         selected={selectedNeighbourhood}

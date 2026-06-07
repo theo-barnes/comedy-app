@@ -94,7 +94,6 @@ export function ComedianHome() {
 
   return (
     <HomeScreenLayout
-      city={MOCK_COMEDIAN_DATA.city}
       heroTitle={t('home.comedian.greeting', {
         timeOfDay,
         name: MOCK_COMEDIAN_DATA.comedianName,

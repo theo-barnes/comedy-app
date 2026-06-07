@@ -3,24 +3,26 @@ import type { StyleProp, ViewStyle } from 'react-native';
 
 import { AppTabScreenLayout } from '@/components/layouts/AppTabScreenLayout';
 import { HomeHeroHeader } from '@/components/HomeHeroHeader';
+import { useHeaderLocationLabel } from '@/features/location';
 
 export type HomeScreenLayoutProps = PropsWithChildren<{
-  city: string;
   heroTitle: string;
   avatarUri?: string;
   contentContainerStyle?: StyleProp<ViewStyle>;
 }>;
 
 export function HomeScreenLayout({
-  city,
   heroTitle,
   avatarUri,
   contentContainerStyle,
   children,
 }: HomeScreenLayoutProps) {
+  const { cityLabel, onCityPress } = useHeaderLocationLabel();
+
   return (
     <AppTabScreenLayout
-      city={city}
+      city={cityLabel}
+      onCityPress={onCityPress}
       tabLabel="Home"
       avatarUri={avatarUri}
       hero={<HomeHeroHeader title={heroTitle} />}

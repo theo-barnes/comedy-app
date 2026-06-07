@@ -8,7 +8,7 @@ import { renderWithTheme } from '../../../utils/renderWithTheme';
 describe('HomeScreenLayout', () => {
   it('renders shared header, hero text, and role content', () => {
     renderWithTheme(
-      <HomeScreenLayout city="London" heroTitle="Hello">
+      <HomeScreenLayout heroTitle="Hello">
         <Text>Role specific block</Text>
       </HomeScreenLayout>,
     );

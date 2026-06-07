@@ -14,6 +14,7 @@ type InlineTab = {
 
 export type AppTabScreenLayoutProps = PropsWithChildren<{
   city: string;
+  onCityPress?: () => void;
   tabLabel: string;
   avatarUri?: string;
   inlineTabs?: readonly InlineTab[];
@@ -32,6 +33,7 @@ export type AppTabScreenLayoutProps = PropsWithChildren<{
 
 export function AppTabScreenLayout({
   city,
+  onCityPress,
   tabLabel,
   avatarUri,
   inlineTabs,
@@ -51,6 +53,7 @@ export function AppTabScreenLayout({
   const header = (
     <ScreenHeader
       city={city}
+      onCityPress={onCityPress}
       tabLabel={tabLabel}
       avatarUri={avatarUri}
       inlineTabs={inlineTabs}

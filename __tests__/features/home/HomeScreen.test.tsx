@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../../utils/renderWithTheme';
 
 // Must be mocked before any transitive import of useAuth resolves
-jest.mock('@/features/auth/AuthProvider', () => ({
+jest.mock('@/features/auth/context', () => ({
   AuthContext: require('react').createContext(null), // eslint-disable-line @typescript-eslint/no-require-imports
 }));
 

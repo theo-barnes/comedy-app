@@ -90,4 +90,13 @@ describe('ScreenHeader', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Open profile' }));
     expect(onAvatarPress).toHaveBeenCalledTimes(1);
   });
+
+  it('supports actionable city fallback for setting location', () => {
+    const onCityPress = jest.fn();
+
+    renderWithTheme(<ScreenHeader city="Set location" tabLabel="Home" onCityPress={onCityPress} />);
+
+    fireEvent.press(screen.getByRole('button', { name: 'Set location' }));
+    expect(onCityPress).toHaveBeenCalledTimes(1);
+  });
 });

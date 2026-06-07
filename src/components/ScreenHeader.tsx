@@ -13,6 +13,7 @@ const AVATAR_SIZE = 40;
 
 export type ScreenHeaderProps = {
   city: string;
+  onCityPress?: () => void;
   tabLabel: string;
   avatarUri?: string;
   onAvatarPress?: () => void;
@@ -27,6 +28,7 @@ export type ScreenHeaderProps = {
 
 export function ScreenHeader({
   city,
+  onCityPress,
   tabLabel,
   avatarUri,
   onAvatarPress,
@@ -50,9 +52,23 @@ export function ScreenHeader({
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <AppText numberOfLines={1} ellipsizeMode="tail" variant="caption" style={styles.city}>
-          {city}
-        </AppText>
+        {onCityPress ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={city}
+            hitSlop={8}
+            onPress={onCityPress}
+            style={styles.cityPressable}
+          >
+            <AppText numberOfLines={1} ellipsizeMode="tail" variant="caption" style={styles.city}>
+              {city}
+            </AppText>
+          </Pressable>
+        ) : (
+          <AppText numberOfLines={1} ellipsizeMode="tail" variant="caption" style={styles.city}>
+            {city}
+          </AppText>
+        )}
         <AppText variant="caption" muted style={styles.separator}>
           {'·'}
         </AppText>
@@ -131,6 +147,10 @@ const createStyles = (theme: Theme) =>
       textTransform: 'uppercase',
       flexShrink: 1,
       maxWidth: 90,
+    },
+    cityPressable: {
+      flexShrink: 1,
+      minWidth: 0,
     },
     separator: {
       marginHorizontal: spacing.sm,

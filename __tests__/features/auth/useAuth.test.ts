@@ -4,7 +4,7 @@ import { useAuth } from '@/features/auth/useAuth';
 
 // Prevent the transitive import chain (useAuth → AuthProvider → supabase → env)
 // from throwing a ZodError about missing environment variables.
-jest.mock('@/features/auth/AuthProvider', () => ({
+jest.mock('@/features/auth/context', () => ({
   AuthContext: require('react').createContext(null), // eslint-disable-line @typescript-eslint/no-require-imports
 }));
 

@@ -40,7 +40,17 @@
     "experiments": {
       "typedRoutes": true
     },
-    "plugins": ["expo-localization", "expo-dev-client", "expo-apple-authentication"],
+    "plugins": [
+      "expo-localization",
+      "expo-dev-client",
+      "expo-apple-authentication",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location to show your city and nearby comedy."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "13242deb-ac3a-451f-b603-7afce2755fa7"

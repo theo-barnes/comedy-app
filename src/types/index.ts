@@ -10,6 +10,9 @@ export type UserProfile = {
   id: string;
   display_name: string;
   role: UserRole;
+  home_city?: string | null;
+  home_latitude?: number | null;
+  home_longitude?: number | null;
   created_at: string;
   updated_at: string;
 };
