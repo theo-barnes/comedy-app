@@ -62,6 +62,11 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
   // The `cancelled` flag prevents a stale async callback from calling setState
   // after the component has unmounted (e.g. during fast refresh or test teardown).
   useEffect(() => {
+    if (initialMode != null) {
+      setIsHydrated(true);
+      return;
+    }
+
     let cancelled = false;
     SecureStore.getItemAsync(STORE_KEY)
       .then((stored) => {
@@ -78,7 +83,7 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialMode]);
 
   const setThemeMode = useCallback(async (mode: ThemeMode) => {
     setThemeModeState(mode);

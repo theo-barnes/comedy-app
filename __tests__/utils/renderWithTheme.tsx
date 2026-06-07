@@ -22,8 +22,10 @@ export function renderWithTheme(
   ui: React.ReactElement,
   { themeMode, ...options }: RenderWithThemeOptions = {},
 ) {
+  const resolvedThemeMode: ThemeMode = themeMode ?? 'system';
+
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AllProviders themeMode={themeMode}>{children}</AllProviders>
+    <AllProviders themeMode={resolvedThemeMode}>{children}</AllProviders>
   );
   return render(ui, { wrapper: Wrapper, ...options });
 }
