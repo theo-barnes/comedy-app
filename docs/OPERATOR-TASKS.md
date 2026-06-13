@@ -137,3 +137,27 @@ https://developer.apple.com/download/all/) first.
 ### 13. GitHub repo protection
 
 - [ ] Protect `main`: require PR + passing status checks (Settings → Branches)
+
+## CI incident note — ERR_PNPM_IGNORED_BUILDS
+
+If GitHub Actions fails on `pnpm install --frozen-lockfile` with
+`ERR_PNPM_IGNORED_BUILDS`, a dependency postinstall/build script is blocked by
+pnpm's supply-chain policy.
+
+1. Identify the blocked package from the CI log (example: `@sentry/cli`).
+2. Allow it in `pnpm-workspace.yaml` under `allowBuilds` with an explicit boolean:
+
+```yaml
+allowBuilds:
+  '@sentry/cli': true
+```
+
+3. Validate locally with:
+
+```sh
+pnpm install --frozen-lockfile
+```
+
+4. Commit the policy change and rerun CI.
+
+Use `false` (or remove the entry) if the build script should stay blocked.
