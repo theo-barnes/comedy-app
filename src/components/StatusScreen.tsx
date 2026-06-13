@@ -3,13 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
+import type { IoniconName } from '@/components/icons';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 
 type Props = {
-  icon: string;
+  icon: IoniconName;
   iconColor?: string;
   iconSize?: number;
   title: string;
@@ -35,7 +36,7 @@ export function StatusScreen({
   const resolvedIconColor = iconColor ?? theme.colors.primaryRest;
   return (
     <View style={[styles.container, containerStyle]}>
-      <Ionicons name={icon as any} size={iconSize} color={resolvedIconColor} />
+      <Ionicons name={icon} size={iconSize} color={resolvedIconColor} />
       <AppText variant={titleVariant} style={styles.title}>
         {title}
       </AppText>

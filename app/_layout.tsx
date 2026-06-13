@@ -2,15 +2,19 @@ import { useEffect } from 'react';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { initSentry, Sentry } from '@/lib/sentry';
 import { AppProviders } from '@/providers/AppProviders';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/features/auth/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
+// Crash reporting first — so errors during startup are captured.
+initSentry();
+
 // Keep the splash screen visible until auth, onboarding, and theme state have resolved.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <AppProviders>
       <StatusBar style="auto" />
@@ -18,6 +22,8 @@ export default function RootLayout() {
     </AppProviders>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 function RootNavigator() {
   const { isLoading, session, isGuest, profile } = useAuth();

@@ -1,9 +1,10 @@
-import { Component, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import i18n from '@/i18n';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
+import { Sentry } from '@/lib/sentry';
 import { useTheme } from '@/providers/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
@@ -18,6 +19,12 @@ class ErrorBoundaryClass extends Component<ClassProps, State> {
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: errorInfo.componentStack } },
+    });
   }
 
   handleReset = () => {

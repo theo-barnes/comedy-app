@@ -11,7 +11,7 @@ const DEFAULT_PROPS = {
   venue: 'The Comedy Store',
   date: 'Fri, 6 Jun',
   doorsTime: '8:30 PM',
-  performerAvatars: [undefined] as Array<string | undefined>,
+  performerAvatars: [undefined] as (string | undefined)[],
   onTheBillCount: 3,
 };
 

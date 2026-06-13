@@ -20,7 +20,7 @@ type Props = {
   time: string;
   price: string;
   badges: BadgeVariant[];
-  performerAvatars: Array<string | undefined>;
+  performerAvatars: (string | undefined)[];
   performerLabel: string;
   imageUri?: string;
 };

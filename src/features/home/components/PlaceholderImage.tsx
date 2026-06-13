@@ -1,11 +1,11 @@
-import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/providers/ThemeProvider';
 
 type Props = {
   uri?: string;
   /** Layout styles applied identically to both the placeholder View and the Image. */
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle & ImageStyle>;
 };
 
 /**
@@ -16,9 +16,7 @@ type Props = {
 export function PlaceholderImage({ uri, style }: Props) {
   const { theme } = useTheme();
   if (uri) {
-    // Image accepts the same layout properties as View; the cast is safe here
-    // since callers only pass dimension / borderRadius styles.
-    return <Image source={{ uri }} style={style as any} resizeMode="cover" />;
+    return <Image source={{ uri }} style={style} resizeMode="cover" />;
   }
   return <View style={[{ backgroundColor: theme.colors.card }, style]} />;
 }

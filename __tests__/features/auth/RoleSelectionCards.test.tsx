@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../../utils/renderWithTheme';
 
 import { RoleSelectionCards } from '@/features/auth/RoleSelectionCards';
@@ -25,7 +25,7 @@ describe('RoleSelectionCards', () => {
     renderWithTheme(<RoleSelectionCards selectedRole="fan" onRoleChange={onRoleChange} />);
     // Cards are ordered: fan (0), comedian (1), venue (2)
     const cards = screen.getAllByRole('radio');
-    fireEvent.press(cards[2]);
+    fireEvent.press(cards[2]!);
     expect(onRoleChange).toHaveBeenCalledWith('venue' as UserRole);
   });
 
@@ -33,7 +33,7 @@ describe('RoleSelectionCards', () => {
     const onRoleChange = jest.fn();
     renderWithTheme(<RoleSelectionCards selectedRole="fan" onRoleChange={onRoleChange} />);
     const cards = screen.getAllByRole('radio');
-    fireEvent.press(cards[1]);
+    fireEvent.press(cards[1]!);
     expect(onRoleChange).toHaveBeenCalledWith('comedian' as UserRole);
   });
 });

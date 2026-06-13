@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, userEvent } from '@testing-library/react-native';
+import { fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { renderWithTheme } from '../utils/renderWithTheme';
 
 import { Button } from '@/components/Button';

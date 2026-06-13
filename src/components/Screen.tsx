@@ -3,10 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Edge } from 'react-native-safe-area-context';
 
-const SAFE_AREA_EDGES: Edge[] = ['top', 'left', 'right'];
-
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import type { Theme } from '@/theme/types';
+
+const SAFE_AREA_EDGES: Edge[] = ['top', 'left', 'right'];
 
 export function Screen({ children }: PropsWithChildren) {
   const styles = useThemedStyles(createStyles);

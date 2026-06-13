@@ -70,7 +70,7 @@ export function Badge({ variant }: Props) {
   );
 }
 
-const createStyles = (theme: Theme) =>
+const createStyles = (_theme: Theme) =>
   StyleSheet.create({
     pill: {
       paddingHorizontal: spacing.sm,

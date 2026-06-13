@@ -18,7 +18,7 @@ type Props = {
   venue: string;
   date: string;
   doorsTime: string;
-  performerAvatars: Array<string | undefined>;
+  performerAvatars: (string | undefined)[];
   onTheBillCount: number;
 };
 

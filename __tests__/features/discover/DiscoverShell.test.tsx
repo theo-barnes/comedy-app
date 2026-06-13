@@ -27,6 +27,6 @@ describe('DiscoverShell', () => {
     // No browse hero title (BrowseView is gone)
     expect(screen.queryByText(config.browse.heroTitle)).toBeNull();
     // No map filters (MapView is gone)
-    expect(screen.queryByText(config.map.filters[0])).toBeNull();
+    expect(screen.queryByText(config.map.filters[0]!)).toBeNull();
   });
 });

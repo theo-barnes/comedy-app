@@ -3,7 +3,7 @@ import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 import type { FieldError } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 
-import { AppText } from '@/components/AppText';
+import { FieldWrapper } from '@/components/FieldWrapper';
 import { createAuthStyles } from '@/features/auth/authStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -19,10 +19,7 @@ export function PasswordInput({ label, error, ...inputProps }: Props) {
   const authStyles = useThemedStyles(createAuthStyles);
 
   return (
-    <>
-      <AppText variant="caption" muted style={authStyles.label}>
-        {label}
-      </AppText>
+    <FieldWrapper label={label} error={error}>
       <View style={[authStyles.passwordRow, error && authStyles.inputError]}>
         <TextInput
           style={authStyles.passwordInput}
@@ -38,11 +35,6 @@ export function PasswordInput({ label, error, ...inputProps }: Props) {
           />
         </Pressable>
       </View>
-      {error && (
-        <AppText variant="caption" style={authStyles.fieldError}>
-          {error.message}
-        </AppText>
-      )}
-    </>
+    </FieldWrapper>
   );
 }

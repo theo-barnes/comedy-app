@@ -11,7 +11,7 @@ const OVERLAP = 8;
 
 type Props = {
   /** Pass `undefined` entries for avatars without a real URI — renders a grey circle. */
-  avatars: Array<string | undefined>;
+  avatars: (string | undefined)[];
   label: string;
 };
 

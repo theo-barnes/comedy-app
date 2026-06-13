@@ -10,6 +10,8 @@ import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
 import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
+import { useHeaderLocationLabel } from '@/features/location';
+
 import {
   CuratorSection,
   FullBillSection,
@@ -33,7 +35,7 @@ const MOCK_FAN_DATA = {
     time: '9:00 PM',
     price: '£18',
     badges: ['hotTicket', 'lateNight', 'soldOut'] as BadgeVariant[],
-    performerAvatars: [undefined, undefined, undefined] as Array<string | undefined>,
+    performerAvatars: [undefined, undefined, undefined] as (string | undefined)[],
     performerLabel: '3 performers',
   },
   thisWeek: [
@@ -91,15 +93,16 @@ export function FanHome() {
   const { t } = useTranslation();
   const router = useRouter();
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState(
-    MOCK_FAN_DATA.neighbourhoods[0],
+    MOCK_FAN_DATA.neighbourhoods[0] ?? '',
   );
   const { featured, thisWeek, performersNearYou, freshClips, becauseYouSaved } = MOCK_FAN_DATA;
   const browse = getBrowseConfig('fan');
   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
+  const { cityLabel } = useHeaderLocationLabel();
 
   return (
-    <HomeScreenLayout heroTitle={t('home.fan.findYourNextRoom', { city: MOCK_FAN_DATA.city })}>
+    <HomeScreenLayout heroTitle={t('home.fan.findYourNextRoom', { city: cityLabel })}>
       <FilterChips
         options={MOCK_FAN_DATA.neighbourhoods}
         selected={selectedNeighbourhood}

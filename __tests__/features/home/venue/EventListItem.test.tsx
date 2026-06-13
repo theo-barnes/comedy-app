@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../../../utils/renderWithTheme';
 
 import { EventListItem } from '@/features/home/venue/EventListItem';

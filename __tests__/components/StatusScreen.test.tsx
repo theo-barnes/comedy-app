@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../utils/renderWithTheme';
 
 import { StatusScreen } from '@/components/StatusScreen';
@@ -8,7 +8,7 @@ describe('StatusScreen', () => {
     icon: 'checkmark-circle-outline',
     title: 'All done!',
     body: 'Your action was successful.',
-  };
+  } as const;
 
   it('renders the title and body', () => {
     renderWithTheme(<StatusScreen {...baseProps} />);

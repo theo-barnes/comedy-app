@@ -34,7 +34,7 @@ export function RoleSelectionCards({ selectedRole, onRoleChange }: Props) {
           >
             <View style={[styles.icon, isSelected && styles.iconSelected]}>
               <Ionicons
-                name={opt.icon as any}
+                name={opt.icon}
                 size={22}
                 color={isSelected ? theme.colors.onPrimary : theme.colors.textMuted}
               />

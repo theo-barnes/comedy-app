@@ -1,3 +1,4 @@
 allowBuilds:
+  '@sentry/cli': set this to true or false
   msgpackr-extract: true
   unrs-resolver: true

@@ -1,5 +1,37 @@
 // Mock native modules that are not available in the Jest environment.
 
+jest.mock('@sentry/react-native', () => ({
+  __esModule: true,
+  init: jest.fn(),
+  wrap: <T>(component: T) => component,
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+}));
+
+// The app-level wrapper imports @/lib/env, which requires real env vars — stub it.
+jest.mock('@/lib/sentry', () => ({
+  __esModule: true,
+  initSentry: jest.fn(),
+  Sentry: {
+    init: jest.fn(),
+    wrap: <T>(component: T) => component,
+    captureException: jest.fn(),
+    captureMessage: jest.fn(),
+  },
+}));
+
+jest.mock('expo-glass-effect', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    GlassView: View,
+    GlassContainer: View,
+    isLiquidGlassAvailable: jest.fn(() => false),
+    isGlassEffectAPIAvailable: jest.fn(() => false),
+  };
+});
+
 jest.mock('@expo/vector-icons', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
@@ -20,8 +52,6 @@ jest.mock('@expo/vector-icons', () => {
 
 jest.mock('react-native-reanimated', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require('react');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { View, Text, ScrollView } = require('react-native');
 
   return {
@@ -30,7 +60,7 @@ jest.mock('react-native-reanimated', () => {
       View,
       Text,
       ScrollView,
-      createAnimatedComponent: (Component: React.ComponentType) => Component,
+      createAnimatedComponent: <T>(Component: T) => Component,
     },
     useSharedValue: <T>(initialValue: T) => ({ value: initialValue }),
     useAnimatedStyle: (updater: () => Record<string, unknown>) => updater(),

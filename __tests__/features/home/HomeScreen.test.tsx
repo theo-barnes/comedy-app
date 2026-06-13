@@ -1,13 +1,13 @@
 import { screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../../utils/renderWithTheme';
 
+import { useAuth } from '@/features/auth/useAuth';
+import { HomeScreen } from '@/features/home';
+
 // Must be mocked before any transitive import of useAuth resolves
 jest.mock('@/features/auth/context', () => ({
   AuthContext: require('react').createContext(null), // eslint-disable-line @typescript-eslint/no-require-imports
 }));
-
-import { useAuth } from '@/features/auth/useAuth';
-import { HomeScreen } from '@/features/home';
 
 jest.mock('@/features/auth/useAuth');
 

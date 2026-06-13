@@ -62,10 +62,8 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
   // The `cancelled` flag prevents a stale async callback from calling setState
   // after the component has unmounted (e.g. during fast refresh or test teardown).
   useEffect(() => {
-    if (initialMode != null) {
-      setIsHydrated(true);
-      return;
-    }
+    // When seeded via initialMode, isHydrated already initialised to true.
+    if (initialMode != null) return;
 
     let cancelled = false;
     SecureStore.getItemAsync(STORE_KEY)

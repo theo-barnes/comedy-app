@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -11,27 +11,45 @@ import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { spacing } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 
+// PKCE auth codes are opaque single-use tokens. Accept only a sane shape so
+// arbitrary deep-link payloads are rejected before reaching the auth client.
+const AUTH_CODE_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
+
+function sanitizeCode(param: string | string[] | undefined): string | null {
+  const value = Array.isArray(param) ? param[0] : param;
+  return value && AUTH_CODE_PATTERN.test(value) ? value : null;
+}
+
 export default function AuthCallbackScreen() {
   const { t } = useTranslation();
-  const { code } = useLocalSearchParams<{ code: string }>();
+  const { code: codeParam } = useLocalSearchParams<{ code: string }>();
   const { exchangeCodeForSession } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
+
+  const code = sanitizeCode(codeParam);
+
+  // Auth codes are single-use: guard against the effect re-running (fast
+  // refresh, param identity changes, re-renders) and double-spending the code.
+  const exchangeStarted = useRef(false);
 
   // Derive the missing-code error at render time to avoid calling setState
   // synchronously inside an effect (react-hooks/set-state-in-effect).
   const displayError = !code ? t('auth.authCallback.errorBody') : error;
 
   useEffect(() => {
-    if (!code) return;
+    if (!code || exchangeStarted.current) return;
+    exchangeStarted.current = true;
     exchangeCodeForSession(code)
       .then(() => {
         // On success: onAuthStateChange in AuthProvider sets the session →
         // root layout guard navigates to /(tabs) automatically.
       })
-      .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : t('auth.authCallback.errorBody'));
+      .catch(() => {
+        // Show a generic message — raw auth errors can leak implementation
+        // detail and are not actionable for the user.
+        setError(t('auth.authCallback.errorBody'));
       });
   }, [code, exchangeCodeForSession, t]);
 

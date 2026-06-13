@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "billd-tonight",
-    "slug": "billd-tonight",
+    "name": "cue",
+    "slug": "cue",
     "version": "1.0.0",
-    "scheme": "billd-tonight",
+    "scheme": "cue",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -16,7 +16,7 @@
       "url": "https://u.expo.dev/13242deb-ac3a-451f-b603-7afce2755fa7"
     },
     "ios": {
-      "bundleIdentifier": "com.billd.billdtonight",
+      "bundleIdentifier": "com.billd.cue",
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "infoPlist": {
@@ -24,7 +24,7 @@
       }
     },
     "android": {
-      "package": "com.billd.billdtonight",
+      "package": "com.billd.cue",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -48,6 +48,15 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location to show your city and nearby comedy."
+        }
+      ],
+      "expo-router",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "REPLACE_WITH_SENTRY_ORG",
+          "project": "REPLACE_WITH_SENTRY_PROJECT"
         }
       ]
     ],

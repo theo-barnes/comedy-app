@@ -41,7 +41,7 @@ const MOCK_COMEDIAN_DATA = {
     venue: 'The Comedy Store',
     date: 'Fri, 6 Jun',
     doorsTime: '8:30 PM',
-    performerAvatars: [undefined, undefined, undefined] as Array<string | undefined>,
+    performerAvatars: [undefined, undefined, undefined] as (string | undefined)[],
     onTheBillCount: 3,
   },
   stats: [

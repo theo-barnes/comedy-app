@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { IoniconName } from '@/components/icons';
 import type { UserRole } from '@/types';
 
-export type RoleOption = { role: UserRole; label: string; description: string; icon: string };
+export type RoleOption = { role: UserRole; label: string; description: string; icon: IoniconName };
 
 export function useRoleOptions(): RoleOption[] {
   const { t } = useTranslation();

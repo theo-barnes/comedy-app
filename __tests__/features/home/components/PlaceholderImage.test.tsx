@@ -1,4 +1,3 @@
-import { screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../../../utils/renderWithTheme';
 
 import { PlaceholderImage } from '@/features/home/components/PlaceholderImage';

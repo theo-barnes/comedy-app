@@ -88,7 +88,7 @@ const MOCK_VENUE_DATA = {
 export function VenueHome() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [selectedActFilter, setSelectedActFilter] = useState(MOCK_VENUE_DATA.actsFilter[0]);
+  const [selectedActFilter, setSelectedActFilter] = useState(MOCK_VENUE_DATA.actsFilter[0] ?? '');
   const { featuredShow, otherEvents, acts, whatElse } = MOCK_VENUE_DATA;
   const browse = getBrowseConfig('venue');
   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);

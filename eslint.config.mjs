@@ -28,6 +28,18 @@ export default defineConfig([
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
+      // Stray logs leak data and noise into release builds — route diagnostics
+      // through the error-reporting layer instead.
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
+    // Tests may use console output and looser typing for mocks.
+    files: ['__tests__/**/*.{ts,tsx}', 'jest.setup.ts'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ]);

@@ -3,7 +3,7 @@
 ## CRITICAL — Do these now
 
 - [ ] Verify .env file contains no real secrets (it is committed to git — run: cat .env)
-- [ ] Update Supabase Dashboard redirect URLs: replace comedy-app://auth-callback with billd-tonight://auth-callback
+- [ ] Update Supabase Dashboard redirect URLs: replace comedy-app://auth-callback with cue://auth-callback
       (Dashboard → Authentication → URL Configuration)
 
 ## Supabase Security Patches (run in Supabase SQL editor)
@@ -90,7 +90,7 @@ create trigger on_profile_updated
 ## Google OAuth (required before the "Continue with Google" button works)
 - [ ] Create a Google Cloud project: https://console.cloud.google.com
 - [ ] Enable the "OAuth 2.0" credential type for iOS and Android
-- [ ] Add redirect URI: billd-tonight://auth-callback
+- [ ] Add redirect URI: cue://auth-callback
 - [ ] Enable Google provider in Supabase Dashboard → Authentication → Providers
       (paste in the Client ID and Client Secret from Google Cloud)
 - [ ] Add EXPO_PUBLIC_GOOGLE_CLIENT_ID to your .env.local file
@@ -99,7 +99,7 @@ create trigger on_profile_updated
       (replaces the custom URI scheme to prevent third-party hijacking — see Security section)
 
 ## Security Hardening (production)
-- [ ] Replace billd-tonight:// URI scheme with Universal Links (iOS) + App Links (Android)
+- [ ] Replace cue:// URI scheme with Universal Links (iOS) + App Links (Android)
       to prevent third-party apps hijacking the OAuth callback
 - [ ] Configure Supabase Dashboard password policy: minimum 8 characters
       (enforces server-side to match the client-side Zod rule)

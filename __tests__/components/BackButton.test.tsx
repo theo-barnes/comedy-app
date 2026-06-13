@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../utils/renderWithTheme';
 import { router } from 'expo-router';
 

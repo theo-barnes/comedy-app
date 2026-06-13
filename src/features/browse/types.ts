@@ -43,10 +43,10 @@ export type LiveNowPanel = {
   kicker: string;
   timeLabel: string;
   title: string;
-  venues: Array<{
+  venues: {
     name: string;
     value: string;
-  }>;
+  }[];
   cta: string;
 };
 

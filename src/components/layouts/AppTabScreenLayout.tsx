@@ -4,7 +4,6 @@ import type { StyleProp, ViewStyle } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { spacing } from '@/theme';
 
 type InlineTab = {
   id: string;

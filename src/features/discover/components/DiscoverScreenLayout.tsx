@@ -11,7 +11,7 @@ type DiscoverScreenLayoutProps = PropsWithChildren<{
   avatarUri?: string;
 }>;
 
-export function DiscoverScreenLayout({ config, avatarUri, children }: DiscoverScreenLayoutProps) {
+export function DiscoverScreenLayout({ avatarUri, children }: DiscoverScreenLayoutProps) {
   const { theme } = useTheme();
   const { cityLabel, onCityPress } = useHeaderLocationLabel();
 

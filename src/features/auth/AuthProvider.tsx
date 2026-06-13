@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { z } from 'zod/v3';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import Constants from 'expo-constants';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Session, User } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
+import { queryKeys } from '@/lib/api/keys';
+import { fetchProfile, updateProfileRole } from '@/lib/api/profiles';
 import type { UserProfile, UserRole } from '@/types';
-import { AuthContext, type AuthContextValue } from '@/features/auth/context';
+import { AuthContext } from '@/features/auth/context';
 
 // ─── Zod guard — role must be one of the three valid values ──────────────────
 const userRoleSchema = z.enum(['fan', 'comedian', 'venue']);
@@ -18,9 +21,14 @@ const userRoleSchema = z.enum(['fan', 'comedian', 'venue']);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  // Role selected in-app before the DB row reflects it (social sign-up flow) —
+  // merged over query data so the nav guard reacts immediately.
+  const [optimisticRole, setOptimisticRole] = useState<UserRole | null>(null);
+  // Dev-only local profile that bypasses Supabase entirely.
+  const [devProfile, setDevProfile] = useState<UserProfile | null>(null);
+  const queryClient = useQueryClient();
 
   // Prevent stale closure on profile fetch
   const isMounted = useRef(true);
@@ -31,24 +39,43 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (isMounted.current) {
-      setProfile((prev) => {
-        if (!data) {
-          // No DB row yet — preserve an optimistically-set role rather than
-          // resetting to null (can happen when trigger hasn't committed yet).
-          return prev?.role ? prev : null;
-        }
-        // DB row exists but role may be null if the trigger ran before the user
-        // selected a role (social sign-up flow). Preserve any optimistic role.
-        if (!data.role && prev?.role) {
-          return { ...data, role: prev.role };
-        }
-        return data;
-      });
+  // Profile is server state owned by React Query.
+  const userId = user?.id;
+  const profileQuery = useQuery({
+    queryKey: queryKeys.profile(userId ?? 'anonymous'),
+    queryFn: () => fetchProfile(userId as string),
+    enabled: !!userId,
+  });
+
+  const profile = useMemo<UserProfile | null>(() => {
+    if (devProfile) return devProfile;
+    const data = profileQuery.data ?? null;
+    if (!data) {
+      // No DB row yet — surface an optimistically-set role rather than nothing
+      // (can happen when the sign-up trigger hasn't committed yet).
+      if (optimisticRole && user) {
+        return {
+          id: user.id,
+          display_name: (user.user_metadata?.display_name as string) ?? '',
+          role: optimisticRole,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+      return null;
     }
-  }, []);
+    // DB row exists but role may be null if the trigger ran before the user
+    // selected a role (social sign-up flow). Preserve any optimistic role.
+    if (!data.role && optimisticRole) {
+      return { ...data, role: optimisticRole };
+    }
+    return data;
+  }, [devProfile, profileQuery.data, optimisticRole, user]);
+
+  // The splash screen stays up until the session is restored AND, when signed
+  // in, the first profile fetch settles — otherwise the role-selection guard
+  // would flash for users who already have a role.
+  const isLoading = isSessionLoading || (!!userId && !devProfile && profileQuery.isPending);
 
   // ── Bootstrap: load persisted session on mount ──────────────────────────────
   useEffect(() => {
@@ -59,20 +86,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       // screen cleanly rather than being stuck in a broken loading state.
       if (error) {
         await supabase.auth.signOut();
-        setIsLoading(false);
-        return;
-      }
-      // DEV ONLY: force sign-in on every launch so auth flows can be tested
-      // without manually signing out. Remove before shipping.
-      if (__DEV__ && s) {
-        await supabase.auth.signOut();
-        setIsLoading(false);
+        setIsSessionLoading(false);
         return;
       }
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) await fetchProfile(s.user.id);
-      setIsLoading(false);
+      setIsSessionLoading(false);
     });
 
     const {
@@ -82,16 +101,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        fetchProfile(s.user.id);
+        // Token refresh / user update for the same user: refetch their profile.
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile(s.user.id) });
       } else {
-        setProfile(null);
+        setOptimisticRole(null);
+        queryClient.removeQueries({ queryKey: queryKeys.profiles });
       }
       // Clear guest mode when a real session arrives
       if (s) setIsGuest(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [queryClient]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   const signInWithEmail = useCallback(async (email: string, password: string) => {
@@ -101,8 +122,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = makeRedirectUri({
-      native: 'billd-tonight://auth-callback',
-      scheme: 'billd-tonight',
+      native: 'cue://auth-callback',
+      scheme: 'cue',
       path: 'auth-callback',
     });
 
@@ -138,8 +159,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const emailRedirectTo = isExpoGo
         ? undefined
         : makeRedirectUri({
-            native: 'billd-tonight://auth-callback',
-            scheme: 'billd-tonight',
+            native: 'cue://auth-callback',
+            scheme: 'cue',
             path: 'auth-callback',
           });
 
@@ -181,9 +202,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
         ],
         nonce: hashedNonce,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // User dismissed the Apple sheet — not an error, silently bail.
-      if (err?.code === 'ERR_REQUEST_CANCELED') return;
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: unknown }).code === 'ERR_REQUEST_CANCELED'
+      ) {
+        return;
+      }
       throw err;
     }
 
@@ -216,26 +244,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
       });
       if (metaError) throw metaError;
 
-      // Best-effort: sync to the profiles table row. This may silently affect 0
-      // rows (no existing row) or fail due to RLS — both are acceptable since
-      // metadata is the source of truth and the DB trigger handles the initial row.
-      await supabase.from('profiles').update({ role: validatedRole }).eq('id', user.id);
+      // Best-effort sync to the profiles row (may affect 0 rows; the DB
+      // enforces set-once immutability server-side).
+      await updateProfileRole(user.id, validatedRole);
 
-      // Optimistically patch local state so the nav guard re-evaluates immediately
-      // without waiting for the onAuthStateChange → fetchProfile round-trip.
-      setProfile((prev) =>
-        prev
-          ? { ...prev, role: validatedRole }
-          : {
-              id: user.id,
-              display_name: (user.user_metadata?.display_name as string) ?? '',
-              role: validatedRole,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-      );
+      // Optimistically expose the role so the nav guard re-evaluates
+      // immediately, then refetch the canonical row.
+      setOptimisticRole(validatedRole);
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.id) });
     },
-    [user],
+    [user, queryClient],
   );
 
   const signOut = useCallback(async () => {
@@ -244,6 +262,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setIsGuest(false);
+    setDevProfile(null);
   }, []);
 
   const continueAsGuest = useCallback(() => {
@@ -259,7 +278,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const resetPasswordForEmail = useCallback(async (email: string) => {
     // Fire-and-forget — always show success to prevent email enumeration.
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'billd-tonight://auth-callback',
+      redirectTo: 'cue://auth-callback',
     });
   }, []);
 
@@ -270,7 +289,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!__DEV__) return;
     const validatedRole = userRoleSchema.parse(role);
     const label = validatedRole.charAt(0).toUpperCase() + validatedRole.slice(1);
-    setProfile({
+    setDevProfile({
       id: 'dev-user',
       display_name: `Dev ${label}`,
       role: validatedRole,

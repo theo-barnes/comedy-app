@@ -1,5 +1,5 @@
 /**
- * Core domain types for the billd-tonight app.
+ * Core domain types for the cue app.
  * These are stubs that grow as features are built — add fields as needed
  * when implementing feature modules rather than trying to define everything upfront.
  */
