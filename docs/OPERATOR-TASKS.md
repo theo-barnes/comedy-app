@@ -12,8 +12,8 @@ The Supabase CLI is installed as a dev dependency (`pnpm supabase ...`).
 
 ```sh
 pnpm supabase login
-pnpm supabase link --project-ref <YOUR_PROJECT_REF>   # ref from the dashboard URL
-pnpm supabase db push                                  # applies both migrations
+pnpm supabase link --project-ref kwezyzbqbmkcagmglspk
+pnpm supabase db push
 ```
 
 The migrations are idempotent (`if not exists` / `drop ... if exists` guards) so they apply

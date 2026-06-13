@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geospatial-discovery-service"
+version = "0.1.0"
+description = "Python backend for adaptive geospatial discovery filters"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "pydantic-settings>=2,<3",
+  "psycopg[binary,pool]>=3.2,<4",
+  "requests>=2.32,<3",
+  "shapely>=2.0,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "httpx>=0.27,<1"]
+
+[project.scripts]
+discovery-ingest = "app.ingest:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

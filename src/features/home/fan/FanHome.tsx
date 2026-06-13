@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
 
 import { FilterChips } from '@/features/home/components/FilterChips';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
@@ -10,7 +9,7 @@ import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
 import { HOME_SPACING } from '@/features/home/home-spacing';
 import type { BadgeVariant } from '@/features/home/components/Badge';
-import { useHeaderLocationLabel } from '@/features/location';
+import { LocationContext, useHeaderLocationLabel } from '@/features/location';
 
 import {
   CuratorSection,
@@ -19,6 +18,8 @@ import {
   TrendingSection,
   getBrowseConfig,
 } from '@/features/browse';
+
+import { useDiscoveryRegions } from '@/lib/api/discovery-regions';
 
 import { ClipCard } from './ClipCard';
 import { FeaturedEventCard } from './FeaturedEventCard';
@@ -91,20 +92,27 @@ const MOCK_FAN_DATA = {
 
 export function FanHome() {
   const { t } = useTranslation();
-  const router = useRouter();
-  const [selectedNeighbourhood, setSelectedNeighbourhood] = useState(
-    MOCK_FAN_DATA.neighbourhoods[0] ?? '',
-  );
   const { featured, thisWeek, performersNearYou, freshClips, becauseYouSaved } = MOCK_FAN_DATA;
   const browse = getBrowseConfig('fan');
   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
   const { cityLabel } = useHeaderLocationLabel();
+  const location = useContext(LocationContext);
+  const discoveryRegionsQuery = useDiscoveryRegions(
+    location?.latitude ?? null,
+    location?.longitude ?? null,
+  );
+  const [selectedNeighbourhood, setSelectedNeighbourhood] = useState('All');
+
+  const neighbourhoodChips = [
+    'All',
+    ...(discoveryRegionsQuery.data?.regions.map((region) => region.name) ?? []),
+  ];
 
   return (
     <HomeScreenLayout heroTitle={t('home.fan.findYourNextRoom', { city: cityLabel })}>
       <FilterChips
-        options={MOCK_FAN_DATA.neighbourhoods}
+        options={neighbourhoodChips}
         selected={selectedNeighbourhood}
         onSelect={setSelectedNeighbourhood}
       />
@@ -190,7 +198,7 @@ export function FanHome() {
         <FullBillSection
           sectionTitle={browse.fullBillKicker}
           shows={browse.fullBillShows}
-          onMapPress={() => router.push('/map')}
+          onMapPress={() => {}}
         />
       </View>
       <View style={styles.browseSection}>

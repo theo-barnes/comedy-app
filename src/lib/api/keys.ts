@@ -8,4 +8,6 @@
 export const queryKeys = {
   profiles: ['profile'] as const,
   profile: (userId: string) => ['profile', userId] as const,
+  discoveryRegions: (latitudeBucket: number, longitudeBucket: number) =>
+    ['discovery-regions', latitudeBucket, longitudeBucket] as const,
 };
