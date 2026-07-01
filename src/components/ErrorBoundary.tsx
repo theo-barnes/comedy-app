@@ -11,6 +11,10 @@ import type { Theme } from '@/theme/types';
 
 // ─── Class component ──────────────────────────────────────────────────────────
 
+/**
+ * ErrorBoundaryClass is a React class component that implements an error boundary. It catches JavaScript errors anywhere in its child component tree,
+ *  logs those errors to Sentry, and displays a fallback UI instead of the component tree that crashed.
+ */
 type ClassProps = { children: ReactNode; theme: Theme };
 type State = { hasError: boolean };
 

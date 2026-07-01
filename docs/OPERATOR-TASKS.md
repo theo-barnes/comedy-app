@@ -12,7 +12,7 @@ The Supabase CLI is installed as a dev dependency (`pnpm supabase ...`).
 
 ```sh
 pnpm supabase login
-pnpm supabase link --project-ref kwezyzbqbmkcagmglspk
+pnpm supabase link --project-ref <PROJECT-REF>
 pnpm supabase db push
 ```
 

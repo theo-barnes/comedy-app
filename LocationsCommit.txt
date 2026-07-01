@@ -1,0 +1,1352 @@
+commit 39b453fab38f4da38338ac3636a549e27f577e36 (HEAD -> main)
+Author: Theo-Barnes <37929917+theo-barnes@users.noreply.github.com>
+Date:   Sat Jun 13 18:12:27 2026 +0100
+
+    Region Discovery
+
+diff --git a/__tests__/lib/api/discovery-regions.test.ts b/__tests__/lib/api/discovery-regions.test.ts
+new file mode 100644
+index 0000000..2489b61
+--- /dev/null
++++ b/__tests__/lib/api/discovery-regions.test.ts
+@@ -0,0 +1,12 @@
++import { bucketCoordinate, buildDiscoveryRegionsUrl } from '@/lib/api/discovery-regions';
++
++describe('discovery-regions api helpers', () => {
++  it('buckets coordinates for cache keys', () => {
++    expect(bucketCoordinate(51.5074)).toBe(1030);
++    expect(bucketCoordinate(-0.1278)).toBe(-3);
++  });
++
++  it('builds a relative url when no discovery api base is configured', () => {
++    expect(buildDiscoveryRegionsUrl(51.5, -0.12)).toBe('/discovery-regions?lat=51.5&lng=-0.12');
++  });
++});
+diff --git a/backend/app/__pycache__/cache.cpython-314.pyc b/backend/app/__pycache__/cache.cpython-314.pyc
+new file mode 100644
+index 0000000..9d26659
+Binary files /dev/null and b/backend/app/__pycache__/cache.cpython-314.pyc differ
+diff --git a/backend/app/__pycache__/ingest.cpython-314.pyc b/backend/app/__pycache__/ingest.cpython-314.pyc
+new file mode 100644
+index 0000000..c1671fb
+Binary files /dev/null and b/backend/app/__pycache__/ingest.cpython-314.pyc differ
+diff --git a/backend/app/__pycache__/main.cpython-314.pyc b/backend/app/__pycache__/main.cpython-314.pyc
+new file mode 100644
+index 0000000..c2601e5
+Binary files /dev/null and b/backend/app/__pycache__/main.cpython-314.pyc differ
+diff --git a/backend/app/__pycache__/models.cpython-314.pyc b/backend/app/__pycache__/models.cpython-314.pyc
+new file mode 100644
+index 0000000..892e401
+Binary files /dev/null and b/backend/app/__pycache__/models.cpython-314.pyc differ
+diff --git a/backend/app/__pycache__/repositories.cpython-314.pyc b/backend/app/__pycache__/repositories.cpython-314.pyc
+new file mode 100644
+index 0000000..be070bb
+Binary files /dev/null and b/backend/app/__pycache__/repositories.cpython-314.pyc differ
+diff --git a/backend/app/__pycache__/services.cpython-314.pyc b/backend/app/__pycache__/services.cpython-314.pyc
+new file mode 100644
+index 0000000..c6129f7
+Binary files /dev/null and b/backend/app/__pycache__/services.cpython-314.pyc differ
+diff --git a/backend/app/__pycache__/settings.cpython-314.pyc b/backend/app/__pycache__/settings.cpython-314.pyc
+new file mode 100644
+index 0000000..910f222
+Binary files /dev/null and b/backend/app/__pycache__/settings.cpython-314.pyc differ
+diff --git a/backend/app/cache.py b/backend/app/cache.py
+new file mode 100644
+index 0000000..36a9485
+--- /dev/null
++++ b/backend/app/cache.py
+@@ -0,0 +1,43 @@
++from __future__ import annotations
++
++from dataclasses import dataclass
++from time import monotonic
++
++from .models import DiscoveryRegionsResponse
++
++
++def bucket_coordinate(value: float, bucket_size: float = 0.05) -> int:
++    return round(value / bucket_size)
++
++
++def make_cache_key(latitude: float, longitude: float) -> str:
++    return f'{bucket_coordinate(latitude)}:{bucket_coordinate(longitude)}'
++
++
++@dataclass(slots=True)
++class CachedResponse:
++    expires_at: float
++    response: DiscoveryRegionsResponse
++
++
++class DiscoveryResponseCache:
++    def __init__(self, ttl_seconds: int) -> None:
++        self._ttl_seconds = ttl_seconds
++        self._entries: dict[str, CachedResponse] = {}
++
++    def get(self, cache_key: str) -> DiscoveryRegionsResponse | None:
++        entry = self._entries.get(cache_key)
++        if entry is None:
++            return None
++
++        if entry.expires_at <= monotonic():
++            self._entries.pop(cache_key, None)
++            return None
++
++        return entry.response
++
++    def set(self, cache_key: str, response: DiscoveryRegionsResponse) -> None:
++        self._entries[cache_key] = CachedResponse(
++            expires_at=monotonic() + self._ttl_seconds,
++            response=response,
++        )
+\ No newline at end of file
+diff --git a/backend/app/ingest.py b/backend/app/ingest.py
+new file mode 100644
+index 0000000..93d07f5
+--- /dev/null
++++ b/backend/app/ingest.py
+@@ -0,0 +1,481 @@
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import uuid
++from dataclasses import dataclass
++from pathlib import Path
++
++import psycopg
++import requests
++from shapely.geometry import MultiPolygon, Polygon, box, shape
++from shapely.geometry.base import BaseGeometry
++
++NAMESPACE = uuid.UUID("4cbf9f8f-4f7f-4e6d-a6aa-f5eaeb980f7c")
++USER_AGENT = "comedy-app-geospatial-ingest/1.0"
++
++DEFAULT_CITIES = [
++    ("London", "gb"),
++    ("Manchester", "gb"),
++    ("Birmingham", "gb"),
++    ("Glasgow", "gb"),
++    ("Edinburgh", "gb"),
++    ("San Francisco", "us"),
++    ("Oakland", "us"),
++    ("San Jose", "us"),
++    ("Los Angeles", "us"),
++    ("New York", "us"),
++    ("Chicago", "us"),
++]
++
++
++@dataclass(slots=True)
++class CityRecord:
++    name: str
++    country_code: str
++    center_lat: float
++    center_lng: float
++    boundary_geom: Polygon
++    population: int | None
++
++
++@dataclass(slots=True)
++class NeighbourhoodRecord:
++    name: str
++    region_type: str
++    geom: MultiPolygon
++
++
++def parse_city_specs(raw: str | None) -> list[tuple[str, str]]:
++    if not raw:
++        return DEFAULT_CITIES
++
++    parsed: list[tuple[str, str]] = []
++    for part in raw.split(","):
++        chunk = part.strip()
++        if not chunk:
++            continue
++        if ":" not in chunk:
++            raise ValueError(f"Invalid city spec '{chunk}'. Expected format Name:cc")
++        name, country_code = chunk.split(":", 1)
++        parsed.append((name.strip(), country_code.strip().lower()))
++
++    if not parsed:
++        raise ValueError("No valid city specs provided")
++
++    return parsed
++
++
++def build_session() -> requests.Session:
++    session = requests.Session()
++    session.headers.update({"User-Agent": USER_AGENT})
++    return session
++
++
++def fetch_city_boundary(session: requests.Session, city_name: str, country_code: str) -> CityRecord:
++    response = session.get(
++        "https://nominatim.openstreetmap.org/search",
++        params={
++            "format": "jsonv2",
++            "polygon_geojson": 1,
++            "limit": 5,
++            "countrycodes": country_code,
++            "q": city_name,
++        },
++        timeout=60,
++    )
++    response.raise_for_status()
++
++    payload = response.json()
++    if not payload:
++        raise RuntimeError(f"Nominatim returned no result for {city_name}:{country_code}")
++
++    first, polygon = resolve_city_polygon(payload, city_name, country_code)
++
++    population = fetch_city_population(session, city_name, country_code)
++
++    return CityRecord(
++        name=city_name,
++        country_code=country_code.upper(),
++        center_lat=float(first["lat"]),
++        center_lng=float(first["lon"]),
++        boundary_geom=polygon,
++        population=population,
++    )
++
++
++def resolve_city_polygon(payload: list[dict[str, object]], city_name: str, country_code: str) -> tuple[dict[str, object], Polygon]:
++    for candidate in payload:
++        geojson = candidate.get("geojson")
++        if geojson is None:
++            continue
++
++        geometry = shape(geojson)
++        if isinstance(geometry, (Polygon, MultiPolygon)):
++            return candidate, largest_polygon(geometry)
++
++    first = payload[0]
++    boundingbox = first.get("boundingbox")
++    if isinstance(boundingbox, list) and len(boundingbox) == 4:
++        south, north, west, east = [float(value) for value in boundingbox]
++        # Nominatim boundingbox order is [south, north, west, east].
++        return first, box(west, south, east, north)
++
++    raise TypeError(f"Unsupported geometry type for city boundary: {city_name}:{country_code}")
++
++
++def fetch_city_population(session: requests.Session, city_name: str, country_code: str) -> int | None:
++    where = f'name like "{city_name}" and country_code = "{country_code.upper()}"'
++    response = session.get(
++        "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/geonames-all-cities-with-a-population-1000/records",
++        params={
++            "where": where,
++            "order_by": "population desc",
++            "limit": 1,
++        },
++        timeout=60,
++    )
++    response.raise_for_status()
++    payload = response.json()
++    results = payload.get("results", [])
++    if not results:
++        return None
++    pop = results[0].get("population")
++    return int(pop) if pop is not None else None
++
++
++def fetch_neighbourhoods(
++    session: requests.Session,
++    city_polygon: Polygon,
++    max_results: int,
++    overpass_url: str,
++) -> list[NeighbourhoodRecord]:
++    if max_results <= 0:
++        return []
++
++    minx, miny, maxx, maxy = city_polygon.bounds
++    overpass_query = f"""
++[out:json][timeout:60];
++(
++  way[\"boundary\"=\"administrative\"][\"admin_level\"~\"8|9|10|11\"]({miny},{minx},{maxy},{maxx});
++  way[\"place\"~\"borough|suburb|neighbourhood|quarter\"]({miny},{minx},{maxy},{maxx});
++);
++out tags geom;
++""".strip()
++
++    try:
++        response = session.get(
++            overpass_url,
++            params={"data": overpass_query},
++            timeout=90,
++        )
++        response.raise_for_status()
++        payload = response.json()
++    except Exception as exc:
++        print(f"warning: overpass fetch failed ({exc}); continuing without neighbourhood boundaries")
++        return []
++
++    out: list[NeighbourhoodRecord] = []
++    seen_names: set[str] = set()
++
++    for element in payload.get("elements", []):
++        tags = element.get("tags", {})
++        name = (tags.get("name") or "").strip()
++        if not name:
++            continue
++
++        lower_name = name.lower()
++        if lower_name in seen_names:
++            continue
++
++        geometry = element.get("geometry")
++        if not geometry:
++            continue
++
++        polygon = overpass_way_to_polygon(geometry)
++        if polygon is None or polygon.is_empty:
++            continue
++
++        if not polygon.intersects(city_polygon):
++            continue
++
++        region_type = "borough" if tags.get("place") == "borough" or tags.get("admin_level") == "8" else "neighbourhood"
++        out.append(NeighbourhoodRecord(name=name, region_type=region_type, geom=MultiPolygon([polygon])))
++        seen_names.add(lower_name)
++
++        if len(out) >= max_results:
++            break
++
++    return out
++
++
++def overpass_way_to_polygon(points: list[dict[str, float]]) -> Polygon | None:
++    coords = [(point["lon"], point["lat"]) for point in points]
++    if len(coords) < 3:
++        return None
++
++    if coords[0] != coords[-1]:
++        coords.append(coords[0])
++
++    if len(coords) < 4:
++        return None
++
++    polygon = Polygon(coords)
++    if polygon.is_empty:
++        return None
++
++    if not polygon.is_valid:
++        polygon = polygon.buffer(0)
++
++    if polygon.is_empty:
++        return None
++
++    if isinstance(polygon, MultiPolygon):
++        return max(polygon.geoms, key=lambda geom: geom.area)
++
++    if not isinstance(polygon, Polygon):
++        return None
++
++    return polygon
++
++
++def largest_polygon(geometry: BaseGeometry) -> Polygon:
++    if isinstance(geometry, Polygon):
++        return geometry
++
++    if isinstance(geometry, MultiPolygon):
++        return max(geometry.geoms, key=lambda geom: geom.area)
++
++    raise TypeError(f"Unsupported geometry type for city boundary: {geometry.geom_type}")
++
++
++def load_database_url() -> str:
++    from_env = os.getenv("DISCOVERY_DATABASE_URL")
++    if from_env:
++        return from_env
++
++    env_path = Path(__file__).resolve().parents[1] / ".env"
++    if env_path.exists():
++        for line in env_path.read_text().splitlines():
++            if line.startswith("DISCOVERY_DATABASE_URL="):
++                return line.split("=", 1)[1].strip()
++
++    raise RuntimeError("DISCOVERY_DATABASE_URL not found in environment or backend/.env")
++
++
++def geom_to_json(geometry: BaseGeometry) -> str:
++    return json.dumps(geometry.__geo_interface__)
++
++
++def compute_density(cursor: psycopg.Cursor, polygon: Polygon, population: int | None) -> float | None:
++    if population is None or population <= 0:
++        return None
++
++    cursor.execute(
++        """
++        select nullif(st_area(st_setsrid(st_geomfromgeojson(%s), 4326)::geography) / 1000000.0, 0)
++        """,
++        (geom_to_json(polygon),),
++    )
++    area_km2 = cursor.fetchone()[0]
++    if area_km2 is None:
++        return None
++
++    return float(population / area_km2)
++
++
++def upsert_city(cursor: psycopg.Cursor, city: CityRecord, density: float | None) -> uuid.UUID:
++    city_id = uuid.uuid5(NAMESPACE, f"city:{city.country_code}:{city.name.lower()}")
++    cursor.execute(
++        """
++        insert into public.cities (id, name, country_code, population, population_density, center)
++        values (
++          %s,
++          %s,
++          %s,
++          %s,
++          %s,
++          st_setsrid(st_makepoint(%s, %s), 4326)
++        )
++        on conflict (id)
++        do update set
++          name = excluded.name,
++          country_code = excluded.country_code,
++          population = excluded.population,
++          population_density = excluded.population_density,
++          center = excluded.center,
++          updated_at = now()
++        """,
++        (str(city_id), city.name, city.country_code, city.population, density, city.center_lng, city.center_lat),
++    )
++    return city_id
++
++
++def upsert_neighbourhoods(
++    cursor: psycopg.Cursor,
++    city_id: uuid.UUID,
++    city_density: float | None,
++    neighbourhoods: list[NeighbourhoodRecord],
++    city_key: str,
++) -> list[uuid.UUID]:
++    inserted_ids: list[uuid.UUID] = []
++
++    for neighbourhood in neighbourhoods:
++        neighbourhood_id = uuid.uuid5(NAMESPACE, f"neighbourhood:{city_key}:{neighbourhood.name.lower()}")
++        cursor.execute(
++            """
++            insert into public.neighbourhoods (id, city_id, name, region_type, population_density, geom)
++            values (
++              %s,
++              %s,
++              %s,
++              %s,
++              %s,
++              st_multi(st_collectionextract(st_setsrid(st_geomfromgeojson(%s), 4326), 3))
++            )
++            on conflict (city_id, name)
++            do update set
++              region_type = excluded.region_type,
++              population_density = excluded.population_density,
++              geom = excluded.geom,
++              updated_at = now()
++            """,
++            (
++                str(neighbourhood_id),
++                str(city_id),
++                neighbourhood.name,
++                neighbourhood.region_type,
++                city_density,
++                geom_to_json(neighbourhood.geom),
++            ),
++        )
++        inserted_ids.append(neighbourhood_id)
++
++    if inserted_ids:
++        cursor.execute(
++            """
++            delete from public.neighbourhoods
++            where city_id = %s
++              and not (id = any(%s::uuid[]))
++            """,
++            (str(city_id), [str(item) for item in inserted_ids]),
++        )
++
++    return inserted_ids
++
++
++def upsert_density_tile(cursor: psycopg.Cursor, city_key: str, density: float | None, polygon: Polygon) -> uuid.UUID:
++    density_id = uuid.uuid5(NAMESPACE, f"density:{city_key}")
++
++    if density is None:
++        cursor.execute("delete from public.discovery_density_tiles where id = %s", (str(density_id),))
++        return density_id
++
++    cursor.execute(
++        """
++        insert into public.discovery_density_tiles (id, density, geom)
++        values (
++          %s,
++          %s,
++          st_setsrid(st_geomfromgeojson(%s), 4326)
++        )
++        on conflict (id)
++        do update set
++          density = excluded.density,
++          geom = excluded.geom,
++          updated_at = now()
++        """,
++        (str(density_id), density, geom_to_json(polygon)),
++    )
++    return density_id
++
++
++def run_ingest(
++    city_specs: list[tuple[str, str]],
++    max_neighbourhoods: int,
++    overpass_url: str,
++    dry_run: bool,
++) -> None:
++    db_url = load_database_url()
++    session = build_session()
++
++    with psycopg.connect(db_url) as connection:
++        with connection.cursor() as cursor:
++            for city_name, country_code in city_specs:
++                city = fetch_city_boundary(session, city_name, country_code)
++                neighbourhoods = fetch_neighbourhoods(
++                    session=session,
++                    city_polygon=city.boundary_geom,
++                    max_results=max_neighbourhoods,
++                    overpass_url=overpass_url,
++                )
++                density = compute_density(cursor, city.boundary_geom, city.population)
++                city_key = f"{city.country_code}:{city.name.lower()}"
++
++                city_id = upsert_city(cursor, city, density)
++                inserted_neighbourhood_ids = upsert_neighbourhoods(
++                    cursor=cursor,
++                    city_id=city_id,
++                    city_density=density,
++                    neighbourhoods=neighbourhoods,
++                    city_key=city_key,
++                )
++                density_id = upsert_density_tile(cursor, city_key, density, city.boundary_geom)
++
++                print(
++                    "ingested city="
++                    f"{city.name} "
++                    f"population={city.population} "
++                    f"density={'None' if density is None else round(density, 2)} "
++                    f"neighbourhoods={len(inserted_neighbourhood_ids)} "
++                    f"city_id={city_id} density_tile_id={density_id}"
++                )
++
++            if dry_run:
++                connection.rollback()
++                print("dry-run complete: transaction rolled back")
++            else:
++                connection.commit()
++                print("ingestion complete: committed to database")
++
++
++def parse_args() -> argparse.Namespace:
++    parser = argparse.ArgumentParser(description="Ingest discovery geospatial data into Supabase/PostGIS")
++    parser.add_argument(
++        "--cities",
++        default=None,
++        help="Comma-separated city specs in the format Name:cc (example: London:gb,Manchester:gb)",
++    )
++    parser.add_argument(
++        "--max-neighbourhoods",
++        type=int,
++        default=100,
++        help="Max neighbourhood/borough boundaries to ingest per city",
++    )
++    parser.add_argument(
++        "--overpass-url",
++        default="https://overpass.kumi.systems/api/interpreter",
++        help="Overpass API interpreter URL",
++    )
++    parser.add_argument(
++        "--dry-run",
++        action="store_true",
++        help="Run ingestion and print results without committing database changes",
++    )
++    return parser.parse_args()
++
++
++def main() -> None:
++    args = parse_args()
++    city_specs = parse_city_specs(args.cities)
++    run_ingest(
++        city_specs=city_specs,
++        max_neighbourhoods=args.max_neighbourhoods,
++        overpass_url=args.overpass_url,
++        dry_run=args.dry_run,
++    )
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/backend/app/main.py b/backend/app/main.py
+new file mode 100644
+index 0000000..f8c0019
+--- /dev/null
++++ b/backend/app/main.py
+@@ -0,0 +1,33 @@
++from __future__ import annotations
++
++from fastapi import FastAPI, Query
++
++from .cache import DiscoveryResponseCache, make_cache_key
++from .repositories import create_repository
++from .services import DiscoveryRegionService
++from .settings import settings
++
++app = FastAPI(title='Discovery Regions API', version='0.1.0')
++
++repository = create_repository(settings.database_url)
++service = DiscoveryRegionService(
++    repository=repository,
++    high_density_threshold=settings.high_density_threshold,
++    nearby_city_radius_km=settings.nearby_city_radius_km,
++)
++cache = DiscoveryResponseCache(settings.cache_ttl_seconds)
++
++
++@app.get('/discovery-regions')
++def get_discovery_regions(
++    lat: float = Query(..., ge=-90, le=90),
++    lng: float = Query(..., ge=-180, le=180),
++):
++    cache_key = make_cache_key(lat, lng)
++    cached = cache.get(cache_key)
++    if cached is not None:
++        return cached
++
++    response = service.get_regions(lat, lng)
++    cache.set(cache_key, response)
++    return response
+\ No newline at end of file
+diff --git a/backend/app/models.py b/backend/app/models.py
+new file mode 100644
+index 0000000..409e058
+--- /dev/null
++++ b/backend/app/models.py
+@@ -0,0 +1,25 @@
++from __future__ import annotations
++
++from typing import Literal
++
++from pydantic import BaseModel, Field
++
++DiscoveryRegionType = Literal['city', 'neighbourhood', 'borough']
++DiscoveryScopeType = Literal['city_cluster', 'neighbourhood_cluster']
++
++
++class DiscoveryRegionCenter(BaseModel):
++    lat: float = Field(..., description='Latitude in WGS84')
++    lng: float = Field(..., description='Longitude in WGS84')
++
++
++class DiscoveryRegion(BaseModel):
++    id: str
++    name: str
++    type: DiscoveryRegionType
++    center: DiscoveryRegionCenter
++
++
++class DiscoveryRegionsResponse(BaseModel):
++    scopeType: DiscoveryScopeType
++    regions: list[DiscoveryRegion]
+\ No newline at end of file
+diff --git a/backend/app/repositories.py b/backend/app/repositories.py
+new file mode 100644
+index 0000000..25892dc
+--- /dev/null
++++ b/backend/app/repositories.py
+@@ -0,0 +1,165 @@
++from __future__ import annotations
++
++from dataclasses import dataclass
++from typing import Protocol
++
++try:
++    from psycopg_pool import ConnectionPool
++except Exception:  # pragma: no cover - optional while bootstrapping
++    ConnectionPool = object  # type: ignore[assignment]
++
++from .models import DiscoveryRegion, DiscoveryRegionCenter
++
++
++class DiscoveryRegionRepository(Protocol):
++    def get_population_density(self, latitude: float, longitude: float) -> float | None: ...
++
++    def list_neighbourhoods(self, latitude: float, longitude: float, limit: int = 8) -> list[DiscoveryRegion]: ...
++
++    def list_nearby_cities(
++        self,
++        latitude: float,
++        longitude: float,
++        radius_meters: int = 75_000,
++        limit: int = 4,
++    ) -> list[DiscoveryRegion]: ...
++
++
++@dataclass(slots=True)
++class EmptyDiscoveryRegionRepository:
++    def get_population_density(self, latitude: float, longitude: float) -> float | None:
++        return None
++
++    def list_neighbourhoods(self, latitude: float, longitude: float, limit: int = 8) -> list[DiscoveryRegion]:
++        return []
++
++    def list_nearby_cities(
++        self,
++        latitude: float,
++        longitude: float,
++        radius_meters: int = 75_000,
++        limit: int = 4,
++    ) -> list[DiscoveryRegion]:
++        return []
++
++
++@dataclass(slots=True)
++class PostGISDiscoveryRegionRepository:
++    pool: ConnectionPool
++
++    def get_population_density(self, latitude: float, longitude: float) -> float | None:
++        query = """
++            select density
++            from discovery_density_tiles
++            where st_contains(
++              geom,
++              st_setsrid(st_makepoint(%s, %s), 4326)
++            )
++            limit 1
++        """
++        with self.pool.connection() as connection:
++            with connection.cursor() as cursor:
++                cursor.execute(query, (longitude, latitude))
++                row = cursor.fetchone()
++
++        return None if row is None else float(row[0])
++
++    def list_neighbourhoods(self, latitude: float, longitude: float, limit: int = 8) -> list[DiscoveryRegion]:
++        query = """
++            select
++              id::text,
++              name,
++              region_type,
++              st_y(st_centroid(geom)) as lat,
++              st_x(st_centroid(geom)) as lng
++            from neighbourhoods
++                        where
++                            st_contains(
++                                geom,
++                                st_setsrid(st_makepoint(%s, %s), 4326)
++                            )
++                            or st_dwithin(
++                                geom::geography,
++                                st_setsrid(st_makepoint(%s, %s), 4326)::geography,
++                                10000
++                            )
++                        order by
++                            st_contains(
++                                geom,
++                                st_setsrid(st_makepoint(%s, %s), 4326)
++                            ) desc,
++                            st_distance(
++                                st_centroid(geom)::geography,
++                                st_setsrid(st_makepoint(%s, %s), 4326)::geography
++                            ) asc,
++                            population_density desc nulls last
++            limit %s
++        """
++        return self._fetch_regions(
++            query,
++            (
++                longitude,
++                latitude,
++                longitude,
++                latitude,
++                longitude,
++                latitude,
++                longitude,
++                latitude,
++                limit,
++            ),
++        )
++
++    def list_nearby_cities(
++        self,
++        latitude: float,
++        longitude: float,
++        radius_meters: int = 75_000,
++        limit: int = 4,
++    ) -> list[DiscoveryRegion]:
++        query = """
++            select
++              id::text,
++              name,
++              'city' as region_type,
++              st_y(center) as lat,
++              st_x(center) as lng
++            from cities
++            where st_dwithin(
++              center::geography,
++              st_setsrid(st_makepoint(%s, %s), 4326)::geography,
++              %s
++            )
++            order by st_distance(
++              center::geography,
++              st_setsrid(st_makepoint(%s, %s), 4326)::geography
++            ) asc
++            limit %s
++        """
++        return self._fetch_regions(query, (longitude, latitude, radius_meters, longitude, latitude, limit))
++
++    def _fetch_regions(self, query: str, params: tuple[object, ...]) -> list[DiscoveryRegion]:
++        with self.pool.connection() as connection:
++            with connection.cursor() as cursor:
++                cursor.execute(query, params)
++                rows = cursor.fetchall()
++
++        regions: list[DiscoveryRegion] = []
++        for row in rows:
++            region_id, name, region_type, lat, lng = row
++            regions.append(
++                DiscoveryRegion(
++                    id=str(region_id),
++                    name=str(name),
++                    type=str(region_type),
++                    center=DiscoveryRegionCenter(lat=float(lat), lng=float(lng)),
++                )
++            )
++        return regions
++
++
++def create_repository(database_url: str) -> DiscoveryRegionRepository:
++    if not database_url:
++        return EmptyDiscoveryRegionRepository()
++
++    return PostGISDiscoveryRegionRepository(ConnectionPool(database_url))
+diff --git a/backend/app/services.py b/backend/app/services.py
+new file mode 100644
+index 0000000..50f7713
+--- /dev/null
++++ b/backend/app/services.py
+@@ -0,0 +1,30 @@
++from __future__ import annotations
++
++from dataclasses import dataclass
++
++from .models import DiscoveryRegionsResponse
++from .repositories import DiscoveryRegionRepository
++
++
++@dataclass(slots=True)
++class DiscoveryRegionService:
++    repository: DiscoveryRegionRepository
++    high_density_threshold: float = 2500.0
++    nearby_city_radius_km: float = 75.0
++
++    def get_regions(self, latitude: float, longitude: float) -> DiscoveryRegionsResponse:
++        density = self.repository.get_population_density(latitude, longitude)
++        neighbourhoods = self.repository.list_neighbourhoods(latitude, longitude)
++        cities = self.repository.list_nearby_cities(
++            latitude,
++            longitude,
++            radius_meters=int(self.nearby_city_radius_km * 1000),
++        )
++
++        if density is not None and density >= self.high_density_threshold and neighbourhoods:
++            return DiscoveryRegionsResponse(scopeType='neighbourhood_cluster', regions=neighbourhoods)
++
++        if cities:
++            return DiscoveryRegionsResponse(scopeType='city_cluster', regions=cities)
++
++        return DiscoveryRegionsResponse(scopeType='city_cluster', regions=neighbourhoods[:4])
+\ No newline at end of file
+diff --git a/backend/app/settings.py b/backend/app/settings.py
+new file mode 100644
+index 0000000..d9973b2
+--- /dev/null
++++ b/backend/app/settings.py
+@@ -0,0 +1,13 @@
++from pydantic_settings import BaseSettings, SettingsConfigDict
++
++
++class Settings(BaseSettings):
++    model_config = SettingsConfigDict(env_file='.env', env_prefix='DISCOVERY_')
++
++    database_url: str = ''
++    cache_ttl_seconds: int = 300
++    high_density_threshold: float = 2500.0
++    nearby_city_radius_km: float = 75.0
++
++
++settings = Settings()
+\ No newline at end of file
+diff --git a/backend/geospatial_discovery_service.egg-info/PKG-INFO b/backend/geospatial_discovery_service.egg-info/PKG-INFO
+new file mode 100644
+index 0000000..91afd2c
+--- /dev/null
++++ b/backend/geospatial_discovery_service.egg-info/PKG-INFO
+@@ -0,0 +1,14 @@
++Metadata-Version: 2.4
++Name: geospatial-discovery-service
++Version: 0.1.0
++Summary: Python backend for adaptive geospatial discovery filters
++Requires-Python: >=3.11
++Requires-Dist: fastapi<1,>=0.115
++Requires-Dist: uvicorn[standard]<1,>=0.30
++Requires-Dist: pydantic-settings<3,>=2
++Requires-Dist: psycopg[binary,pool]<4,>=3.2
++Requires-Dist: requests<3,>=2.32
++Requires-Dist: shapely<3,>=2.0
++Provides-Extra: dev
++Requires-Dist: pytest<9,>=8; extra == "dev"
++Requires-Dist: httpx<1,>=0.27; extra == "dev"
+diff --git a/backend/geospatial_discovery_service.egg-info/SOURCES.txt b/backend/geospatial_discovery_service.egg-info/SOURCES.txt
+new file mode 100644
+index 0000000..b552838
+--- /dev/null
++++ b/backend/geospatial_discovery_service.egg-info/SOURCES.txt
+@@ -0,0 +1,15 @@
++pyproject.toml
++app/cache.py
++app/ingest.py
++app/main.py
++app/models.py
++app/repositories.py
++app/services.py
++app/settings.py
++geospatial_discovery_service.egg-info/PKG-INFO
++geospatial_discovery_service.egg-info/SOURCES.txt
++geospatial_discovery_service.egg-info/dependency_links.txt
++geospatial_discovery_service.egg-info/entry_points.txt
++geospatial_discovery_service.egg-info/requires.txt
++geospatial_discovery_service.egg-info/top_level.txt
++tests/test_services.py
+\ No newline at end of file
+diff --git a/backend/geospatial_discovery_service.egg-info/dependency_links.txt b/backend/geospatial_discovery_service.egg-info/dependency_links.txt
+new file mode 100644
+index 0000000..8b13789
+--- /dev/null
++++ b/backend/geospatial_discovery_service.egg-info/dependency_links.txt
+@@ -0,0 +1 @@
++
+diff --git a/backend/geospatial_discovery_service.egg-info/entry_points.txt b/backend/geospatial_discovery_service.egg-info/entry_points.txt
+new file mode 100644
+index 0000000..126e545
+--- /dev/null
++++ b/backend/geospatial_discovery_service.egg-info/entry_points.txt
+@@ -0,0 +1,2 @@
++[console_scripts]
++discovery-ingest = app.ingest:main
+diff --git a/backend/geospatial_discovery_service.egg-info/requires.txt b/backend/geospatial_discovery_service.egg-info/requires.txt
+new file mode 100644
+index 0000000..ff5a83e
+--- /dev/null
++++ b/backend/geospatial_discovery_service.egg-info/requires.txt
+@@ -0,0 +1,10 @@
++fastapi<1,>=0.115
++uvicorn[standard]<1,>=0.30
++pydantic-settings<3,>=2
++psycopg[binary,pool]<4,>=3.2
++requests<3,>=2.32
++shapely<3,>=2.0
++
++[dev]
++pytest<9,>=8
++httpx<1,>=0.27
+diff --git a/backend/geospatial_discovery_service.egg-info/top_level.txt b/backend/geospatial_discovery_service.egg-info/top_level.txt
+new file mode 100644
+index 0000000..b80f0bd
+--- /dev/null
++++ b/backend/geospatial_discovery_service.egg-info/top_level.txt
+@@ -0,0 +1 @@
++app
+diff --git a/backend/pyproject.toml b/backend/pyproject.toml
+new file mode 100644
+index 0000000..c64c82d
+--- /dev/null
++++ b/backend/pyproject.toml
+@@ -0,0 +1,27 @@
++[build-system]
++requires = ["setuptools>=68", "wheel"]
++build-backend = "setuptools.build_meta"
++
++[project]
++name = "geospatial-discovery-service"
++version = "0.1.0"
++description = "Python backend for adaptive geospatial discovery filters"
++requires-python = ">=3.11"
++dependencies = [
++  "fastapi>=0.115,<1",
++  "uvicorn[standard]>=0.30,<1",
++  "pydantic-settings>=2,<3",
++  "psycopg[binary,pool]>=3.2,<4",
++  "requests>=2.32,<3",
++  "shapely>=2.0,<3",
++]
++
++[project.optional-dependencies]
++dev = ["pytest>=8,<9", "httpx>=0.27,<1"]
++
++[project.scripts]
++discovery-ingest = "app.ingest:main"
++
++[tool.setuptools.packages.find]
++where = ["."]
++include = ["app*"]
+diff --git a/backend/tests/test_services.py b/backend/tests/test_services.py
+new file mode 100644
+index 0000000..bdf34af
+--- /dev/null
++++ b/backend/tests/test_services.py
+@@ -0,0 +1,67 @@
++from __future__ import annotations
++
++from dataclasses import dataclass
++
++from app.models import DiscoveryRegion, DiscoveryRegionCenter
++from app.services import DiscoveryRegionService
++
++
++@dataclass(slots=True)
++class FakeRepository:
++    density: float | None
++    neighbourhoods: list[DiscoveryRegion]
++    cities: list[DiscoveryRegion]
++
++    def get_population_density(self, latitude: float, longitude: float) -> float | None:
++        return self.density
++
++    def list_neighbourhoods(self, latitude: float, longitude: float, limit: int = 8) -> list[DiscoveryRegion]:
++        return self.neighbourhoods
++
++    def list_nearby_cities(
++        self,
++        latitude: float,
++        longitude: float,
++        radius_meters: int = 75_000,
++        limit: int = 4,
++    ) -> list[DiscoveryRegion]:
++        return self.cities
++
++
++def region(region_id: str, name: str, region_type: str) -> DiscoveryRegion:
++    return DiscoveryRegion(
++        id=region_id,
++        name=name,
++        type=region_type,  # type: ignore[arg-type]
++        center=DiscoveryRegionCenter(lat=51.5, lng=-0.1),
++    )
++
++
++def test_prefers_neighbourhoods_in_dense_areas() -> None:
++    service = DiscoveryRegionService(
++        repository=FakeRepository(
++            density=3000,
++            neighbourhoods=[region('camden', 'Camden', 'neighbourhood')],
++            cities=[region('london', 'London', 'city')],
++        )
++    )
++
++    response = service.get_regions(51.5, -0.1)
++
++    assert response.scopeType == 'neighbourhood_cluster'
++    assert response.regions[0].name == 'Camden'
++
++
++def test_falls_back_to_city_cluster_when_density_is_low() -> None:
++    service = DiscoveryRegionService(
++        repository=FakeRepository(
++            density=1000,
++            neighbourhoods=[region('soho', 'Soho', 'neighbourhood')],
++            cities=[region('southampton', 'Southampton', 'city')],
++        )
++    )
++
++    response = service.get_regions(50.9, -1.4)
++
++    assert response.scopeType == 'city_cluster'
++    assert response.regions[0].name == 'Southampton'
+\ No newline at end of file
+diff --git a/docs/OPERATOR-TASKS.md b/docs/OPERATOR-TASKS.md
+index 2e3110e..9fa7d50 100644
+--- a/docs/OPERATOR-TASKS.md
++++ b/docs/OPERATOR-TASKS.md
+@@ -12,8 +12,8 @@ The Supabase CLI is installed as a dev dependency (`pnpm supabase ...`).
+
+ ```sh
+ pnpm supabase login
+-pnpm supabase link --project-ref <YOUR_PROJECT_REF>   # ref from the dashboard URL
+-pnpm supabase db push                                  # applies both migrations
++pnpm supabase link --project-ref kwezyzbqbmkcagmglspk
++pnpm supabase db push
+ ```
+
+ The migrations are idempotent (`if not exists` / `drop ... if exists` guards) so they apply
+diff --git a/src/features/home/fan/FanHome.tsx b/src/features/home/fan/FanHome.tsx
+index 3c74460..6565273 100644
+--- a/src/features/home/fan/FanHome.tsx
++++ b/src/features/home/fan/FanHome.tsx
+@@ -1,7 +1,6 @@
+-import { useState } from 'react';
++import { useContext, useState } from 'react';
+ import { StyleSheet, View } from 'react-native';
+ import { useTranslation } from 'react-i18next';
+-import { useRouter } from 'expo-router';
+
+ import { FilterChips } from '@/features/home/components/FilterChips';
+ import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
+@@ -10,7 +9,7 @@ import { SectionHeader } from '@/features/home/components/SectionHeader';
+ import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
+ import { HOME_SPACING } from '@/features/home/home-spacing';
+ import type { BadgeVariant } from '@/features/home/components/Badge';
+-import { useHeaderLocationLabel } from '@/features/location';
++import { LocationContext, useHeaderLocationLabel } from '@/features/location';
+
+ import {
+   CuratorSection,
+@@ -20,6 +19,8 @@ import {
+   getBrowseConfig,
+ } from '@/features/browse';
+
++import { useDiscoveryRegions } from '@/lib/api/discovery-regions';
++
+ import { ClipCard } from './ClipCard';
+ import { FeaturedEventCard } from './FeaturedEventCard';
+ import { SavedRecommendationItem } from './SavedRecommendationItem';
+@@ -91,20 +92,27 @@ const MOCK_FAN_DATA = {
+
+ export function FanHome() {
+   const { t } = useTranslation();
+-  const router = useRouter();
+-  const [selectedNeighbourhood, setSelectedNeighbourhood] = useState(
+-    MOCK_FAN_DATA.neighbourhoods[0] ?? '',
+-  );
+   const { featured, thisWeek, performersNearYou, freshClips, becauseYouSaved } = MOCK_FAN_DATA;
+   const browse = getBrowseConfig('fan');
+   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
+   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
+   const { cityLabel } = useHeaderLocationLabel();
++  const location = useContext(LocationContext);
++  const discoveryRegionsQuery = useDiscoveryRegions(
++    location?.latitude ?? null,
++    location?.longitude ?? null,
++  );
++  const [selectedNeighbourhood, setSelectedNeighbourhood] = useState('All');
++
++  const neighbourhoodChips = [
++    'All',
++    ...(discoveryRegionsQuery.data?.regions.map((region) => region.name) ?? []),
++  ];
+
+   return (
+     <HomeScreenLayout heroTitle={t('home.fan.findYourNextRoom', { city: cityLabel })}>
+       <FilterChips
+-        options={MOCK_FAN_DATA.neighbourhoods}
++        options={neighbourhoodChips}
+         selected={selectedNeighbourhood}
+         onSelect={setSelectedNeighbourhood}
+       />
+@@ -190,7 +198,7 @@ export function FanHome() {
+         <FullBillSection
+           sectionTitle={browse.fullBillKicker}
+           shows={browse.fullBillShows}
+-          onMapPress={() => router.push('/map')}
++          onMapPress={() => {}}
+         />
+       </View>
+       <View style={styles.browseSection}>
+diff --git a/src/lib/api/discovery-regions.ts b/src/lib/api/discovery-regions.ts
+new file mode 100644
+index 0000000..f22c1d0
+--- /dev/null
++++ b/src/lib/api/discovery-regions.ts
+@@ -0,0 +1,101 @@
++import { useEffect, useState } from 'react';
++
++import { keepPreviousData, useQuery } from '@tanstack/react-query';
++import { z } from 'zod/v3';
++
++import { queryKeys } from '@/lib/api/keys';
++
++const discoveryRegionSchema = z.object({
++  id: z.string(),
++  name: z.string(),
++  type: z.union([z.literal('city'), z.literal('neighbourhood'), z.literal('borough')]),
++  center: z.object({
++    lat: z.number(),
++    lng: z.number(),
++  }),
++});
++
++const discoveryRegionsResponseSchema = z.object({
++  scopeType: z.union([z.literal('city_cluster'), z.literal('neighbourhood_cluster')]),
++  regions: z.array(discoveryRegionSchema),
++});
++
++export type DiscoveryRegion = z.infer<typeof discoveryRegionSchema>;
++export type DiscoveryRegionsResponse = z.infer<typeof discoveryRegionsResponseSchema>;
++
++const DEFAULT_CACHE_BUCKET_SIZE = 0.05;
++const DEFAULT_DEBOUNCE_MS = 250;
++
++function bucketCoordinate(value: number, bucketSize = DEFAULT_CACHE_BUCKET_SIZE): number {
++  return Math.round(value / bucketSize);
++}
++
++function buildDiscoveryRegionsUrl(latitude: number, longitude: number): string {
++  const baseUrl = process.env.EXPO_PUBLIC_DISCOVERY_API_URL?.replace(/\/$/, '');
++  if (!baseUrl) {
++    return `/discovery-regions?lat=${latitude}&lng=${longitude}`;
++  }
++
++  const url = new URL('/discovery-regions', baseUrl);
++  url.searchParams.set('lat', latitude.toString());
++  url.searchParams.set('lng', longitude.toString());
++  return url.toString();
++}
++
++async function fetchDiscoveryRegions(
++  latitude: number,
++  longitude: number,
++): Promise<DiscoveryRegionsResponse> {
++  const response = await fetch(buildDiscoveryRegionsUrl(latitude, longitude));
++  if (!response.ok) {
++    throw new Error(`Failed to load discovery regions (${response.status})`);
++  }
++
++  return discoveryRegionsResponseSchema.parse((await response.json()) as unknown);
++}
++
++function useDebouncedCoordinates(
++  latitude: number | null,
++  longitude: number | null,
++  delayMs = DEFAULT_DEBOUNCE_MS,
++): { latitude: number | null; longitude: number | null } {
++  const [debounced, setDebounced] = useState({ latitude, longitude });
++
++  useEffect(() => {
++    const timeout = setTimeout(() => {
++      setDebounced({ latitude, longitude });
++    }, delayMs);
++
++    return () => clearTimeout(timeout);
++  }, [delayMs, latitude, longitude]);
++
++  return debounced;
++}
++
++export function useDiscoveryRegions(latitude: number | null, longitude: number | null) {
++  const debounced = useDebouncedCoordinates(latitude, longitude);
++  const hasCoordinates = debounced.latitude != null && debounced.longitude != null;
++  const resolvedLatitude = debounced.latitude;
++  const resolvedLongitude = debounced.longitude;
++  const latitudeBucket =
++    hasCoordinates && resolvedLatitude != null ? bucketCoordinate(resolvedLatitude) : 0;
++  const longitudeBucket =
++    hasCoordinates && resolvedLongitude != null ? bucketCoordinate(resolvedLongitude) : 0;
++
++  return useQuery({
++    queryKey: queryKeys.discoveryRegions(latitudeBucket, longitudeBucket),
++    queryFn: () => {
++      if (!hasCoordinates || resolvedLatitude == null || resolvedLongitude == null) {
++        return Promise.resolve({ scopeType: 'city_cluster' as const, regions: [] });
++      }
++
++      return fetchDiscoveryRegions(resolvedLatitude, resolvedLongitude);
++    },
++    enabled: hasCoordinates && !!process.env.EXPO_PUBLIC_DISCOVERY_API_URL,
++    placeholderData: keepPreviousData,
++    staleTime: 5 * 60 * 1000,
++    gcTime: 30 * 60 * 1000,
++  });
++}
++
++export { buildDiscoveryRegionsUrl, bucketCoordinate };
+diff --git a/src/lib/api/keys.ts b/src/lib/api/keys.ts
+index 92e283f..7ebce0a 100644
+--- a/src/lib/api/keys.ts
++++ b/src/lib/api/keys.ts
+@@ -8,4 +8,6 @@
+ export const queryKeys = {
+   profiles: ['profile'] as const,
+   profile: (userId: string) => ['profile', userId] as const,
++  discoveryRegions: (latitudeBucket: number, longitudeBucket: number) =>
++    ['discovery-regions', latitudeBucket, longitudeBucket] as const,
+ };
+diff --git a/src/lib/env.ts b/src/lib/env.ts
+index 3ec84a3..d5c4c53 100644
+--- a/src/lib/env.ts
++++ b/src/lib/env.ts
+@@ -4,10 +4,12 @@ const envSchema = z.object({
+   EXPO_PUBLIC_SUPABASE_URL: z.string().url(),
+   EXPO_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+   EXPO_PUBLIC_SENTRY_DSN: z.string().url().optional(),
++  EXPO_PUBLIC_DISCOVERY_API_URL: z.string().url().optional(),
+ });
+
+ export const env = envSchema.parse({
+   EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+   EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+   EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN || undefined,
++  EXPO_PUBLIC_DISCOVERY_API_URL: process.env.EXPO_PUBLIC_DISCOVERY_API_URL || undefined,
+ });
+diff --git a/supabase/migrations/20260613000100_geospatial_discovery.sql b/supabase/migrations/20260613000100_geospatial_discovery.sql
+new file mode 100644
+index 0000000..f0e053d
+--- /dev/null
++++ b/supabase/migrations/20260613000100_geospatial_discovery.sql
+@@ -0,0 +1,45 @@
++-- Geospatial discovery foundation
++
++create extension if not exists postgis;
++
++create table if not exists public.cities (
++  id uuid primary key default gen_random_uuid(),
++  name text not null,
++  country_code text not null,
++  metro_area text,
++  population bigint,
++  population_density numeric,
++  center geometry(point, 4326) not null,
++  created_at timestamptz not null default now(),
++  updated_at timestamptz not null default now(),
++  unique (name, country_code)
++);
++
++create index if not exists cities_center_gix on public.cities using gist (center);
++create index if not exists cities_density_idx on public.cities (population_density);
++
++create table if not exists public.neighbourhoods (
++  id uuid primary key default gen_random_uuid(),
++  city_id uuid not null references public.cities (id) on delete cascade,
++  name text not null,
++  region_type text not null check (region_type in ('neighbourhood', 'borough')),
++  population_density numeric,
++  geom geometry(multipolygon, 4326) not null,
++  created_at timestamptz not null default now(),
++  updated_at timestamptz not null default now(),
++  unique (city_id, name)
++);
++
++create index if not exists neighbourhoods_geom_gix on public.neighbourhoods using gist (geom);
++create index if not exists neighbourhoods_density_idx on public.neighbourhoods (population_density);
++
++create table if not exists public.discovery_density_tiles (
++  id uuid primary key default gen_random_uuid(),
++  density numeric not null,
++  geom geometry(polygon, 4326) not null,
++  created_at timestamptz not null default now(),
++  updated_at timestamptz not null default now()
++);
++
++create index if not exists discovery_density_tiles_geom_gix on public.discovery_density_tiles using gist (geom);
++create index if not exists discovery_density_tiles_density_idx on public.discovery_density_tiles (density);
+\ No newline at end of file
+(END)

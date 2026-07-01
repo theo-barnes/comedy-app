@@ -20,6 +20,7 @@ import {
 } from '@/features/browse';
 
 import { useDiscoveryRegions } from '@/lib/api/discovery-regions';
+import { useRouter } from 'expo-router';
 
 import { ClipCard } from './ClipCard';
 import { FeaturedEventCard } from './FeaturedEventCard';
@@ -103,10 +104,11 @@ export function FanHome() {
     location?.longitude ?? null,
   );
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState('All');
+  const router = useRouter();
 
   const neighbourhoodChips = [
     'All',
-    ...(discoveryRegionsQuery.data?.regions.map((region) => region.name) ?? []),
+    ...Array.from(new Set(discoveryRegionsQuery.data?.regions.map((region) => region.name) ?? [])),
   ];
 
   return (
@@ -198,7 +200,7 @@ export function FanHome() {
         <FullBillSection
           sectionTitle={browse.fullBillKicker}
           shows={browse.fullBillShows}
-          onMapPress={() => {}}
+          onMapPress={() => router.push('/map')}
         />
       </View>
       <View style={styles.browseSection}>

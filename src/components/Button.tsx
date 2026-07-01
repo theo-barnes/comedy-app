@@ -1,4 +1,5 @@
 import {
+  // React Native components and types
   ActivityIndicator,
   Pressable,
   StyleSheet,
@@ -17,6 +18,21 @@ import type { Theme } from '@/theme/types';
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
+/**
+ * Button component is a customizable button that supports different variants, sizes, loading states, and icons.
+ * It uses the Pressable component from React Native to handle press interactions and provides visual feedback for pressed and disabled states.
+ *
+ * @param variant - The visual style of the button ('primary', 'secondary', or 'ghost').
+ * @param size - The size of the button ('sm', 'md', or 'lg').
+ * @param loading - If true, displays a loading indicator instead of the button content.
+ * @param disabled - If true, disables the button and applies a disabled style.
+ * @param icon - Optional icon to display alongside the button text.
+ * @param children - The text content of the button.
+ * @param style - Optional style to apply to the button container.
+ * @param props - Other PressableProps to pass to the underlying Pressable component.
+ *
+ * @returns A React element representing the button.
+ */
 type ButtonProps = Omit<PressableProps, 'style'> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -26,6 +42,13 @@ type ButtonProps = Omit<PressableProps, 'style'> & {
   style?: StyleProp<ViewStyle>;
 };
 
+/**
+ * Exported Button component that renders a pressable button with customizable styles, sizes, and states.
+ * It uses the useTheme and useThemedStyles hooks to apply theme-based styles and resolve font families based on the provided variant and font weight.
+ *
+ * @param param0 - The properties for the Button component, including variant, size, loading, disabled, icon, children, style, and other PressableProps.
+ * @returns A React element representing the button.
+ */
 export function Button({
   variant = 'primary',
   size = 'md',
