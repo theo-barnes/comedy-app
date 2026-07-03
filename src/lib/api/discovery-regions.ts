@@ -8,7 +8,14 @@ import { queryKeys } from '@/lib/api/keys';
 const discoveryRegionSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.union([z.literal('city'), z.literal('neighbourhood'), z.literal('borough')]),
+  type: z.union([
+    z.literal('country'),
+    z.literal('region'),
+    z.literal('metro'),
+    z.literal('city'),
+    z.literal('borough'),
+    z.literal('neighbourhood'),
+  ]),
   center: z.object({
     lat: z.number(),
     lng: z.number(),
@@ -16,7 +23,12 @@ const discoveryRegionSchema = z.object({
 });
 
 const discoveryRegionsResponseSchema = z.object({
-  scopeType: z.union([z.literal('city_cluster'), z.literal('neighbourhood_cluster')]),
+  scopeType: z.union([
+    z.literal('borough_cluster'),
+    z.literal('neighbourhood_cluster'),
+    z.literal('city_cluster'),
+    z.literal('nearby_cities'),
+  ]),
   regions: z.array(discoveryRegionSchema),
 });
 
@@ -31,7 +43,9 @@ function bucketCoordinate(value: number, bucketSize = DEFAULT_CACHE_BUCKET_SIZE)
 }
 
 function buildDiscoveryRegionsUrl(latitude: number, longitude: number): string {
-  const baseUrl = process.env.EXPO_PUBLIC_DISCOVERY_API_URL?.replace(/\/$/, '');
+  const baseUrl =
+    process.env.EXPO_PUBLIC_DISCOVERY_API_URL?.replace(/\/$/, '') ||
+    process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
   if (!baseUrl) {
     return `/discovery-regions?lat=${latitude}&lng=${longitude}`;
   }
@@ -82,6 +96,9 @@ export function useDiscoveryRegions(latitude: number | null, longitude: number |
   const longitudeBucket =
     hasCoordinates && resolvedLongitude != null ? bucketCoordinate(resolvedLongitude) : 0;
 
+  const hasApiBaseUrl =
+    !!process.env.EXPO_PUBLIC_DISCOVERY_API_URL || !!process.env.EXPO_PUBLIC_API_URL;
+
   return useQuery({
     queryKey: queryKeys.discoveryRegions(latitudeBucket, longitudeBucket),
     queryFn: () => {
@@ -91,7 +108,7 @@ export function useDiscoveryRegions(latitude: number | null, longitude: number |
 
       return fetchDiscoveryRegions(resolvedLatitude, resolvedLongitude);
     },
-    enabled: hasCoordinates && !!process.env.EXPO_PUBLIC_DISCOVERY_API_URL,
+    enabled: hasCoordinates && hasApiBaseUrl,
     placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

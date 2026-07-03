@@ -2,6 +2,7 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
+import { GlassSurface, useLiquidGlassSupport } from '@/components/GlassSurface';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 /**
@@ -79,6 +80,7 @@ export function AppTabScreenLayout({
   bodyStyle,
   children,
 }: AppTabScreenLayoutProps) {
+  const glassEnabled = useLiquidGlassSupport();
   const header = (
     <ScreenHeader
       city={city}
@@ -119,6 +121,8 @@ export function AppTabScreenLayout({
   /*
    * If the overlayHeader prop is true, we render the header and controls in an absolutely positioned View that overlays the body content.
    * This allows for a layout where the header and controls are always visible on top of the body content.
+   * When Liquid Glass is available the header row sits on a glass band so it stays
+   * legible over media; elsewhere it stays transparent, matching the existing look.
    */
   if (overlayHeader) {
     return (
@@ -126,7 +130,7 @@ export function AppTabScreenLayout({
         <View style={[styles.root, backgroundStyle]}>
           <View style={[styles.staticBody, bodyStyle]}>{children}</View>
           <View style={styles.overlayHeader} pointerEvents="box-none">
-            {header}
+            {glassEnabled ? <GlassSurface>{header}</GlassSurface> : header}
             {topControls}
             {controls}
           </View>

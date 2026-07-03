@@ -50,6 +50,29 @@ const glassAvailable =
   Platform.OS === 'ios' && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
 
 /**
+ * Static device capability: the native Liquid Glass API exists (iOS 26+).
+ *
+ * Unlike `useLiquidGlassSupport`, this does NOT account for the Reduce
+ * Transparency setting — use it for one-time structural decisions that must
+ * not flip mid-session (e.g. which tab navigator to mount). UIKit reduces
+ * native materials automatically when Reduce Transparency is enabled.
+ */
+export const isLiquidGlassCapable = glassAvailable;
+
+/**
+ * Whether Liquid Glass should render right now: the native API is available
+ * (iOS 26+) and the user has not enabled Reduce Transparency.
+ *
+ * Use this to make layout decisions that depend on glass (e.g. floating a
+ * tab bar over content). Rendering decisions should keep going through
+ * `GlassSurface`, which applies the same check internally.
+ */
+export function useLiquidGlassSupport(): boolean {
+  const reduceTransparency = useReduceTransparency();
+  return glassAvailable && !reduceTransparency;
+}
+
+/**
  * The app's single entry point for Apple Liquid Glass.
  *
  * Renders a native `GlassView` on iOS 26+ and degrades to a themed solid
@@ -67,9 +90,9 @@ export function GlassSurface({
   ...viewProps
 }: GlassSurfaceProps) {
   const { theme } = useTheme();
-  const reduceTransparency = useReduceTransparency();
+  const glassEnabled = useLiquidGlassSupport();
 
-  if (!glassAvailable || reduceTransparency) {
+  if (!glassEnabled) {
     return (
       <View {...viewProps} style={[{ backgroundColor: theme.colors.surface }, style]}>
         {children}

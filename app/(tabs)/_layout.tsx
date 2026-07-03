@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { ColorValue } from 'react-native';
 
+import { isLiquidGlassCapable } from '@/components/GlassSurface';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from 'react-i18next';
 
@@ -13,19 +15,53 @@ function tabIcon(active: IoniconName, inactive: IoniconName) {
   );
 }
 
-export default function TabsLayout() {
+/**
+ * Native tab bar (UITabBarController) for iOS 26+.
+ *
+ * The system owns the tab bar chrome, so Liquid Glass — the floating,
+ * translucent, refractive material — comes for free and stays correct
+ * across scroll edge effects, Reduce Transparency, and dark mode.
+ * Styling is deliberately minimal: only the brand tint is applied.
+ */
+function NativeTabsLayout() {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
+  return (
+    <NativeTabs tintColor={theme.colors.primaryRest}>
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="search">
+        <NativeTabs.Trigger.Label>{t('tabs.discover')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'play.circle', selected: 'play.circle.fill' }} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="saved">
+        <NativeTabs.Trigger.Label>{t('tabs.saved')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'bookmark', selected: 'bookmark.fill' }} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} />
+      </NativeTabs.Trigger>
+    </NativeTabs>
+  );
+}
+
+/** JS tab bar fallback for Android, web, and iOS < 26. */
+function JsTabsLayout() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: theme.colors.primaryRest,
+        tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
         },
-        tabBarActiveTintColor: theme.colors.primaryRest,
-        tabBarInactiveTintColor: theme.colors.textMuted,
       }}
     >
       <Tabs.Screen
@@ -58,4 +94,9 @@ export default function TabsLayout() {
       />
     </Tabs>
   );
+}
+
+export default function TabsLayout() {
+  // Static capability check: the navigator choice must not change mid-session.
+  return isLiquidGlassCapable ? <NativeTabsLayout /> : <JsTabsLayout />;
 }

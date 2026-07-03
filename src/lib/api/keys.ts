@@ -10,4 +10,11 @@ export const queryKeys = {
   profile: (userId: string) => ['profile', userId] as const,
   discoveryRegions: (latitudeBucket: number, longitudeBucket: number) =>
     ['discovery-regions', latitudeBucket, longitudeBucket] as const,
+  saved: ['saved'] as const,
+  homeFeed: (latitude: number | null, longitude: number | null) =>
+    [
+      'home-feed',
+      latitude != null ? Math.round(latitude * 20) : null,
+      longitude != null ? Math.round(longitude * 20) : null,
+    ] as const,
 };

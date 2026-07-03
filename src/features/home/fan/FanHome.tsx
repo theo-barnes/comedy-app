@@ -20,6 +20,7 @@ import {
 } from '@/features/browse';
 
 import { useDiscoveryRegions } from '@/lib/api/discovery-regions';
+import { useHomeFeed } from '@/lib/api/home-feed';
 import { useRouter } from 'expo-router';
 
 import { ClipCard } from './ClipCard';
@@ -93,7 +94,7 @@ const MOCK_FAN_DATA = {
 
 export function FanHome() {
   const { t } = useTranslation();
-  const { featured, thisWeek, performersNearYou, freshClips, becauseYouSaved } = MOCK_FAN_DATA;
+  const { featured, becauseYouSaved } = MOCK_FAN_DATA;
   const browse = getBrowseConfig('fan');
   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
@@ -103,8 +104,37 @@ export function FanHome() {
     location?.latitude ?? null,
     location?.longitude ?? null,
   );
+  const homeFeedQuery = useHomeFeed(location?.latitude ?? null, location?.longitude ?? null);
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState('All');
   const router = useRouter();
+
+  const homeFeed = homeFeedQuery.data;
+  const thisWeek =
+    homeFeed && homeFeed.nearbyEvents.length > 0
+      ? homeFeed.nearbyEvents.map((event) => ({
+          id: event.id,
+          title: event.title,
+          subtitle: event.venueName,
+        }))
+      : MOCK_FAN_DATA.thisWeek;
+  const performersNearYou =
+    homeFeed && homeFeed.newComedians.length > 0
+      ? homeFeed.newComedians.map((comedian) => ({
+          id: comedian.userId,
+          name: comedian.stageName,
+          subtitle: comedian.bio ?? '',
+        }))
+      : MOCK_FAN_DATA.performersNearYou;
+  const freshClips =
+    homeFeed && homeFeed.trendingClips.length > 0
+      ? homeFeed.trendingClips.map((clip) => ({
+          id: clip.contentId,
+          title: clip.title,
+          comedianName: clip.creatorName,
+          viewCount: `${clip.likeCount} likes`,
+          duration: '',
+        }))
+      : MOCK_FAN_DATA.freshClips;
 
   const neighbourhoodChips = [
     'All',
