@@ -14,9 +14,9 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
     { id: 'fri', day: 'FRI', date: '05', count: 44 },
   ],
   featuredGig: {
-    id: 'moth-invitational',
+    id: 'storytellers-invitational',
     title: 'Six storytellers, one mic, no notes.',
-    venue: 'Union Chapel',
+    venue: 'The Old Chapel',
     neighbourhood: 'Islington',
     date: 'Fri, 6 Jun',
     time: '8:00 PM',
@@ -29,11 +29,11 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
   trendingKicker: 'REFRESHED 4 MIN AGO',
   trendingShows: [
     {
-      id: 'late-night-bill-murray',
+      id: 'late-night-brickhouse',
       badges: ['hotTicket'] as BadgeVariant[],
       date: 'Sat, 7 Jun · 10:30 PM',
-      title: 'Late Night at the Bill Murray',
-      venue: 'Angel Comedy',
+      title: 'Late Night at the Brickhouse',
+      venue: 'Brickhouse Comedy Club',
       neighbourhood: 'N1',
       price: '£12',
       imageUri:
@@ -44,7 +44,7 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
       badges: ['onSale'] as BadgeVariant[],
       date: 'Tonight · 8:00 PM',
       title: 'New Material Mondays',
-      venue: 'The Comedy Store',
+      venue: 'The Punchline Club',
       neighbourhood: 'W1',
       price: '£8',
       imageUri:
@@ -53,7 +53,7 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
   ],
   curator: {
     kicker: "THIS WEEK'S SPOTLIGHT",
-    title: 'Phil Wang picks six rooms worth crossing the river for.',
+    title: 'Maya Rivers picks six rooms worth crossing the river for.',
     avatarUris: [
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=256&q=80',
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
@@ -68,8 +68,8 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
       id: 'full-1',
       badges: ['hotTicket'] as BadgeVariant[],
       date: 'Sat, 7 Jun · 10:30 PM',
-      title: 'Late Night at the Bill Murray',
-      venue: 'Angel Comedy',
+      title: 'Late Night at the Brickhouse',
+      venue: 'Brickhouse Comedy Club',
       neighbourhood: 'N1',
       price: '£12',
       imageUri:
@@ -79,7 +79,7 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
       id: 'full-2',
       date: 'Tonight · 8:00 PM',
       title: 'New Material Mondays',
-      venue: 'The Comedy Store',
+      venue: 'The Punchline Club',
       neighbourhood: 'W1',
       price: '£8',
       imageUri:
@@ -88,8 +88,8 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
     {
       id: 'full-3',
       date: 'Thu, 5 Jun · 7:30 PM',
-      title: 'The Big Belly Showcase',
-      venue: 'Underbelly',
+      title: 'The Main Room Showcase',
+      venue: 'The Copper Tap',
       neighbourhood: 'SE1',
       price: '£15',
       imageUri:
@@ -99,7 +99,7 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
       id: 'full-4',
       date: 'Fri, 6 Jun · 9:00 PM',
       title: 'Off The Cuff Improv',
-      venue: 'Up The Creek',
+      venue: 'The Cellar Door',
       neighbourhood: 'SE10',
       price: '£10',
       imageUri:
@@ -111,9 +111,9 @@ const BASE_BROWSE_CONFIG: BrowseConfig = {
     timeLabel: '21:14 BST',
     title: 'Three rooms still taking walk-ins.',
     venues: [
-      { name: 'Camden Head', value: '2 seats' },
-      { name: 'Hen & Chickens', value: '8 seats' },
-      { name: 'Top Secret Comedy', value: 'Standing' },
+      { name: 'The Crooked Fox', value: '2 seats' },
+      { name: 'The Laughing Goat', value: '8 seats' },
+      { name: 'Basement Laughs', value: 'Standing' },
     ],
     cta: 'See all 218 shows',
   },

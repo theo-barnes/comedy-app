@@ -13,8 +13,8 @@ import { FeaturedEventCard } from '@/features/home/fan/FeaturedEventCard';
 import { renderWithTheme } from '../../utils/renderWithTheme';
 
 const FEATURED_EVENT_PROPS = {
-  title: 'The Moth Invitational',
-  venue: 'The Moth Club',
+  title: 'The Storytellers Invitational',
+  venue: 'The Velvet Curtain',
   neighbourhood: 'Hackney',
   date: 'Fri, 6 Jun',
   time: '9 PM',

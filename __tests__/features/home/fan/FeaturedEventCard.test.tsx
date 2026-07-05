@@ -4,8 +4,8 @@ import { renderWithTheme } from '../../../utils/renderWithTheme';
 import { FeaturedEventCard } from '@/features/home/fan/FeaturedEventCard';
 
 const DEFAULT_PROPS = {
-  title: 'The Moth Invitational',
-  venue: 'The Moth Club',
+  title: 'The Storytellers Invitational',
+  venue: 'The Velvet Curtain',
   neighbourhood: 'Hackney',
   date: 'Fri, 6 Jun',
   time: '9 PM',
@@ -22,7 +22,7 @@ describe('FeaturedEventCard', () => {
 
   it('renders the show title', () => {
     renderWithTheme(<FeaturedEventCard {...DEFAULT_PROPS} />);
-    expect(screen.getByText('The Moth Invitational')).toBeTruthy();
+    expect(screen.getByText('The Storytellers Invitational')).toBeTruthy();
   });
 
   it('renders the price', () => {
@@ -32,7 +32,7 @@ describe('FeaturedEventCard', () => {
 
   it('renders venue and neighbourhood', () => {
     renderWithTheme(<FeaturedEventCard {...DEFAULT_PROPS} />);
-    expect(screen.getByText('The Moth Club · Hackney')).toBeTruthy();
+    expect(screen.getByText('The Velvet Curtain · Hackney')).toBeTruthy();
   });
 
   it('renders the heart icon for saving', () => {

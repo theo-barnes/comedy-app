@@ -7,8 +7,8 @@ const DEFAULT_PROPS = {
   daysUntil: 4,
   hoursUntil: 6,
   roleBadge: 'headliner' as const,
-  showTitle: 'Store Nights: Friday Late',
-  venue: 'The Comedy Store',
+  showTitle: 'Friday Night Late Show',
+  venue: 'The Punchline Club',
   date: 'Fri, 6 Jun',
   doorsTime: '8:30 PM',
   performerAvatars: [undefined] as (string | undefined)[],
@@ -22,7 +22,7 @@ describe('NextGigCard', () => {
 
   it('renders the show title', () => {
     renderWithTheme(<NextGigCard {...DEFAULT_PROPS} />);
-    expect(screen.getByText('Store Nights: Friday Late')).toBeTruthy();
+    expect(screen.getByText('Friday Night Late Show')).toBeTruthy();
   });
 
   it('renders the days countdown', () => {

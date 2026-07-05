@@ -8,7 +8,6 @@ import { FilterChips } from '@/features/home/components/FilterChips';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { HOME_SPACING } from '@/features/home/home-spacing';
-import type { BadgeVariant } from '@/features/home/components/Badge';
 import {
   CuratorSection,
   FullBillSection,
@@ -20,76 +19,15 @@ import {
 import { ActCard } from './ActCard';
 import { EventListItem } from './EventListItem';
 import { FeaturedShowCard } from './FeaturedShowCard';
-
-const MOCK_VENUE_DATA = {
-  city: 'London',
-  featuredShow: {
-    title: 'The Moth Invitational',
-    venue: 'The Moth Club',
-    date: 'Fri, 13 Jun',
-    statusBadge: 'onSale' as BadgeVariant,
-    ticketsSold: 186,
-    totalTickets: 280,
-    revenue: '£4,092',
-    remaining: 94,
-    onWaitlist: 47,
-    progress: 186 / 280,
-  },
-  otherEvents: [
-    {
-      id: '1',
-      title: 'Store Nights: Friday Late',
-      venue: 'The Comedy Store',
-      date: 'Fri, 6 Jun',
-      statusBadge: 'soldOut' as BadgeVariant,
-      progress: 1.0,
-    },
-    {
-      id: '2',
-      title: 'New Acts Night',
-      venue: 'Angel Comedy Club',
-      date: 'Sat, 7 Jun',
-      statusBadge: 'onSale' as BadgeVariant,
-      progress: 0.69,
-    },
-    {
-      id: '3',
-      title: 'Thursday Late at the Creek',
-      venue: 'Up The Creek',
-      date: 'Thu, 5 Jun',
-      statusBadge: 'onSale' as BadgeVariant,
-      progress: 0.59,
-    },
-  ],
-  actsFilter: ['All', 'Observational', 'Alt-Comedy', 'Storytelling'],
-  acts: [
-    { id: '1', name: 'Jane Smith', rating: 4.9, tagline: 'Sharp. Absurdist. Unavoidable.' },
-    { id: '2', name: 'John Doe', rating: 4.7, tagline: 'Deadpan delivery. Dry as toast.' },
-    {
-      id: '3',
-      name: 'Sarah Brown',
-      rating: 4.8,
-      tagline: 'Comedy for people with trust issues.',
-    },
-    {
-      id: '4',
-      name: 'Tom Jones',
-      rating: 4.6,
-      tagline: 'Observational. Relentless. Oddly charming.',
-    },
-  ],
-  whatElse: [
-    { id: '1', title: 'Store Nights: Friday Late', subtitle: 'The Comedy Store' },
-    { id: '2', title: 'New Acts Night', subtitle: 'Angel Comedy Club' },
-    { id: '3', title: 'Thursday Late at the Creek', subtitle: 'Up The Creek' },
-  ],
-};
+import { VENUE_HOME_FIXTURE } from './venue-home-fixture';
 
 export function VenueHome() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [selectedActFilter, setSelectedActFilter] = useState(MOCK_VENUE_DATA.actsFilter[0] ?? '');
-  const { featuredShow, otherEvents, acts, whatElse } = MOCK_VENUE_DATA;
+  const [selectedActFilter, setSelectedActFilter] = useState(
+    VENUE_HOME_FIXTURE.actsFilter[0] ?? '',
+  );
+  const { featuredShow, otherEvents, acts, whatElse } = VENUE_HOME_FIXTURE;
   const browse = getBrowseConfig('venue');
   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
@@ -137,7 +75,7 @@ export function VenueHome() {
         onAction={() => {}}
       />
       <FilterChips
-        options={MOCK_VENUE_DATA.actsFilter}
+        options={VENUE_HOME_FIXTURE.actsFilter}
         selected={selectedActFilter}
         onSelect={setSelectedActFilter}
       />

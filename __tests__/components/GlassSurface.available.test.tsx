@@ -11,9 +11,7 @@ import { isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-ef
 (isLiquidGlassAvailable as jest.Mock).mockReturnValue(true);
 (isGlassEffectAPIAvailable as jest.Mock).mockReturnValue(true);
 
-// eslint-disable-next-line import/first
 import { ThemeProvider } from '@/providers/ThemeProvider';
-// eslint-disable-next-line import/first
 import { renderWithTheme } from '../utils/renderWithTheme';
 
 // Import after availability mocks so module-level `glassAvailable` is true.

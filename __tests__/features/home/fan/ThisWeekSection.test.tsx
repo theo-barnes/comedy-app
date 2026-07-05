@@ -5,8 +5,8 @@ import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
 
 const DEFAULT_PROPS = {
   events: [
-    { id: '1', title: 'Store Nights: Friday Late', subtitle: 'The Comedy Store · Soho' },
-    { id: '2', title: 'New Acts Night', subtitle: 'Angel Comedy Club' },
+    { id: '1', title: 'Friday Night Late Show', subtitle: 'The Punchline Club · Soho' },
+    { id: '2', title: 'New Acts Night', subtitle: 'Brickhouse Comedy Club' },
   ],
   sectionLabel: 'home.fan.thisWeek',
   actionLabel: 'common.seeAll',
@@ -25,8 +25,8 @@ describe('ThisWeekSection', () => {
 
   it('renders event cards from provided data', () => {
     renderWithTheme(<ThisWeekSection {...DEFAULT_PROPS} />);
-    expect(screen.getByText('Store Nights: Friday Late')).toBeTruthy();
-    expect(screen.getByText('The Comedy Store · Soho')).toBeTruthy();
+    expect(screen.getByText('Friday Night Late Show')).toBeTruthy();
+    expect(screen.getByText('The Punchline Club · Soho')).toBeTruthy();
     expect(screen.getByText('New Acts Night')).toBeTruthy();
   });
 });

@@ -4,7 +4,7 @@ import prettier from 'eslint-config-prettier';
 
 export default defineConfig([
   {
-    ignores: ['node_modules/**', '.expo/**', 'dist/**', 'coverage/**'],
+    ignores: ['node_modules/**', '.expo/**', 'dist/**', 'coverage/**', '**/.venv/**', 'ios/**'],
   },
   expoConfig,
   {
@@ -35,11 +35,18 @@ export default defineConfig([
     },
   },
   {
-    // Tests may use console output and looser typing for mocks.
+    // Tests may use console output and looser typing for mocks. Jest's
+    // module-mock hoisting also requires mocks before imports and `typeof
+    // import()` annotations for lazily-required modules.
     files: ['__tests__/**/*.{ts,tsx}', 'jest.setup.ts'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'import/first': 'off',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports', disallowTypeAnnotations: false },
+      ],
     },
   },
 ]);

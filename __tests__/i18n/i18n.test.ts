@@ -10,23 +10,6 @@ jest.unmock('@/i18n');
 
 type I18nInstance = typeof import('@/i18n').default;
 
-// function loadI18n(): I18nInstance {
-//   let instance: I18nInstance;
-//   jest.isolateModules(() => {
-//     // eslint-disable-next-line @typescript-eslint/no-require-imports
-//     instance = require('@/i18n').default;
-//   });
-//   return instance!;
-// }
-
-// function loadI18n(): I18nInstance {
-//   jest.resetModules();
-
-//   // ensure mocks are already applied BEFORE this call
-//   // eslint-disable-next-line @typescript-eslint/no-require-imports
-//   return require('@/i18n').default;
-// }
-
 function loadI18n(): I18nInstance {
   jest.resetModules();
 

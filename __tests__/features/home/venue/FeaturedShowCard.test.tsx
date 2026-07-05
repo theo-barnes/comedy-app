@@ -4,8 +4,8 @@ import { renderWithTheme } from '../../../utils/renderWithTheme';
 import { FeaturedShowCard } from '@/features/home/venue/FeaturedShowCard';
 
 const DEFAULT_PROPS = {
-  title: 'The Moth Invitational',
-  venue: 'The Moth Club',
+  title: 'The Storytellers Invitational',
+  venue: 'The Velvet Curtain',
   date: 'Fri, 13 Jun',
   statusBadge: 'onSale' as const,
   ticketsSold: 186,
@@ -23,7 +23,7 @@ describe('FeaturedShowCard', () => {
 
   it('renders the show title', () => {
     renderWithTheme(<FeaturedShowCard {...DEFAULT_PROPS} />);
-    expect(screen.getByText('The Moth Invitational')).toBeTruthy();
+    expect(screen.getByText('The Storytellers Invitational')).toBeTruthy();
   });
 
   it('renders the revenue', () => {

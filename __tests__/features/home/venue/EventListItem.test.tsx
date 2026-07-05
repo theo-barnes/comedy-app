@@ -8,8 +8,8 @@ describe('EventListItem', () => {
     expect(() =>
       renderWithTheme(
         <EventListItem
-          title="Store Nights: Friday Late"
-          venue="The Comedy Store"
+          title="Friday Night Late Show"
+          venue="The Punchline Club"
           date="Fri, 6 Jun"
           statusBadge="soldOut"
           progress={1.0}
@@ -21,42 +21,42 @@ describe('EventListItem', () => {
   it('renders the title', () => {
     renderWithTheme(
       <EventListItem
-        title="Store Nights: Friday Late"
-        venue="The Comedy Store"
+        title="Friday Night Late Show"
+        venue="The Punchline Club"
         date="Fri, 6 Jun"
         statusBadge="soldOut"
         progress={1.0}
       />,
     );
-    expect(screen.getByText('Store Nights: Friday Late')).toBeTruthy();
+    expect(screen.getByText('Friday Night Late Show')).toBeTruthy();
   });
 
   it('renders venue and date', () => {
     renderWithTheme(
       <EventListItem
-        title="Store Nights: Friday Late"
-        venue="The Comedy Store"
+        title="Friday Night Late Show"
+        venue="The Punchline Club"
         date="Fri, 6 Jun"
         statusBadge="soldOut"
         progress={1.0}
       />,
     );
-    expect(screen.getByText('The Comedy Store · Fri, 6 Jun')).toBeTruthy();
+    expect(screen.getByText('The Punchline Club · Fri, 6 Jun')).toBeTruthy();
   });
 
   it('calls onPress when tapped', () => {
     const onPress = jest.fn();
     renderWithTheme(
       <EventListItem
-        title="Store Nights: Friday Late"
-        venue="The Comedy Store"
+        title="Friday Night Late Show"
+        venue="The Punchline Club"
         date="Fri, 6 Jun"
         statusBadge="soldOut"
         progress={1.0}
         onPress={onPress}
       />,
     );
-    fireEvent.press(screen.getByText('Store Nights: Friday Late'));
+    fireEvent.press(screen.getByText('Friday Night Late Show'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

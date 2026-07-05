@@ -6,17 +6,17 @@ import { EventCard } from '@/features/home/components/EventCard';
 describe('EventCard', () => {
   it('renders without crashing', () => {
     expect(() =>
-      renderWithTheme(<EventCard title="Store Nights" subtitle="The Comedy Store" />),
+      renderWithTheme(<EventCard title="Friday Late Show" subtitle="The Punchline Club" />),
     ).not.toThrow();
   });
 
   it('renders the title', () => {
-    renderWithTheme(<EventCard title="Store Nights" subtitle="The Comedy Store" />);
-    expect(screen.getByText('Store Nights')).toBeTruthy();
+    renderWithTheme(<EventCard title="Friday Late Show" subtitle="The Punchline Club" />);
+    expect(screen.getByText('Friday Late Show')).toBeTruthy();
   });
 
   it('renders the subtitle', () => {
-    renderWithTheme(<EventCard title="Store Nights" subtitle="The Comedy Store" />);
-    expect(screen.getByText('The Comedy Store')).toBeTruthy();
+    renderWithTheme(<EventCard title="Friday Late Show" subtitle="The Punchline Club" />);
+    expect(screen.getByText('The Punchline Club')).toBeTruthy();
   });
 });

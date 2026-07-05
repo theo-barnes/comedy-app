@@ -7,21 +7,21 @@ describe('GigListItem', () => {
   it('renders without crashing', () => {
     expect(() =>
       renderWithTheme(
-        <GigListItem venue="The Comedy Store" date="Fri, 6 Jun · 9 PM" roleBadge="headliner" />,
+        <GigListItem venue="The Punchline Club" date="Fri, 6 Jun · 9 PM" roleBadge="headliner" />,
       ),
     ).not.toThrow();
   });
 
   it('renders the venue', () => {
     renderWithTheme(
-      <GigListItem venue="The Comedy Store" date="Fri, 6 Jun · 9 PM" roleBadge="headliner" />,
+      <GigListItem venue="The Punchline Club" date="Fri, 6 Jun · 9 PM" roleBadge="headliner" />,
     );
-    expect(screen.getByText('The Comedy Store')).toBeTruthy();
+    expect(screen.getByText('The Punchline Club')).toBeTruthy();
   });
 
   it('renders the date', () => {
     renderWithTheme(
-      <GigListItem venue="The Comedy Store" date="Fri, 6 Jun · 9 PM" roleBadge="headliner" />,
+      <GigListItem venue="The Punchline Club" date="Fri, 6 Jun · 9 PM" roleBadge="headliner" />,
     );
     expect(screen.getByText('Fri, 6 Jun · 9 PM')).toBeTruthy();
   });
@@ -30,13 +30,13 @@ describe('GigListItem', () => {
     const onPress = jest.fn();
     renderWithTheme(
       <GigListItem
-        venue="The Comedy Store"
+        venue="The Punchline Club"
         date="Fri, 6 Jun · 9 PM"
         roleBadge="headliner"
         onPress={onPress}
       />,
     );
-    fireEvent.press(screen.getByText('The Comedy Store'));
+    fireEvent.press(screen.getByText('The Punchline Club'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

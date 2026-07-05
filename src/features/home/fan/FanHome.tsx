@@ -8,7 +8,6 @@ import { PerformerCard } from '@/features/home/components/PerformerCard';
 import { SectionHeader } from '@/features/home/components/SectionHeader';
 import { ThisWeekSection } from '@/features/home/fan/ThisWeekSection';
 import { HOME_SPACING } from '@/features/home/home-spacing';
-import type { BadgeVariant } from '@/features/home/components/Badge';
 import { LocationContext, useHeaderLocationLabel } from '@/features/location';
 
 import {
@@ -24,77 +23,14 @@ import { useHomeFeed } from '@/lib/api/home-feed';
 import { useRouter } from 'expo-router';
 
 import { ClipCard } from './ClipCard';
+import { FAN_HOME_FIXTURE } from './fan-home-fixture';
+import { selectFanHomeSections } from './fan-home-selectors';
 import { FeaturedEventCard } from './FeaturedEventCard';
 import { SavedRecommendationItem } from './SavedRecommendationItem';
 
-const MOCK_FAN_DATA = {
-  city: 'London',
-  neighbourhoods: ['All', 'Soho', 'Islington', 'Hackney', 'Greenwich'],
-  featured: {
-    title: 'Store Nights: Friday Late',
-    venue: 'The Comedy Store',
-    neighbourhood: 'Soho',
-    date: 'Fri, 6 Jun',
-    time: '9:00 PM',
-    price: '£18',
-    badges: ['hotTicket', 'lateNight', 'soldOut'] as BadgeVariant[],
-    performerAvatars: [undefined, undefined, undefined] as (string | undefined)[],
-    performerLabel: '3 performers',
-  },
-  thisWeek: [
-    { id: '1', title: 'Store Nights: Friday Late', subtitle: 'The Comedy Store · Soho' },
-    { id: '2', title: 'New Acts Night', subtitle: 'Angel Comedy Club' },
-    { id: '3', title: 'Thursday Late at the Creek', subtitle: 'Up The Creek · Greenwich' },
-  ],
-  performersNearYou: [
-    { id: '1', name: 'Jane Smith', subtitle: 'The Comedy Store' },
-    { id: '2', name: 'John Doe', subtitle: 'Up The Creek' },
-    { id: '3', name: 'Sarah Brown', subtitle: 'Angel Comedy Club' },
-  ],
-  freshClips: [
-    {
-      id: '1',
-      title: 'The Algorithm Knows Too Much',
-      comedianName: 'Jane Smith',
-      viewCount: '128K views',
-      duration: '3:42',
-    },
-    {
-      id: '2',
-      title: 'Peckham Is My Trauma Response',
-      comedianName: 'John Doe',
-      viewCount: '84K views',
-      duration: '4:17',
-    },
-  ],
-  becauseYouSaved: {
-    name: 'Jane',
-    items: [
-      {
-        id: '1',
-        title: 'Thursday Late at the Creek',
-        venue: 'Up The Creek',
-        neighbourhood: 'Greenwich',
-        date: 'Thu, 5 Jun',
-        price: '£10',
-        badges: ['weekly', 'lateNight'] as BadgeVariant[],
-      },
-      {
-        id: '2',
-        title: 'The Moth Invitational',
-        venue: 'The Moth Club',
-        neighbourhood: 'Hackney',
-        date: 'Fri, 13 Jun',
-        price: '£22',
-        badges: ['curated', 'premium'] as BadgeVariant[],
-      },
-    ],
-  },
-};
-
 export function FanHome() {
   const { t } = useTranslation();
-  const { featured, becauseYouSaved } = MOCK_FAN_DATA;
+  const { featured, becauseYouSaved } = FAN_HOME_FIXTURE;
   const browse = getBrowseConfig('fan');
   const dayLabels = browse.days.map((d) => `${d.day} ${d.date}`);
   const [selectedDay, setSelectedDay] = useState(dayLabels[0] ?? '');
@@ -108,33 +44,7 @@ export function FanHome() {
   const [selectedNeighbourhood, setSelectedNeighbourhood] = useState('All');
   const router = useRouter();
 
-  const homeFeed = homeFeedQuery.data;
-  const thisWeek =
-    homeFeed && homeFeed.nearbyEvents.length > 0
-      ? homeFeed.nearbyEvents.map((event) => ({
-          id: event.id,
-          title: event.title,
-          subtitle: event.venueName,
-        }))
-      : MOCK_FAN_DATA.thisWeek;
-  const performersNearYou =
-    homeFeed && homeFeed.newComedians.length > 0
-      ? homeFeed.newComedians.map((comedian) => ({
-          id: comedian.userId,
-          name: comedian.stageName,
-          subtitle: comedian.bio ?? '',
-        }))
-      : MOCK_FAN_DATA.performersNearYou;
-  const freshClips =
-    homeFeed && homeFeed.trendingClips.length > 0
-      ? homeFeed.trendingClips.map((clip) => ({
-          id: clip.contentId,
-          title: clip.title,
-          comedianName: clip.creatorName,
-          viewCount: `${clip.likeCount} likes`,
-          duration: '',
-        }))
-      : MOCK_FAN_DATA.freshClips;
+  const { thisWeek, performersNearYou, freshClips } = selectFanHomeSections(homeFeedQuery.data);
 
   const neighbourhoodChips = [
     'All',
