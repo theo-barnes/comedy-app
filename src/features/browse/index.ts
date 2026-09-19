@@ -4,12 +4,4 @@ export {
   FullBillSection,
   LiveNowSection,
 } from './components/BrowseSections';
-export { getBrowseConfig } from './config';
-export type {
-  BrowseConfig,
-  BrowseShow,
-  CuratorSpotlight,
-  LiveNowPanel,
-  FeaturedGig,
-  DiscoverDay,
-} from './types';
+export type { BrowseShow, CuratorSpotlight, LiveNowPanel } from './types';

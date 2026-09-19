@@ -60,10 +60,31 @@ describe('env schema', () => {
     expect(() => loadEnv()).toThrow();
   });
 
+  it('throws when the Supabase URL is still the template placeholder', () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://your-project-ref.supabase.co';
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
+
+    expect(() => loadEnv()).toThrow('Replace the placeholder Supabase URL');
+  });
+
   it('throws when the anon key is empty', () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = '';
 
     expect(() => loadEnv()).toThrow();
+  });
+
+  it('throws when the anon key is still the template placeholder', () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'your-anon-key-here';
+
+    expect(() => loadEnv()).toThrow('Replace the placeholder Supabase anon key');
+  });
+
+  it('accepts a local Supabase URL', () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:54321';
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'local-anon-key';
+
+    expect(loadEnv().EXPO_PUBLIC_SUPABASE_URL).toBe('http://127.0.0.1:54321');
   });
 });

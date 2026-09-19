@@ -35,6 +35,11 @@ class ConflictError(DomainError):
     code = 'conflict'
 
 
+class GoneError(DomainError):
+    status_code = 410
+    code = 'gone'
+
+
 class ValidationFailedError(DomainError):
     status_code = 422
     code = 'validation_failed'

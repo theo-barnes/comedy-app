@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 from datetime import datetime
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from shared.auth import AuthenticatedUser, get_current_user, require_role
+from shared.cache import create_cache
+from shared.config import settings
+from shared.ratelimit import RateLimiter
 
 from .factory import get_service
 from .models.domain import ContentType, ContentVisibility
 from .schemas import (
     ContentListResponse,
     ContentSchema,
+    CompleteUploadRequest,
     CreateContentRequest,
     CreateContentResponse,
+    UploadDescriptorSchema,
 )
 from .service import ContentService
 
@@ -25,12 +31,19 @@ CreatorUser = Annotated[AuthenticatedUser, Depends(require_role('comedian', 'ven
 Service = Annotated[ContentService, Depends(get_service)]
 
 
+@lru_cache(maxsize=1)
+def _upload_limiter() -> RateLimiter:
+    return RateLimiter(create_cache(settings.redis_url), limit=5, window_seconds=60)
+
+
 @router.post('/content', response_model=CreateContentResponse,
              status_code=status.HTTP_201_CREATED)
 def create_content(
     body: CreateContentRequest, user: CreatorUser, service: Service
 ) -> CreateContentResponse:
-    content, upload_url = service.create(
+    if body.type == 'video_clip':
+        _upload_limiter().check(f'video-upload:{user.user_id}')
+    content, upload = service.create(
         user,
         type=ContentType(body.type),
         title=body.title,
@@ -40,10 +53,39 @@ def create_content(
         longitude=body.longitude,
         event_id=body.eventId,
         image_url=body.imageUrl,
+        file_size_bytes=body.file.sizeBytes if body.file else None,
+        file_mime_type=body.file.mimeType if body.file else None,
+        original_filename=body.file.name if body.file else None,
     )
     return CreateContentResponse(
-        content=ContentSchema.from_domain(content), uploadUrl=upload_url
+        content=ContentSchema.from_domain(content),
+        uploadUrl=upload.upload_url if upload else None,
+        upload=(
+            UploadDescriptorSchema(
+                mediaAssetId=upload.media_asset_id or '',
+                protocol=upload.protocol,
+                url=upload.upload_url,
+                expiresAt=upload.expires_at,
+                headers=upload.headers or {},
+            )
+            if upload
+            else None
+        ),
     )
+
+
+@router.post(
+    '/content/{content_id}/upload-complete',
+    response_model=ContentSchema,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def complete_upload(
+    content_id: str,
+    body: CompleteUploadRequest,
+    user: CreatorUser,
+    service: Service,
+) -> ContentSchema:
+    return ContentSchema.from_domain(service.confirm_upload(content_id, body.mediaAssetId, user))
 
 
 @router.get('/content/{content_id}', response_model=ContentSchema)

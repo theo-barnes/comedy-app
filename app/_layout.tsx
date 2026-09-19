@@ -4,20 +4,19 @@ import { StatusBar } from 'expo-status-bar';
 
 import { initSentry, Sentry } from '@/lib/sentry';
 import { AppProviders } from '@/providers/AppProviders';
-import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/features/auth/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 // Crash reporting first — so errors during startup are captured.
 initSentry();
 
-// Keep the splash screen visible until auth, onboarding, and theme state have resolved.
+// Keep the splash screen visible until auth and onboarding state have resolved.
 SplashScreen.preventAutoHideAsync();
 
 function RootLayout() {
   return (
     <AppProviders>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <RootNavigator />
     </AppProviders>
   );
@@ -28,9 +27,8 @@ export default Sentry.wrap(RootLayout);
 function RootNavigator() {
   const { isLoading, session, isGuest, profile } = useAuth();
   const { hasSeenOnboarding } = useOnboarding();
-  const { isHydrated: isThemeHydrated } = useTheme();
 
-  const isReady = !isLoading && hasSeenOnboarding !== null && isThemeHydrated;
+  const isReady = !isLoading && hasSeenOnboarding !== null;
 
   useEffect(() => {
     if (isReady) SplashScreen.hideAsync();

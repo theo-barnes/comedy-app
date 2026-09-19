@@ -11,7 +11,6 @@ export type AuthContextValue = {
   isGuest: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
   signUp: (displayName: string, email: string, password: string, role: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;

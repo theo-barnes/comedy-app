@@ -87,6 +87,15 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions<T>): Pr
   return options.schema.parse((await response.json()) as unknown);
 }
 
+export async function apiMutation<T>(
+  path: string,
+  options: Omit<ApiFetchOptions<T>, 'method'> & {
+    method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  },
+): Promise<T> {
+  return apiFetch(path, options);
+}
+
 /** Send a mutation to a no-content `/v1` endpoint (saves, likes, etc.). */
 export async function apiSend(
   path: string,

@@ -36,10 +36,9 @@ export default function SignInScreen() {
   const styles = useThemedStyles(createStyles);
 
   const schema = useMemo(() => createSignInSchema(t), [t]);
-  const { handleGoogle, handleApple, googleLoading, appleLoading } = useSocialAuthHandlers({
+  const { handleGoogle, googleLoading } = useSocialAuthHandlers({
     setError,
     googleErrorMessage: t('auth.signIn.errorGoogle'),
-    appleErrorMessage: t('auth.signIn.errorApple'),
   });
   const [failedAttempts, setFailedAttempts] = useState(0);
   const { remaining: cooldownRemaining, start: startCooldown } = useCountdown(COOLDOWN_SECONDS);
@@ -147,12 +146,7 @@ export default function SignInScreen() {
         {t('auth.signIn.submit')}
       </Button>
 
-      <SocialAuthButtons
-        onGooglePress={handleGoogle}
-        onApplePress={handleApple}
-        googleLoading={googleLoading}
-        appleLoading={appleLoading}
-      />
+      <SocialAuthButtons onGooglePress={handleGoogle} googleLoading={googleLoading} />
 
       {/* Footer links */}
       <View style={styles.footer}>

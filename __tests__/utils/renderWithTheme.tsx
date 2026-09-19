@@ -2,34 +2,22 @@ import { render, type RenderOptions } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ThemeProvider } from '@/providers/ThemeProvider';
-import type { ThemeMode } from '@/theme/types';
-
-type RenderWithThemeOptions = RenderOptions & {
-  /** Render in a specific theme mode. Defaults to 'system' (inherits OS scheme). */
-  themeMode?: ThemeMode;
-};
 
 function AllProviders({
   children,
-  themeMode,
   queryClient,
 }: {
   children: React.ReactNode;
-  themeMode?: ThemeMode;
   queryClient: QueryClient;
 }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider initialMode={themeMode}>{children}</ThemeProvider>
+      <ThemeProvider>{children}</ThemeProvider>
     </QueryClientProvider>
   );
 }
 
-export function renderWithTheme(
-  ui: React.ReactElement,
-  { themeMode, ...options }: RenderWithThemeOptions = {},
-) {
-  const resolvedThemeMode: ThemeMode = themeMode ?? 'system';
+export function renderWithTheme(ui: React.ReactElement, options: RenderOptions = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -43,9 +31,7 @@ export function renderWithTheme(
   });
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AllProviders themeMode={resolvedThemeMode} queryClient={queryClient}>
-      {children}
-    </AllProviders>
+    <AllProviders queryClient={queryClient}>{children}</AllProviders>
   );
   return render(ui, { wrapper: Wrapper, ...options });
 }

@@ -6,11 +6,12 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Protocol, Sequence
+from uuid import uuid4
 
 import h3
 
 from shared.cache import CacheBackend
-from shared.errors import ValidationFailedError
+from shared.errors import GoneError, ValidationFailedError
 
 from .models.domain import (
     ComedianSummary,
@@ -95,15 +96,19 @@ class FeedService:
         page_size = min(limit or self._page_size, 50)
         anchor = self._anchor_cell(lat, lng)
         offset = 0
+        snapshot_id: str | None = None
         if cursor is not None:
-            anchor, offset = self._decode_cursor(cursor)
+            anchor, snapshot_id, offset = self._decode_cursor(cursor)
 
-        content_ids = self._snapshot(user_id, anchor, lat, lng)
+        if snapshot_id is None:
+            snapshot_id, content_ids = self._snapshot(user_id, anchor, lat, lng)
+        else:
+            content_ids = self._load_snapshot(snapshot_id)
         window = content_ids[offset : offset + page_size]
         items = self._repository.hydrate(window, user_id)
         next_offset = offset + page_size
         next_cursor = (
-            self._encode_cursor(anchor, next_offset)
+            self._encode_cursor(anchor, snapshot_id, next_offset)
             if next_offset < len(content_ids)
             else None
         )
@@ -160,15 +165,13 @@ class FeedService:
 
     def _snapshot(
         self, user_id: str, anchor: str, lat: float | None, lng: float | None
-    ) -> list[str]:
-        key = f'feed:videos:{user_id}:{anchor}'
-        cached = self._cache.get(key)
-        if cached is not None:
+    ) -> tuple[str, list[str]]:
+        pointer_key = f'feed:videos:{user_id}:{anchor}'
+        snapshot_id = self._cache.get(pointer_key)
+        if snapshot_id is not None:
             try:
-                ids = json.loads(cached)
-                if isinstance(ids, list):
-                    return ids
-            except json.JSONDecodeError:
+                return snapshot_id, self._load_snapshot(snapshot_id)
+            except GoneError:
                 pass
 
         ctx = self._build_context(user_id, lat, lng)
@@ -182,7 +185,21 @@ class FeedService:
                 merged.setdefault(candidate.content_id, candidate)
         ranked = self._ranker.rank(list(merged.values()), ctx)
         ids = [c.content_id for c in ranked]
-        self._cache.set(key, json.dumps(ids), ttl_seconds=self._ttl)
+        snapshot_id = uuid4().hex
+        self._cache.set(f'feed:snapshot:{snapshot_id}', json.dumps(ids), ttl_seconds=self._ttl)
+        self._cache.set(pointer_key, snapshot_id, ttl_seconds=self._ttl)
+        return snapshot_id, ids
+
+    def _load_snapshot(self, snapshot_id: str) -> list[str]:
+        cached = self._cache.get(f'feed:snapshot:{snapshot_id}')
+        if cached is None:
+            raise GoneError('feed cursor has expired; refresh the feed')
+        try:
+            ids = json.loads(cached)
+        except json.JSONDecodeError:
+            raise GoneError('feed cursor has expired; refresh the feed') from None
+        if not isinstance(ids, list) or not all(isinstance(item, str) for item in ids):
+            raise GoneError('feed cursor has expired; refresh the feed')
         return ids
 
     def _build_context(
@@ -216,19 +233,20 @@ class FeedService:
         return h3.latlng_to_cell(lat, lng, self._anchor_resolution)
 
     @staticmethod
-    def _encode_cursor(anchor: str, offset: int) -> str:
-        payload = json.dumps({'a': anchor, 'o': offset}).encode()
+    def _encode_cursor(anchor: str, snapshot_id: str, offset: int) -> str:
+        payload = json.dumps({'a': anchor, 's': snapshot_id, 'o': offset}).encode()
         return base64.urlsafe_b64encode(payload).decode()
 
     @staticmethod
-    def _decode_cursor(cursor: str) -> tuple[str, int]:
+    def _decode_cursor(cursor: str) -> tuple[str, str, int]:
         try:
             payload = json.loads(base64.urlsafe_b64decode(cursor.encode()))
             anchor = payload['a']
+            snapshot_id = payload['s']
             offset = int(payload['o'])
-            if not isinstance(anchor, str) or offset < 0:
+            if not isinstance(anchor, str) or not isinstance(snapshot_id, str) or offset < 0:
                 raise ValueError
-            return anchor, offset
+            return anchor, snapshot_id, offset
         except (ValueError, KeyError, TypeError, binascii.Error, json.JSONDecodeError):
             raise ValidationFailedError('invalid cursor') from None
 

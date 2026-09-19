@@ -4,10 +4,11 @@ import { z } from 'zod/v3';
 import { apiFetch, isApiConfigured } from '@/lib/api/client';
 import { queryKeys } from '@/lib/api/keys';
 
-const feedItemSchema = z.object({
+export const feedItemSchema = z.object({
   contentId: z.string(),
   contentType: z.string(),
   title: z.string(),
+  description: z.string().nullish(),
   creatorId: z.string(),
   creatorName: z.string(),
   publishedAt: z.string(),

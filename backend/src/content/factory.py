@@ -41,4 +41,6 @@ def get_service() -> ContentService:
         place_resolver=build_place_repository(),
         h3_resolution=settings.content_h3_resolution,
         max_video_duration_seconds=settings.max_video_duration_seconds,
+        max_video_size_bytes=settings.max_video_size_bytes,
+        max_active_uploads_per_creator=settings.max_active_uploads_per_creator,
     )

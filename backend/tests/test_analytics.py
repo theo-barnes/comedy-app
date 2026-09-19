@@ -177,12 +177,14 @@ def _creator(user_id: str = 'creator-a') -> AuthenticatedUser:
 
 def test_overview_aggregates_own_content() -> None:
     repo = FakeAnalyticsRepository()
+    # The service windows on the real clock, so the fixture must use the real date.
+    today = datetime.now(timezone.utc).date()
     repo.creator_contents['creator-a'] = ['content-1']
-    repo.content_stats[('content-1', TODAY)] = ContentStatsDaily(
-        content_id='content-1', date=TODAY, views=10, completions=4
+    repo.content_stats[('content-1', today)] = ContentStatsDaily(
+        content_id='content-1', date=today, views=10, completions=4
     )
-    repo.creator_stats[('creator-a', TODAY)] = CreatorStatsDaily(
-        creator_id='creator-a', date=TODAY, followers_gained=3
+    repo.creator_stats[('creator-a', today)] = CreatorStatsDaily(
+        creator_id='creator-a', date=today, followers_gained=3
     )
     service = AnalyticsService(repo)
     content_stats, creator_stats = service.overview(_creator())

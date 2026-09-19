@@ -8,28 +8,15 @@ describe('VenueHome', () => {
     expect(() => renderWithTheme(<VenueHome />)).not.toThrow();
   });
 
-  it('renders the YOUR OTHER EVENTS section header', () => {
+  it('renders the venue shell title', () => {
     renderWithTheme(<VenueHome />);
-    expect(screen.getByText('home.venue.yourOtherEvents')).toBeTruthy();
+    expect(screen.getByText('home.venue.yourShows')).toBeTruthy();
   });
 
-  it('renders the FIND ACTS TO BOOK section header', () => {
+  it('does not render fixture-driven sections', () => {
     renderWithTheme(<VenueHome />);
-    expect(screen.getByText('home.venue.findActs')).toBeTruthy();
-  });
-
-  it('renders the standardized body sections', () => {
-    renderWithTheme(<VenueHome />);
-    expect(screen.getByTestId('venue-home-featured-section')).toBeTruthy();
-    expect(screen.getByTestId('venue-home-other-events-section')).toBeTruthy();
-    expect(screen.getByTestId('venue-home-acts-section')).toBeTruthy();
-  });
-
-  it('renders browse sections appended below existing content', () => {
-    renderWithTheme(<VenueHome />);
-    expect(screen.getByText('Trending Tonight')).toBeTruthy();
-    expect(screen.getByText("This Week's Spotlight")).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'View on map' })).toBeTruthy();
-    expect(screen.getByText('LIVE NOW')).toBeTruthy();
+    expect(screen.queryByTestId('venue-home-featured-section')).toBeNull();
+    expect(screen.queryByTestId('venue-home-other-events-section')).toBeNull();
+    expect(screen.queryByTestId('venue-home-acts-section')).toBeNull();
   });
 });

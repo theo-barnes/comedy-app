@@ -1,8 +1,22 @@
 import { z } from 'zod/v3';
 
+const supabaseUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => value !== 'https://your-project-ref.supabase.co', {
+    message: 'Replace the placeholder Supabase URL with your project URL',
+  });
+
+const supabaseAnonKeySchema = z
+  .string()
+  .min(1)
+  .refine((value) => value !== 'your-anon-key-here', {
+    message: 'Replace the placeholder Supabase anon key with your project key',
+  });
+
 const envSchema = z.object({
-  EXPO_PUBLIC_SUPABASE_URL: z.string().url(),
-  EXPO_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  EXPO_PUBLIC_SUPABASE_URL: supabaseUrlSchema,
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKeySchema,
   EXPO_PUBLIC_SENTRY_DSN: z.string().url().optional(),
   EXPO_PUBLIC_DISCOVERY_API_URL: z.string().url().optional(),
   EXPO_PUBLIC_API_URL: z.string().url().optional(),

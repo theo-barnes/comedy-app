@@ -53,56 +53,6 @@ export const darkTokens: ColorTokens = {
   buttonShadow: '#000',
 };
 
-/**
- * Studio Daylight · Curtain — light mode colour tokens.
- * Primary walks the scale at 600 → 700 → 800 (one step deeper to hold contrast on cream).
- * Badges use solid 100 fill with 700 ink.
- */
-export const lightTokens: ColorTokens = {
-  // Surfaces
-  surface: '#F5F3EE',
-  card: '#FFFFFF',
-  border: 'rgba(0,0,0,0.08)',
-
-  // Typography
-  textPrimary: '#1A1A1A',
-  textMuted: '#6B6B6B',
-
-  // Primary interactive (600 → 700 → 800)
-  primaryRest: curtain[600],
-  primaryHover: curtain[700],
-  primaryPressed: curtain[800],
-  primaryDisabled: curtain[200],
-
-  // Badges
-  badgeFill: curtain[100],
-  badgeInk: curtain[700],
-
-  // Errors (Curtain scale — no one-off hexes)
-  errorFill: curtain[100],
-  errorInk: curtain[700],
-  errorBorder: curtain[600],
-
-  // Miscellaneous
-  tintWash: curtain[50],
-  link: curtain[700],
-  focusRing: curtain[600],
-  onPrimary: '#FFFFFF',
-  overlayBorder: 'rgba(0,0,0,0.18)',
-  overlayBorderActive: 'rgba(0,0,0,0.4)',
-  onOverlay: '#FFFFFF',
-  mediaScrimSoft: 'rgba(127, 125, 125, 0)',
-  mediaScrimStrong: 'rgba(0,0,0,0.7)',
-  livePanelSurface: '#181818',
-  livePanelRow: 'rgba(255,255,255,0.07)',
-  livePanelTextPrimary: '#F6F2EA',
-  livePanelTextMuted: 'rgba(255,255,255,0.45)',
-  livePanelAccent: curtain[300],
-
-  // Shadows
-  buttonShadow: '#000',
-};
-
 export const spacing = {
   xs: 4,
   sm: 8,

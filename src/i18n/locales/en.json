@@ -110,8 +110,7 @@
     },
     "social": {
       "divider": "OR",
-      "googleCta": "Continue with Google",
-      "appleCta": "Continue with Apple"
+      "googleCta": "Continue with Google"
     },
     "signIn": {
       "heading": "Welcome back.",
@@ -126,7 +125,6 @@
       "browseAsGuest": "Browse as guest",
       "errorInvalid": "Invalid email or password.",
       "errorGoogle": "Google sign-in failed. Please try again.",
-      "errorApple": "Apple sign-in failed. Please try again.",
       "cooldown": "Too many attempts. Try again in {{seconds}}s."
     },
     "signUp": {
@@ -149,8 +147,7 @@
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "Sign in",
       "errorFallback": "Something went wrong. Please try again.",
-      "errorGoogle": "Google sign-up failed. Please try again.",
-      "errorApple": "Apple sign-up failed. Please try again."
+      "errorGoogle": "Google sign-up failed. Please try again."
     },
     "selectRole": {
       "heading": "Who are you?",

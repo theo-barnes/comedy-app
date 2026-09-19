@@ -32,6 +32,7 @@ class FeedItemSchema(BaseModel):
     creatorId: str
     creatorName: str
     publishedAt: datetime
+    description: str | None = None
     hlsUrl: str | None = None
     thumbnailUrl: str | None = None
     imageUrl: str | None = None
@@ -50,6 +51,7 @@ class FeedItemSchema(BaseModel):
             creatorId=item.creator_id,
             creatorName=item.creator_name,
             publishedAt=item.published_at,
+            description=item.description,
             hlsUrl=item.hls_url,
             thumbnailUrl=item.thumbnail_url,
             imageUrl=item.image_url,

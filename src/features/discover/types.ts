@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 
 import type { BadgeVariant } from '@/features/home/components/Badge';
-import type { BrowseConfig } from '@/features/browse/types';
 
 export type ClipFeedItem = {
   id: string;
@@ -38,18 +37,3 @@ export type DiscoverMapAdapterProps = {
 };
 
 export type DiscoverMapAdapter = ComponentType<DiscoverMapAdapterProps>;
-
-export type DiscoverConfig = {
-  city: string;
-  sectionLabel: string;
-  browse: BrowseConfig;
-  clips: {
-    feed: ClipFeedItem[];
-  };
-  map: {
-    searchPlaceholder: string;
-    filters: string[];
-    initialCamera?: DiscoverMapCameraState;
-    markers?: DiscoverMapVenueMarker[];
-  };
-};

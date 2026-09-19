@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     cloudflare_api_token: str = ''
     cloudflare_stream_webhook_secret: str = ''
     max_video_duration_seconds: int = 300
+    max_video_size_bytes: int = 500 * 1024 * 1024
+    max_active_uploads_per_creator: int = 2
     content_h3_resolution: int = 9
 
     # Database

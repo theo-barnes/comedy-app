@@ -1,31 +1,16 @@
 import type { PropsWithChildren } from 'react';
 
-import { AppTabScreenLayout } from '@/components/layouts/AppTabScreenLayout';
-import { useHeaderLocationLabel } from '@/features/location';
-import { useTheme } from '@/providers/ThemeProvider';
-
-import type { DiscoverConfig } from '../types';
+import { View, StyleSheet } from 'react-native';
 
 type DiscoverScreenLayoutProps = PropsWithChildren<{
-  config: DiscoverConfig;
   avatarUri?: string;
 }>;
 
-export function DiscoverScreenLayout({ avatarUri, children }: DiscoverScreenLayoutProps) {
-  const { theme } = useTheme();
-  const { cityLabel, onCityPress } = useHeaderLocationLabel();
-
-  return (
-    <AppTabScreenLayout
-      city={cityLabel}
-      onCityPress={onCityPress}
-      tabLabel="Discover"
-      avatarUri={avatarUri}
-      backgroundStyle={{ backgroundColor: theme.colors.surface }}
-      bodyMode="static"
-      overlayHeader
-    >
-      {children}
-    </AppTabScreenLayout>
-  );
+export function DiscoverScreenLayout({
+  avatarUri: _avatarUri,
+  children,
+}: DiscoverScreenLayoutProps) {
+  return <View style={styles.container}>{children}</View>;
 }
+
+const styles = StyleSheet.create({ container: { flex: 1, backgroundColor: '#000000' } });

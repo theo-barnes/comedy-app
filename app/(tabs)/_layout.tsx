@@ -6,6 +6,7 @@ import type { ColorValue } from 'react-native';
 import { isLiquidGlassCapable } from '@/components/GlassSurface';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/features/auth/useAuth';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -26,16 +27,24 @@ function tabIcon(active: IoniconName, inactive: IoniconName) {
 function NativeTabsLayout() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { profile } = useAuth();
+  const canCreate = profile?.role === 'comedian' || profile?.role === 'venue';
   return (
     <NativeTabs tintColor={theme.colors.primaryRest}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>{t('tabs.home')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="calendar" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="search">
+      <NativeTabs.Trigger name="search" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Label>{t('tabs.discover')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'play.circle', selected: 'play.circle.fill' }} />
       </NativeTabs.Trigger>
+      {canCreate ? (
+        <NativeTabs.Trigger name="create">
+          <NativeTabs.Trigger.Label>Create</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf="plus.circle.fill" />
+        </NativeTabs.Trigger>
+      ) : null}
       <NativeTabs.Trigger name="saved">
         <NativeTabs.Trigger.Label>{t('tabs.saved')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'bookmark', selected: 'bookmark.fill' }} />
@@ -52,6 +61,8 @@ function NativeTabsLayout() {
 function JsTabsLayout() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { profile } = useAuth();
+  const canCreate = profile?.role === 'comedian' || profile?.role === 'venue';
   return (
     <Tabs
       screenOptions={{
@@ -76,6 +87,19 @@ function JsTabsLayout() {
         options={{
           title: t('tabs.discover'),
           tabBarIcon: tabIcon('play-circle', 'play-circle-outline'),
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: 'rgba(14,14,16,0.88)',
+            borderTopColor: 'rgba(255,255,255,0.12)',
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          href: canCreate ? undefined : null,
+          title: 'Create',
+          tabBarIcon: tabIcon('add-circle', 'add-circle-outline'),
         }}
       />
       <Tabs.Screen

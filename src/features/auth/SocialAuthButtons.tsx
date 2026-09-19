@@ -1,4 +1,4 @@
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -11,17 +11,10 @@ import type { Theme } from '@/theme/types';
 
 type Props = {
   onGooglePress: () => void;
-  onApplePress: () => void;
   googleLoading?: boolean;
-  appleLoading?: boolean;
 };
 
-export function SocialAuthButtons({
-  onGooglePress,
-  onApplePress,
-  googleLoading = false,
-  appleLoading = false,
-}: Props) {
+export function SocialAuthButtons({ onGooglePress, googleLoading = false }: Props) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -45,19 +38,6 @@ export function SocialAuthButtons({
       >
         {t('auth.social.googleCta')}
       </Button>
-
-      {Platform.OS === 'ios' && (
-        <Button
-          variant="secondary"
-          size="lg"
-          onPress={onApplePress}
-          loading={appleLoading}
-          icon={<Ionicons name="logo-apple" size={18} color={theme.colors.textPrimary} />}
-          style={styles.appleButton}
-        >
-          {t('auth.social.appleCta')}
-        </Button>
-      )}
     </>
   );
 }
@@ -71,5 +51,4 @@ const createStyles = (theme: Theme) =>
       gap: spacing.sm,
     },
     dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
-    appleButton: { marginTop: spacing.md },
   });
