@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
-from .provider import DirectUpload, MediaProviderError, WebhookEvent
+from datetime import datetime, timedelta, timezone
+
+from .provider import DirectUpload, MediaProviderError, ProviderStatus, WebhookEvent
 
 
 class StubMediaProvider:
@@ -14,13 +16,28 @@ class StubMediaProvider:
     def __init__(self) -> None:
         self.uploads: list[DirectUpload] = []
 
-    def create_direct_upload(self, *, max_duration_seconds: int) -> DirectUpload:
+    def create_direct_upload(
+        self,
+        *,
+        max_duration_seconds: int,
+        size_bytes: int | None = None,
+        mime_type: str | None = None,
+    ) -> DirectUpload:
+        provider_uid = uuid4().hex
         upload = DirectUpload(
-            upload_url=f'https://stub.upload.local/{uuid4()}',
-            provider_uid=uuid4().hex,
+            upload_url=f'https://stub.upload.local/{provider_uid}',
+            provider_uid=provider_uid,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            headers={'Tus-Resumable': '1.0.0'},
         )
         self.uploads.append(upload)
         return upload
+
+    def get_status(self, provider_uid: str) -> ProviderStatus:
+        return ProviderStatus(provider_uid=provider_uid, state='processing')
+
+    def delete_asset(self, provider_uid: str) -> None:
+        self.uploads = [upload for upload in self.uploads if upload.provider_uid != provider_uid]
 
     def verify_webhook(self, body: bytes, signature_header: str | None) -> bool:
         return True

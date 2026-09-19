@@ -20,6 +20,10 @@ export function HomeScreen() {
   if (isLoading) return null;
 
   const role = profile?.role ?? 'fan';
+  if (role === 'comedian') {
+    return <ComedianHome displayName={profile?.display_name} />;
+  }
+
   const RoleHome = HOME_BY_ROLE[role];
   return <RoleHome />;
 }

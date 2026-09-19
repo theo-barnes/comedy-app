@@ -17,4 +17,11 @@ export const queryKeys = {
       latitude != null ? Math.round(latitude * 20) : null,
       longitude != null ? Math.round(longitude * 20) : null,
     ] as const,
+  videoFeed: (latitude: number | null, longitude: number | null) =>
+    [
+      'video-feed',
+      latitude != null ? Math.round(latitude * 20) : null,
+      longitude != null ? Math.round(longitude * 20) : null,
+    ] as const,
+  content: (contentId: string) => ['content', contentId] as const,
 };

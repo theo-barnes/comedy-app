@@ -8,30 +8,20 @@ describe('ComedianHome', () => {
     expect(() => renderWithTheme(<ComedianHome />)).not.toThrow();
   });
 
-  it('renders the YOUR GIGS section header', () => {
+  it('uses the role label when no profile name is provided', () => {
     renderWithTheme(<ComedianHome />);
     expect(screen.getByText('home.comedian.yourGigs')).toBeTruthy();
   });
 
-  it('renders the OTHERS ON THE CIRCUIT section header', () => {
+  it('does not render fixture-driven sections', () => {
     renderWithTheme(<ComedianHome />);
-    expect(screen.getByText('home.comedian.othersOnCircuit')).toBeTruthy();
+    expect(screen.queryByTestId('comedian-home-featured-section')).toBeNull();
+    expect(screen.queryByTestId('comedian-home-stats-section')).toBeNull();
+    expect(screen.queryByTestId('comedian-home-gigs-section')).toBeNull();
   });
 
-  it('renders the standardized body sections', () => {
-    renderWithTheme(<ComedianHome />);
-    expect(screen.getByTestId('comedian-home-featured-section')).toBeTruthy();
-    expect(screen.getByTestId('comedian-home-stats-section')).toBeTruthy();
-    expect(screen.getByTestId('comedian-home-tip-section')).toBeTruthy();
-    expect(screen.getByTestId('comedian-home-gigs-section')).toBeTruthy();
-    expect(screen.getByTestId('comedian-home-same-night-section')).toBeTruthy();
-  });
-
-  it('renders browse sections appended below existing content', () => {
-    renderWithTheme(<ComedianHome />);
-    expect(screen.getByText('Trending Tonight')).toBeTruthy();
-    expect(screen.getByText("This Week's Spotlight")).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'View on map' })).toBeTruthy();
-    expect(screen.getByText('LIVE NOW')).toBeTruthy();
+  it('uses a supplied profile name in the greeting', () => {
+    renderWithTheme(<ComedianHome displayName="Alex" />);
+    expect(screen.getByText('home.comedian.greeting')).toBeTruthy();
   });
 });

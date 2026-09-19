@@ -6,7 +6,7 @@ import path from 'node:path';
 import { screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
-import { darkTokens, lightTokens } from '@/theme/tokens';
+import { darkTokens } from '@/theme/tokens';
 import { Badge } from '@/features/home/components/Badge';
 import { ClipCard } from '@/features/home/fan/ClipCard';
 import { FeaturedEventCard } from '@/features/home/fan/FeaturedEventCard';
@@ -31,11 +31,6 @@ const CLIP_PROPS = {
   duration: '2:14',
 };
 
-const MODES = [
-  { themeMode: 'dark' as const, tokens: darkTokens },
-  { themeMode: 'light' as const, tokens: lightTokens },
-];
-
 const NO_LITERAL_COLOR_PATTERN = /(#[0-9A-Fa-f]{3,8}\b|rgba?\()/;
 
 function styleOf(testId: string): Record<string, unknown> {
@@ -43,28 +38,28 @@ function styleOf(testId: string): Record<string, unknown> {
 }
 
 describe('Home color token regression', () => {
-  describe.each(MODES)('in $themeMode mode', ({ themeMode, tokens }) => {
-    it('uses semantic badge tokens instead of hardcoded literals', () => {
-      renderWithTheme(<Badge variant="hotTicket" />, { themeMode });
-      expect(styleOf('badge-pill-hotTicket').backgroundColor).toBe(tokens.badgeFill);
-      expect(styleOf('badge-label-hotTicket').color).toBe(tokens.badgeInk);
+  it('uses semantic badge tokens instead of hardcoded literals', () => {
+    renderWithTheme(<Badge variant="hotTicket" />);
+    expect(styleOf('badge-pill-hotTicket').backgroundColor).toBe(darkTokens.badgeFill);
+    expect(styleOf('badge-label-hotTicket').color).toBe(darkTokens.badgeInk);
 
-      renderWithTheme(<Badge variant="soldOut" />, { themeMode });
-      expect(styleOf('badge-pill-soldOut').backgroundColor).toBe(tokens.errorFill);
-      expect(styleOf('badge-label-soldOut').color).toBe(tokens.errorInk);
+    renderWithTheme(<Badge variant="soldOut" />);
+    expect(styleOf('badge-pill-soldOut').backgroundColor).toBe(darkTokens.errorFill);
+    expect(styleOf('badge-label-soldOut').color).toBe(darkTokens.errorInk);
 
-      renderWithTheme(<Badge variant="headliner" />, { themeMode });
-      expect(styleOf('badge-pill-headliner').backgroundColor).toBe(tokens.primaryRest);
-      expect(styleOf('badge-label-headliner').color).toBe(tokens.onPrimary);
-    });
+    renderWithTheme(<Badge variant="headliner" />);
+    expect(styleOf('badge-pill-headliner').backgroundColor).toBe(darkTokens.primaryRest);
+    expect(styleOf('badge-label-headliner').color).toBe(darkTokens.onPrimary);
+  });
 
-    it('uses tokenized fan image scrims', () => {
-      renderWithTheme(<FeaturedEventCard {...FEATURED_EVENT_PROPS} />, { themeMode });
-      expect(styleOf('featured-event-bottom-overlay').backgroundColor).toBe(tokens.mediaScrimSoft);
+  it('uses tokenized fan image scrims', () => {
+    renderWithTheme(<FeaturedEventCard {...FEATURED_EVENT_PROPS} />);
+    expect(styleOf('featured-event-bottom-overlay').backgroundColor).toBe(
+      darkTokens.mediaScrimSoft,
+    );
 
-      renderWithTheme(<ClipCard {...CLIP_PROPS} />, { themeMode });
-      expect(styleOf('clip-duration-badge').backgroundColor).toBe(tokens.mediaScrimStrong);
-    });
+    renderWithTheme(<ClipCard {...CLIP_PROPS} />);
+    expect(styleOf('clip-duration-badge').backgroundColor).toBe(darkTokens.mediaScrimStrong);
   });
 
   it('keeps targeted home files free of literal hex/rgba colors', () => {

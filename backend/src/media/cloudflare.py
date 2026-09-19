@@ -3,11 +3,13 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
+import base64
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import requests
 
-from .provider import DirectUpload, MediaProviderError, WebhookEvent
+from .provider import DirectUpload, MediaProviderError, ProviderStatus, WebhookEvent
 
 _API_BASE = 'https://api.cloudflare.com/client/v4'
 # Reject webhooks older than this to limit replay windows.
@@ -34,7 +36,52 @@ class CloudflareStreamProvider:
         self._webhook_secret = webhook_secret
         self._timeout = timeout_seconds
 
-    def create_direct_upload(self, *, max_duration_seconds: int) -> DirectUpload:
+    def create_direct_upload(
+        self,
+        *,
+        max_duration_seconds: int,
+        size_bytes: int | None = None,
+        mime_type: str | None = None,
+    ) -> DirectUpload:
+        if size_bytes is None:
+            return self._create_basic_upload(max_duration_seconds)
+
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        metadata = {
+            'maxDurationSeconds': str(max_duration_seconds),
+            'expiry': expires_at.isoformat(),
+        }
+        encoded_metadata = ','.join(
+            f'{key} {base64.b64encode(value.encode()).decode()}'
+            for key, value in metadata.items()
+        )
+        url = f'{_API_BASE}/accounts/{self._account_id}/stream?direct_user=true'
+        try:
+            response = requests.post(
+                url,
+                headers={
+                    'Authorization': f'Bearer {self._api_token}',
+                    'Tus-Resumable': '1.0.0',
+                    'Upload-Length': str(size_bytes),
+                    'Upload-Metadata': encoded_metadata,
+                },
+                timeout=self._timeout,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise MediaProviderError(f'cloudflare tus upload failed: {exc}') from exc
+        upload_url = response.headers.get('Location')
+        if not upload_url:
+            raise MediaProviderError('cloudflare tus upload response missing Location')
+        provider_uid = upload_url.rstrip('/').split('/')[-1]
+        return DirectUpload(
+            upload_url=upload_url,
+            provider_uid=provider_uid,
+            expires_at=expires_at,
+            headers={'Tus-Resumable': '1.0.0'},
+        )
+
+    def _create_basic_upload(self, max_duration_seconds: int) -> DirectUpload:
         url = f'{_API_BASE}/accounts/{self._account_id}/stream/direct_upload'
         try:
             response = requests.post(
@@ -50,12 +97,55 @@ class CloudflareStreamProvider:
         if not body.get('success'):
             raise MediaProviderError(f'cloudflare direct upload rejected: {body.get("errors")}')
         result = body['result']
-        return DirectUpload(upload_url=result['uploadURL'], provider_uid=result['uid'])
+        return DirectUpload(
+            upload_url=result['uploadURL'],
+            provider_uid=result['uid'],
+            protocol='multipart',
+        )
+
+    def get_status(self, provider_uid: str) -> ProviderStatus:
+        url = f'{_API_BASE}/accounts/{self._account_id}/stream/{provider_uid}'
+        try:
+            response = requests.get(
+                url,
+                headers={'Authorization': f'Bearer {self._api_token}'},
+                timeout=self._timeout,
+            )
+            response.raise_for_status()
+            result = response.json()['result']
+        except (requests.RequestException, KeyError, ValueError) as exc:
+            raise MediaProviderError(f'cloudflare status request failed: {exc}') from exc
+        parsed = self.parse_webhook(result)
+        state = (result.get('status') or {}).get('state', 'processing')
+        return ProviderStatus(
+            provider_uid=provider_uid,
+            state=state,
+            ready=parsed.ready,
+            playback_hls_url=parsed.playback_hls_url,
+            thumbnail_url=parsed.thumbnail_url,
+            duration_seconds=parsed.duration_seconds,
+            width=parsed.width,
+            height=parsed.height,
+            error=parsed.error,
+            error_code=(result.get('status') or {}).get('errReasonCode'),
+        )
+
+    def delete_asset(self, provider_uid: str) -> None:
+        url = f'{_API_BASE}/accounts/{self._account_id}/stream/{provider_uid}'
+        try:
+            response = requests.delete(
+                url,
+                headers={'Authorization': f'Bearer {self._api_token}'},
+                timeout=self._timeout,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise MediaProviderError(f'cloudflare delete failed: {exc}') from exc
 
     def verify_webhook(self, body: bytes, signature_header: str | None) -> bool:
         """Verify Cloudflare's ``Webhook-Signature: time=<ts>,sig1=<hex>`` header."""
 
-        if not signature_header:
+        if not self._webhook_secret or not signature_header:
             return False
         parts = dict(
             part.split('=', 1) for part in signature_header.split(',') if '=' in part
@@ -68,7 +158,7 @@ class CloudflareStreamProvider:
             age = time.time() - int(timestamp)
         except ValueError:
             return False
-        if age > _MAX_WEBHOOK_AGE_SECONDS:
+        if age > _MAX_WEBHOOK_AGE_SECONDS or age < -60:
             return False
         expected = hmac.new(
             self._webhook_secret.encode(),

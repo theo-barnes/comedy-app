@@ -103,8 +103,7 @@
     },
     "social": {
       "divider": "ODER",
-      "googleCta": "Mit Google fortfahren",
-      "appleCta": "Mit Apple fortfahren"
+      "googleCta": "Mit Google fortfahren"
     },
     "signIn": {
       "heading": "Willkommen zurück.",
@@ -119,7 +118,6 @@
       "browseAsGuest": "Als Gast stöbern",
       "errorInvalid": "E-Mail oder Passwort ist falsch.",
       "errorGoogle": "Google-Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
-      "errorApple": "Apple-Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
       "cooldown": "Zu viele Versuche. Versuche es in {{seconds}}s erneut."
     },
     "signUp": {
@@ -142,8 +140,7 @@
       "alreadyHaveAccount": "Bereits ein Konto?",
       "signIn": "Anmelden",
       "errorFallback": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-      "errorGoogle": "Google-Registrierung fehlgeschlagen. Bitte versuche es erneut.",
-      "errorApple": "Apple-Registrierung fehlgeschlagen. Bitte versuche es erneut."
+      "errorGoogle": "Google-Registrierung fehlgeschlagen. Bitte versuche es erneut."
     },
     "selectRole": {
       "heading": "Wer bist du?",

@@ -87,6 +87,10 @@ jest.mock('expo-router', () => ({
   }),
   usePathname: jest.fn(() => '/'),
   useSegments: jest.fn(() => []),
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const React = jest.requireActual<typeof import('react')>('react');
+    React.useEffect(callback, [callback]);
+  },
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 

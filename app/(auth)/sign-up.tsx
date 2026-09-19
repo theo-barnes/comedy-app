@@ -33,10 +33,9 @@ export default function SignUpScreen() {
   const [error, setError] = useState<string | null>(null);
   const styles = useThemedStyles(createStyles);
 
-  const { handleGoogle, handleApple, googleLoading, appleLoading } = useSocialAuthHandlers({
+  const { handleGoogle, googleLoading } = useSocialAuthHandlers({
     setError,
     googleErrorMessage: t('auth.signUp.errorGoogle'),
-    appleErrorMessage: t('auth.signUp.errorApple'),
   });
 
   const schema = useMemo(() => createSignUpSchema(t), [t]);
@@ -147,12 +146,7 @@ export default function SignUpScreen() {
         {t('auth.signUp.submit')}
       </Button>
 
-      <SocialAuthButtons
-        onGooglePress={handleGoogle}
-        onApplePress={handleApple}
-        googleLoading={googleLoading}
-        appleLoading={appleLoading}
-      />
+      <SocialAuthButtons onGooglePress={handleGoogle} googleLoading={googleLoading} />
 
       <AppText style={styles.terms}>
         <Trans

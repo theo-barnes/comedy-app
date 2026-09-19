@@ -40,6 +40,7 @@ class FeedItem:
     creator_id: str
     creator_name: str
     published_at: datetime
+    description: str | None = None
     hls_url: str | None = None
     thumbnail_url: str | None = None
     image_url: str | None = None

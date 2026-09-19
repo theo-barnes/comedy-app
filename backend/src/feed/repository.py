@@ -110,7 +110,12 @@ class SqlFeedRepository:
         with self._session_factory() as session:
             rows = session.execute(
                 select(ContentRow, MediaAssetRow, ComedianProfileRow, VenueProfileRow)
-                .outerjoin(MediaAssetRow, MediaAssetRow.content_id == ContentRow.id)
+                .outerjoin(
+                    MediaAssetRow,
+                    (MediaAssetRow.content_id == ContentRow.id)
+                    & MediaAssetRow.is_current.is_(True)
+                    & (MediaAssetRow.status == 'ready'),
+                )
                 .outerjoin(
                     ComedianProfileRow, ComedianProfileRow.user_id == ContentRow.creator_id
                 )
@@ -154,6 +159,7 @@ class SqlFeedRepository:
                     creator_id=content.creator_id,
                     creator_name=name,
                     published_at=content.published_at or content.created_at,
+                    description=content.description,
                     hls_url=media.playback_hls_url if media is not None else None,
                     thumbnail_url=media.thumbnail_url if media is not None else None,
                     image_url=content.image_url,

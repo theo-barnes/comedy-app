@@ -9,6 +9,8 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Boolean,
+    BigInteger,
     String,
     Text,
     UniqueConstraint,
@@ -22,7 +24,9 @@ from shared.database import Base
 CONTENT_TYPES = ('video_clip', 'image', 'event_promotion', 'announcement')
 CONTENT_STATUSES = ('draft', 'processing', 'published', 'removed')
 CONTENT_VISIBILITIES = ('public', 'unlisted')
-MEDIA_STATUSES = ('pending', 'ready', 'errored')
+MEDIA_STATUSES = (
+    'pending_upload', 'uploaded', 'processing', 'ready', 'failed', 'expired', 'cancelled'
+)
 
 
 class ContentRow(Base):
@@ -51,7 +55,7 @@ class ContentRow(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    media: Mapped['MediaAssetRow | None'] = relationship(back_populates='content', uselist=False)
+    media_assets: Mapped[list['MediaAssetRow']] = relationship(back_populates='content')
 
     __table_args__ = (
         CheckConstraint(f"type in {CONTENT_TYPES!r}", name='content_type_check'),
@@ -78,22 +82,42 @@ class MediaAssetRow(Base):
     )
     provider: Mapped[str] = mapped_column(String(40), nullable=False)
     provider_uid: Mapped[str] = mapped_column(Text, nullable=False)
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False, server_default='1')
+    is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default='true')
+    upload_protocol: Mapped[str] = mapped_column(String(20), nullable=False, server_default="'tus'")
+    upload_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_mime_type: Mapped[str | None] = mapped_column(String(100))
+    source_size_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    original_filename: Mapped[str | None] = mapped_column(String(255))
     playback_hls_url: Mapped[str | None] = mapped_column(Text)
     thumbnail_url: Mapped[str | None] = mapped_column(Text)
     duration_seconds: Mapped[float | None] = mapped_column(Float)
     width: Mapped[int | None] = mapped_column(Integer)
     height: Mapped[int | None] = mapped_column(Integer)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="'pending'")
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="'pending_upload'"
+    )
     error: Mapped[str | None] = mapped_column(Text)
+    provider_error_code: Mapped[str | None] = mapped_column(String(100))
+    uploaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_provider_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    content: Mapped[ContentRow] = relationship(back_populates='media')
+    content: Mapped[ContentRow] = relationship(back_populates='media_assets')
 
     __table_args__ = (
         CheckConstraint(f"status in {MEDIA_STATUSES!r}", name='media_assets_status_check'),
-        UniqueConstraint('content_id', name='media_assets_content_uq'),
         UniqueConstraint('provider', 'provider_uid', name='media_assets_provider_uid_uq'),
+          CheckConstraint('source_size_bytes is null or source_size_bytes > 0',
+                    name='media_assets_source_size_check'),
+          Index('media_assets_current_uq', 'content_id', unique=True,
+              postgresql_where=is_current.is_(True)),
+          Index('media_assets_active_status_idx', 'status', 'updated_at',
+              postgresql_where=status.in_(('pending_upload', 'uploaded', 'processing'))),
     )

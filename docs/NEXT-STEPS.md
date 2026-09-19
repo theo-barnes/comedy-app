@@ -54,7 +54,7 @@ The UI currently renders fixture content (`*-home-fixture.ts`, `features/browse/
 - **Observability**: Sentry is integrated on both sides; add alerting rules, structured logging in FastAPI, and dashboards for the worker jobs (rollup/trending).
 - **Performance**: adopt the H3-based `discovery_cache` as the primary read path for discovery once traffic warrants it; profile list rendering with real data volumes (FlashList if needed).
 - **Android parity**: full test pass on Android (deep links, SecureStore, native tabs fallback is already in place).
-- **Dark mode**: tokens for both themes exist (`src/theme/tokens.ts`) and are regression-tested; remove the hard-coded `userInterfaceStyle: "light"` once designs are approved.
+- **Theme expansion**: the app is intentionally dark-only; add new palettes only when their full component and native-navigation states are designed and regression-tested.
 - **Infrastructure as code**: containerise the FastAPI service for deployment (Dockerfile exists); add a deployment workflow and database migration step to CI.
 
 ## Architectural principles to preserve

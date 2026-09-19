@@ -1,6 +1,5 @@
 import { screen } from '@testing-library/react-native';
 import { renderWithTheme } from '../../utils/renderWithTheme';
-import { Platform } from 'react-native';
 
 import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 
@@ -9,7 +8,6 @@ import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 describe('SocialAuthButtons', () => {
   const defaultProps = {
     onGooglePress: jest.fn(),
-    onApplePress: jest.fn(),
   };
 
   it('always renders the Google button', () => {
@@ -18,14 +16,7 @@ describe('SocialAuthButtons', () => {
     expect(screen.getByText('auth.social.googleCta')).toBeTruthy();
   });
 
-  it('renders the Apple button on iOS', () => {
-    jest.replaceProperty(Platform, 'OS', 'ios');
-    renderWithTheme(<SocialAuthButtons {...defaultProps} />);
-    expect(screen.queryByText('auth.social.appleCta')).toBeTruthy();
-  });
-
-  it('does not render the Apple button on Android', () => {
-    jest.replaceProperty(Platform, 'OS', 'android');
+  it('does not render an Apple button', () => {
     renderWithTheme(<SocialAuthButtons {...defaultProps} />);
     expect(screen.queryByText('auth.social.appleCta')).toBeNull();
   });

@@ -59,7 +59,11 @@ class SqlEngagementRepository:
         stmt = (
             select(SaveRow, ContentRow, MediaAssetRow.thumbnail_url)
             .join(ContentRow, ContentRow.id == SaveRow.content_id)
-            .outerjoin(MediaAssetRow, MediaAssetRow.content_id == ContentRow.id)
+            .outerjoin(
+                MediaAssetRow,
+                (MediaAssetRow.content_id == ContentRow.id)
+                & MediaAssetRow.is_current.is_(True),
+            )
             .where(SaveRow.user_id == user_id, ContentRow.status == 'published')
             .order_by(SaveRow.created_at.desc())
             .limit(limit)

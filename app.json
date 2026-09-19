@@ -6,7 +6,8 @@
     "scheme": "cue",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E0E10",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -18,7 +19,6 @@
     "ios": {
       "bundleIdentifier": "com.billd.cue",
       "supportsTablet": true,
-      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -35,7 +35,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "backgroundColor": "#0E0E10",
+      "themeColor": "#0E0E10"
     },
     "experiments": {
       "typedRoutes": true
@@ -43,7 +45,6 @@
     "plugins": [
       "expo-localization",
       "expo-dev-client",
-      "expo-apple-authentication",
       [
         "expo-location",
         {
@@ -52,11 +53,30 @@
       ],
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your videos so you can upload comedy clips.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",
-          "organization": "REPLACE_WITH_SENTRY_ORG",
-          "project": "REPLACE_WITH_SENTRY_PROJECT"
+          "organization": "cuecomedy",
+          "project": "react-native"
+        }
+      ],
+      "expo-video",
+      "expo-web-browser",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "buildReactNativeFromSource": true
+          }
         }
       ]
     ],

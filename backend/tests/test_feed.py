@@ -228,6 +228,19 @@ def test_invalid_cursor_rejected() -> None:
         service.feed_videos('user-1', cursor='not-a-cursor')
 
 
+def test_expired_snapshot_cursor_requires_refresh() -> None:
+    from shared.errors import GoneError
+
+    repo = FakeFeedRepository()
+    repo.trending = [_candidate('c1'), _candidate('c2'), _candidate('c3')]
+    service = _service(repo)
+    first = service.feed_videos('user-1')
+    assert first.next_cursor is not None
+    service._cache = MemoryCache()
+    with pytest.raises(GoneError):
+        service.feed_videos('user-1', cursor=first.next_cursor)
+
+
 # ---------------------------------------------------------------- home feed
 
 

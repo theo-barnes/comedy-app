@@ -4,12 +4,10 @@ import { useSocialAuthHandlers } from '@/features/auth/useSocialAuthHandlers';
 
 // Mock useAuth so the hook can be rendered without an AuthProvider.
 const mockSignInWithGoogle = jest.fn();
-const mockSignInWithApple = jest.fn();
 
 jest.mock('@/features/auth/useAuth', () => ({
   useAuth: () => ({
     signInWithGoogle: mockSignInWithGoogle,
-    signInWithApple: mockSignInWithApple,
   }),
 }));
 
@@ -17,7 +15,6 @@ function makeOptions(overrides?: Partial<Parameters<typeof useSocialAuthHandlers
   return {
     setError: jest.fn(),
     googleErrorMessage: 'Google sign-in failed',
-    appleErrorMessage: 'Apple sign-in failed',
     ...overrides,
   };
 }
@@ -30,11 +27,6 @@ describe('useSocialAuthHandlers', () => {
   it('googleLoading is false before the handler is called', () => {
     const { result } = renderHook(() => useSocialAuthHandlers(makeOptions()));
     expect(result.current.googleLoading).toBe(false);
-  });
-
-  it('appleLoading is false before the handler is called', () => {
-    const { result } = renderHook(() => useSocialAuthHandlers(makeOptions()));
-    expect(result.current.appleLoading).toBe(false);
   });
 
   it('clears error and sets googleLoading while Google sign-in is in progress', async () => {
@@ -76,21 +68,5 @@ describe('useSocialAuthHandlers', () => {
 
     expect(setError).toHaveBeenCalledWith('Google sign-in failed');
     expect(result.current.googleLoading).toBe(false);
-  });
-
-  it('sets error message when Apple sign-in throws', async () => {
-    mockSignInWithApple.mockRejectedValue(new Error('auth cancelled'));
-    const setError = jest.fn();
-
-    const { result } = renderHook(() =>
-      useSocialAuthHandlers(makeOptions({ setError, appleErrorMessage: 'Apple sign-in failed' })),
-    );
-
-    await act(async () => {
-      await result.current.handleApple();
-    });
-
-    expect(setError).toHaveBeenCalledWith('Apple sign-in failed');
-    expect(result.current.appleLoading).toBe(false);
   });
 });

@@ -109,7 +109,7 @@ export function LiveNowSection({ panel }: LiveNowSectionProps) {
     <View>
       <SectionHeader label={panel.kicker} />
       <View style={styles.wrap}>
-        {/* Live Now panel is intentionally always-dark — a real-time accent regardless of system theme */}
+        {/* Live Now uses a distinct dark surface to emphasize real-time content. */}
         <View testID="live-now-panel" style={styles.panel}>
           <AppText testID="live-now-time-label" variant="caption" style={styles.timeLabel}>
             {panel.timeLabel}

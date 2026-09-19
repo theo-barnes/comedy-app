@@ -1,4 +1,3 @@
-import { FAN_HOME_FIXTURE } from '@/features/home/fan/fan-home-fixture';
 import { selectFanHomeSections } from '@/features/home/fan/fan-home-selectors';
 import type { HomeFeedResponse } from '@/lib/api/home-feed';
 
@@ -44,18 +43,14 @@ const POPULATED_FEED: HomeFeedResponse = {
 };
 
 describe('selectFanHomeSections', () => {
-  it('falls back to fixture content when the feed is undefined', () => {
+  it('returns empty sections when the feed is undefined', () => {
     const sections = selectFanHomeSections(undefined);
-    expect(sections.thisWeek).toBe(FAN_HOME_FIXTURE.thisWeek);
-    expect(sections.performersNearYou).toBe(FAN_HOME_FIXTURE.performersNearYou);
-    expect(sections.freshClips).toBe(FAN_HOME_FIXTURE.freshClips);
+    expect(sections).toEqual({ thisWeek: [], performersNearYou: [], freshClips: [] });
   });
 
-  it('falls back per-section when the feed sections are empty', () => {
+  it('returns empty sections when the feed sections are empty', () => {
     const sections = selectFanHomeSections(EMPTY_FEED);
-    expect(sections.thisWeek).toBe(FAN_HOME_FIXTURE.thisWeek);
-    expect(sections.performersNearYou).toBe(FAN_HOME_FIXTURE.performersNearYou);
-    expect(sections.freshClips).toBe(FAN_HOME_FIXTURE.freshClips);
+    expect(sections).toEqual({ thisWeek: [], performersNearYou: [], freshClips: [] });
   });
 
   it('maps feed data to the view model when present', () => {

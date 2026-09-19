@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from itertools import count
 from typing import Any
@@ -57,14 +58,61 @@ class FakeContentRepository:
             if c.creator_id == creator_id and c.status in statuses
         ][:limit]
 
-    def create_media_asset(self, content_id: str, provider: str, provider_uid: str) -> None:
-        self.media[(provider, provider_uid)] = MediaAsset(
+    def create_media_asset(
+        self,
+        content_id: str,
+        provider: str,
+        provider_uid: str,
+        **fields: Any,
+    ) -> MediaAsset:
+        asset = MediaAsset(
             id=f'media-{content_id}',
             content_id=content_id,
             provider=provider,
             provider_uid=provider_uid,
             status=MediaStatus.PENDING,
+            upload_protocol=fields.get('upload_protocol', 'tus'),
+            upload_expires_at=fields.get('upload_expires_at'),
+            source_mime_type=fields.get('source_mime_type'),
+            source_size_bytes=fields.get('source_size_bytes'),
+            original_filename=fields.get('original_filename'),
         )
+        self.media[(provider, provider_uid)] = asset
+        return asset
+
+    def mark_media_uploaded(self, media_asset_id: str) -> None:
+        for key, asset in self.media.items():
+            if asset.id == media_asset_id:
+                self.media[key] = replace(asset, status=MediaStatus.PROCESSING)
+                content = self.contents[asset.content_id]
+                self.contents[asset.content_id] = Content(
+                    **{**_as_dict(content), 'media': self.media[key]}
+                )
+                return
+
+    def active_upload_count(self, creator_id: str) -> int:
+        active = {MediaStatus.PENDING_UPLOAD, MediaStatus.UPLOADED, MediaStatus.PROCESSING}
+        return sum(
+            1
+            for asset in self.media.values()
+            if self.contents[asset.content_id].creator_id == creator_id
+            and asset.is_current
+            and asset.status in active
+        )
+
+    def list_stale_media(self, *, updated_before, limit: int) -> list[MediaAsset]:  # noqa: ANN001
+        active = {MediaStatus.PENDING_UPLOAD, MediaStatus.UPLOADED, MediaStatus.PROCESSING}
+        return [asset for asset in self.media.values() if asset.status in active][:limit]
+
+    def mark_media_expired(self, media_asset_id: str) -> None:
+        for key, asset in self.media.items():
+            if asset.id == media_asset_id:
+                self.media[key] = replace(asset, status=MediaStatus.EXPIRED)
+
+    def mark_media_cancelled(self, media_asset_id: str) -> None:
+        for key, asset in self.media.items():
+            if asset.id == media_asset_id:
+                self.media[key] = replace(asset, status=MediaStatus.CANCELLED)
 
     def get_content_by_provider_uid(self, provider: str, provider_uid: str) -> Content | None:
         asset = self.media.get((provider, provider_uid))
@@ -166,6 +214,40 @@ def test_create_video_returns_upload_url_and_processing_status(
     assert content.h3_index is not None
 
 
+def test_create_video_validates_file_metadata(service: ContentService) -> None:
+    with pytest.raises(ValidationFailedError):
+        service.create(
+            _user(),
+            type=ContentType.VIDEO_CLIP,
+            title='Not video',
+            file_size_bytes=10,
+            file_mime_type='text/plain',
+        )
+
+
+def test_confirm_upload_is_owner_only_and_idempotent(
+    service: ContentService, repo: FakeContentRepository
+) -> None:
+    content, upload = service.create(
+        _user(),
+        type=ContentType.VIDEO_CLIP,
+        title='My set',
+        file_size_bytes=1024,
+        file_mime_type='video/mp4',
+    )
+    assert upload is not None and upload.media_asset_id is not None
+    asset = repo.media[('stub', upload.provider_uid)]
+    repo.contents[content.id] = Content(**{**_as_dict(content), 'media': asset})
+
+    with pytest.raises(PermissionDeniedError):
+        service.confirm_upload(content.id, asset.id, _user('other'))
+
+    confirmed = service.confirm_upload(content.id, asset.id, _user())
+    assert confirmed.media is not None
+    assert confirmed.media.status is MediaStatus.PROCESSING
+    assert service.confirm_upload(content.id, asset.id, _user()).media is not None
+
+
 def test_create_announcement_publishes_immediately(service: ContentService) -> None:
     content, upload_url = service.create(
         _user(), type=ContentType.ANNOUNCEMENT, title='New tour!'
@@ -251,6 +333,20 @@ def test_delete_owner_only(service: ContentService, repo: FakeContentRepository)
         service.delete(content.id, _user('someone-else', 'fan'))
     service.delete(content.id, _user())
     assert repo.contents[content.id].status is ContentStatus.REMOVED
+
+
+def test_reconciliation_deletes_removed_provider_asset(
+    service: ContentService, repo: FakeContentRepository, provider: StubMediaProvider
+) -> None:
+    content, upload = service.create(_user(), type=ContentType.VIDEO_CLIP, title='cancel me')
+    assert upload is not None and upload.media_asset_id is not None
+    service.delete(content.id, _user())
+
+    repaired, failures = service.reconcile_stale_media(stale_after_seconds=0)
+
+    assert (repaired, failures) == (1, 0)
+    assert provider.uploads == []
+    assert repo.media[('stub', upload.provider_uid)].status is MediaStatus.CANCELLED
 
 
 def test_list_by_creator_filters_for_public_viewers(

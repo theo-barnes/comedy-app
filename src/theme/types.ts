@@ -2,8 +2,7 @@ import type { spacing, radii, typography, navigationTabs } from './tokens';
 
 /**
  * Semantic colour roles — every key has a clearly defined job.
- * Both dark and light themes implement this interface; components
- * depend on ColorTokens, never on a concrete theme object.
+ * Components depend on ColorTokens, never on concrete colour values.
  */
 export interface ColorTokens {
   // ── Surfaces ──────────────────────────────────────────────────
@@ -102,9 +101,4 @@ export interface Theme {
   radii: Radii;
   typography: Typography;
   navigationTabs: NavigationTabs;
-  /** Resolved colour scheme for the current mode */
-  colorScheme: 'light' | 'dark';
 }
-
-/** The three modes a user can choose from */
-export type ThemeMode = 'light' | 'dark' | 'system';

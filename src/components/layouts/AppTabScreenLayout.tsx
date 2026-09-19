@@ -2,7 +2,6 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
-import { GlassSurface, useLiquidGlassSupport } from '@/components/GlassSurface';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 /**
@@ -31,7 +30,6 @@ type InlineTab = {
  * @param hero - Optional ReactNode to render as a hero section below the header and top controls.
  * @param controls - Optional ReactNode to render below the hero section and above the body content.
  * @param bodyMode - Determines if the body content is scrollable ('scroll') or static ('static'). Defaults to 'static'.
- * @param overlayHeader - If true, the header and controls will overlay the body content. Defaults to false.
  * @param backgroundStyle - Optional style for the background of the layout.
  * @param scrollContentContainerStyle - Optional style for the content container of the ScrollView when bodyMode is 'scroll'.
  * @param bodyStyle - Optional style for the body content container.
@@ -49,7 +47,6 @@ export type AppTabScreenLayoutProps = PropsWithChildren<{
   hero?: ReactNode;
   controls?: ReactNode;
   bodyMode?: 'scroll' | 'static';
-  overlayHeader?: boolean;
   backgroundStyle?: StyleProp<ViewStyle>;
   scrollContentContainerStyle?: StyleProp<ViewStyle>;
   bodyStyle?: StyleProp<ViewStyle>;
@@ -74,13 +71,11 @@ export function AppTabScreenLayout({
   hero,
   controls,
   bodyMode = 'static',
-  overlayHeader = false,
   backgroundStyle,
   scrollContentContainerStyle,
   bodyStyle,
   children,
 }: AppTabScreenLayoutProps) {
-  const glassEnabled = useLiquidGlassSupport();
   const header = (
     <ScreenHeader
       city={city}
@@ -119,28 +114,7 @@ export function AppTabScreenLayout({
   }
 
   /*
-   * If the overlayHeader prop is true, we render the header and controls in an absolutely positioned View that overlays the body content.
-   * This allows for a layout where the header and controls are always visible on top of the body content.
-   * When Liquid Glass is available the header row sits on a glass band so it stays
-   * legible over media; elsewhere it stays transparent, matching the existing look.
-   */
-  if (overlayHeader) {
-    return (
-      <Screen>
-        <View style={[styles.root, backgroundStyle]}>
-          <View style={[styles.staticBody, bodyStyle]}>{children}</View>
-          <View style={styles.overlayHeader} pointerEvents="box-none">
-            {glassEnabled ? <GlassSurface>{header}</GlassSurface> : header}
-            {topControls}
-            {controls}
-          </View>
-        </View>
-      </Screen>
-    );
-  }
-
-  /*
-   * If neither bodyMode is 'scroll' nor overlayHeader is true, we render a static layout with the header, top controls, hero section, controls, and body content.
+   * In static mode, render the shared header and controls above the body content.
    */
   return (
     <Screen>
@@ -174,15 +148,5 @@ const styles = StyleSheet.create({
   staticBody: {
     // Fill the available space in the parent container for static body content
     flex: 1,
-  },
-  overlayHeader: {
-    // Absolutely position the header and controls to overlay the body content
-    position: 'absolute',
-    // Position at the top of the screen
-    top: 0,
-    left: 0,
-    right: 0,
-    // Ensure the overlay is above other content
-    zIndex: 10,
   },
 });

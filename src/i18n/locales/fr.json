@@ -103,8 +103,7 @@
     },
     "social": {
       "divider": "OU",
-      "googleCta": "Continuer avec Google",
-      "appleCta": "Continuer avec Apple"
+      "googleCta": "Continuer avec Google"
     },
     "signIn": {
       "heading": "Bon retour.",
@@ -119,7 +118,6 @@
       "browseAsGuest": "Naviguer en tant qu'invité",
       "errorInvalid": "E-mail ou mot de passe incorrect.",
       "errorGoogle": "La connexion avec Google a échoué. Veuillez réessayer.",
-      "errorApple": "La connexion avec Apple a échoué. Veuillez réessayer.",
       "cooldown": "Trop de tentatives. Réessayez dans {{seconds}}s."
     },
     "signUp": {
@@ -142,8 +140,7 @@
       "alreadyHaveAccount": "Déjà un compte ?",
       "signIn": "Se connecter",
       "errorFallback": "Une erreur s'est produite. Veuillez réessayer.",
-      "errorGoogle": "L'inscription avec Google a échoué. Veuillez réessayer.",
-      "errorApple": "L'inscription avec Apple a échoué. Veuillez réessayer."
+      "errorGoogle": "L'inscription avec Google a échoué. Veuillez réessayer."
     },
     "selectRole": {
       "heading": "Qui êtes-vous ?",

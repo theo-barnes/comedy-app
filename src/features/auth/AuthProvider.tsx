@@ -3,8 +3,6 @@ import { z } from 'zod/v3';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import Constants from 'expo-constants';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Crypto from 'expo-crypto';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -177,62 +175,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [],
   );
 
-  const signInWithApple = useCallback(async () => {
-    const isAvailable = await AppleAuthentication.isAvailableAsync();
-    if (!isAvailable) return;
-
-    // Generate a cryptographically random nonce.
-    // rawNonce (hex string) is what Supabase verifies; hashedNonce (SHA-256) is
-    // what Apple embeds in the identity token — prevents replay attacks.
-    const randomBytes = await Crypto.getRandomBytesAsync(32);
-    const rawNonce = Array.from(randomBytes)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-    const hashedNonce = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      rawNonce,
-    );
-
-    let credential: AppleAuthentication.AppleAuthenticationCredential;
-    try {
-      credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-        nonce: hashedNonce,
-      });
-    } catch (err: unknown) {
-      // User dismissed the Apple sheet — not an error, silently bail.
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'code' in err &&
-        (err as { code?: unknown }).code === 'ERR_REQUEST_CANCELED'
-      ) {
-        return;
-      }
-      throw err;
-    }
-
-    if (!credential.identityToken) throw new Error('Apple Sign In failed: no identity token');
-
-    const { error } = await supabase.auth.signInWithIdToken({
-      provider: 'apple',
-      token: credential.identityToken,
-      nonce: rawNonce,
-    });
-    if (error) throw error;
-
-    // Apple only provides fullName on the very first sign-in — save it then.
-    if (credential.fullName) {
-      const parts = [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean);
-      if (parts.length > 0) {
-        await supabase.auth.updateUser({ data: { display_name: parts.join(' ') } });
-      }
-    }
-  }, []);
-
   const updateUserRole = useCallback(
     async (role: UserRole) => {
       if (!user) throw new Error('No authenticated user');
@@ -309,7 +251,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
         isGuest,
         signInWithEmail,
         signInWithGoogle,
-        signInWithApple,
         signUp,
         signOut,
         continueAsGuest,

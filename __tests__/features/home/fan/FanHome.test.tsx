@@ -8,36 +8,25 @@ describe('FanHome', () => {
     expect(() => renderWithTheme(<FanHome />)).not.toThrow();
   });
 
-  it('renders the THIS WEEK section header', () => {
+  it('does not render an empty THIS WEEK section', () => {
     renderWithTheme(<FanHome />);
-    expect(screen.getByText('home.fan.thisWeek')).toBeTruthy();
+    expect(screen.queryByText('home.fan.thisWeek')).toBeNull();
   });
 
-  it('renders the PERFORMING NEAR YOU section header', () => {
+  it('does not render an empty PERFORMING NEAR YOU section', () => {
     renderWithTheme(<FanHome />);
-    expect(screen.getByText('home.fan.performingNearYou')).toBeTruthy();
+    expect(screen.queryByText('home.fan.performingNearYou')).toBeNull();
   });
 
-  it('renders the FRESH CLIPS section header without a Browse action label', () => {
+  it('does not render an empty FRESH CLIPS section', () => {
     renderWithTheme(<FanHome />);
-    expect(screen.getByText('home.fan.freshClips')).toBeTruthy();
-    expect(screen.queryByText('Browse')).toBeNull();
+    expect(screen.queryByText('home.fan.freshClips')).toBeNull();
   });
 
-  it('renders the standardized body sections', () => {
+  it('does not render fixture-only body sections', () => {
     renderWithTheme(<FanHome />);
-    expect(screen.getByTestId('fan-home-featured-section')).toBeTruthy();
-    expect(screen.getByTestId('fan-home-this-week-section')).toBeTruthy();
-    expect(screen.getByTestId('fan-home-performers-section')).toBeTruthy();
-    expect(screen.getByTestId('fan-home-clips-section')).toBeTruthy();
-    expect(screen.getByTestId('fan-home-saved-section')).toBeTruthy();
-  });
-
-  it('renders browse sections appended below existing content', () => {
-    renderWithTheme(<FanHome />);
-    expect(screen.getByText('Trending Tonight')).toBeTruthy();
-    expect(screen.getByText("This Week's Spotlight")).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'View on map' })).toBeTruthy();
-    expect(screen.getByText('LIVE NOW')).toBeTruthy();
+    expect(screen.queryByTestId('fan-home-featured-section')).toBeNull();
+    expect(screen.queryByTestId('fan-home-saved-section')).toBeNull();
+    expect(screen.queryByText('Trending Tonight')).toBeNull();
   });
 });
