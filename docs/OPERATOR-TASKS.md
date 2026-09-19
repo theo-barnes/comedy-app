@@ -1,9 +1,9 @@
 # Operator Tasks — actions required outside the codebase
 
 Tasks only you can complete (dashboards, accounts, local machine). This file is the single
-source of truth for out-of-repo work, sequenced by cost: **Phase A is free — do it this month.**
-**Phase B needs the budget that unlocks at the start of next month** and builds directly on
-Phase A. Tick items off as you go.
+source of truth for out-of-repo work, sequenced by cost: **Phase A is free except for the
+domain purchase — do it this month.** **Phase B needs the budget that unlocks at the start of
+next month** and builds directly on Phase A. Tick items off as you go.
 
 Decisions locked in (2026-09-13):
 
@@ -14,202 +14,29 @@ Decisions locked in (2026-09-13):
 - October paid scope: Apple Developer Program (~$99/yr), hosted dev API + worker (~$10–25/mo),
   Cloudflare Stream (~$5/mo minimum), domain purchase.
 
-## Phase A — this month (free: security + hosted-backend prerequisites)
+## Phase A — this month (security + hosted-backend prerequisites)
 
-### A1. Apply the database migrations to the Supabase dev project
+### Completed foundations
 
-The repo now versions the schema under `supabase/migrations/` (baseline + role-escalation fix,
-plus two 2026-09-13 drift fixes below). The Supabase CLI is installed as a dev dependency
-(`pnpm supabase ...`).
-
-```sh
-pnpm supabase login
-pnpm supabase link --project-ref <PROJECT-REF>
-pnpm supabase db push
-```
-
-If the CLI prompts `[Y/n]` and appears to hang, you likely piped its output (e.g. `| tail`) —
-run it unpiped, or pass `--yes` to skip the prompt.
-
-**Schema drift found and fixed on 2026-09-13** (present on this project before that date; apply
-once, safe to re-run):
-
-- `profiles.role` had a `NOT NULL` constraint predating the versioned migrations. `create table
-if not exists` never alters an existing column, so it silently survived every push and broke
-  any sign-up that doesn't supply a role immediately (OAuth sign-up, or the "select role after
-  sign-up" flow). Fixed by `20260913000100_profiles_role_nullable.sql`.
-- `profiles` was missing table-level `GRANT SELECT, UPDATE ... TO authenticated`. Tables created
-  via CLI-applied migrations don't inherit the Dashboard SQL editor's default ACLs, so every
-  authenticated update (including the in-app role-selection screen) failed with Postgres's own
-  `42501 permission denied for table profiles` before RLS was ever evaluated. Fixed by
-  `20260913000200_profiles_grants.sql`.
-
-The migrations are idempotent (`if not exists` / `drop ... if exists` guards) so they apply
-cleanly onto your existing dashboard-managed schema. `supabase db push` reporting the remote
-database as up to date confirms this step is done.
-
-**Verify the escalation fix worked.** The immutability trigger only fires once a profile's
-`role` is already non-null, so a fresh account needs a role set first. Run the bundled script,
-which creates a throwaway account and drives both PATCH calls (avoids multi-line curl blocks
-breaking on copy-paste):
-
-```sh
-SUPABASE_URL=https://<project-ref>.supabase.co ANON_KEY=<anon-key> \
-  ./scripts/verify-role-immutability.sh
-```
-
-If `.env.local` already has `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` set, the
-script reads those automatically and the inline `SUPABASE_URL=`/`ANON_KEY=` prefix can be omitted.
-
-Expected: step 3's output shows `"role":"fan"`; step 4's output contains
-`role is immutable once set`.
-
-- [x] `supabase link` + `db push` completed
-- [x] Escalation test rejected
-
-### A2. Confirm RLS is enabled on every table
-
-Dashboard → Database → Tables: every table in `public` must show RLS **enabled**.
-The migrations enforce it for `profiles`; check anything created manually.
-
-- [x] All tables show RLS enabled
-
-### A3. Supabase Auth dashboard hardening
-
-Dashboard → Authentication:
-
-- [x] **Password policy**: minimum 8 characters + require letters/digits mix
-      (Settings → Auth → Passwords) — matches the client-side Zod rule
-- [x] **Leaked password protection**: enable (checks against HaveIBeenPwned)
-- [x] **Redirect URLs**: allowlist exactly `cue://auth-callback` (remove
-      `comedy-app://auth-callback` and any wildcard entries)
-- [x] **Rate limits**: review Auth rate limits (tighten if on a paid plan)
-
-### A4. Secret hygiene
-
-Git history was checked on 2026-06-10: no `.env` / `.env.local` ever committed, and the working
-tree only tracks `.env.example`. No rotation needed unless you've shared keys elsewhere.
-
-- [ ] Confirm the anon key hasn't been pasted into chats/docs/screenshots; rotate in
-      Dashboard → Settings → API if unsure
-
-### A5. Asymmetric JWT signing keys — blocking for the hosted backend
-
-Dashboard → Settings → Auth → JWT Keys → migrate to **asymmetric (ECC/RSA) signing keys**.
-The FastAPI backend verifies user JWTs via the project's JWKS endpoint
-(`DISCOVERY_SUPABASE_URL`); until asymmetric keys are enabled, a hosted deployment cannot
-authenticate anyone. Do this before any Phase B deploy.
-
-- [x] Migrated to asymmetric signing keys
-
-- Current Key type ECC (P-256)
-  Public Key Set:
-  {
-  "keys": [
-  {
-  "x": "QMfhnWhH3sRrG3SdoYGVhipl1aX6qtDsGIJsH3InnmI",
-  "y": "ffjBai1ui4S62j0pEkttyo36EzRdL91EWbJR9yNiE60",
-  "alg": "ES256",
-  "crv": "P-256",
-  "ext": true,
-  "kid": "6d708f61-f9eb-4f7f-8d76-e98262a76eb8",
-  "kty": "EC",
-  "key_ops": [
-  "verify"
-  ]
-  }
-  ]
-  }
-
-https://kwezyzbqbmkcagmglspk.supabase.co/auth/v1/.well-known/jwks.json returns:
-{"keys":[{"alg":"ES256","crv":"P-256","ext":true,"key_ops":["verify"],"kid":"6d708f61-f9eb-4f7f-8d76-e98262a76eb8","kty":"EC","use":"sig","x":"QMfhnWhH3sRrG3SdoYGVhipl1aX6qtDsGIJsH3InnmI","y":"ffjBai1ui4S62j0pEkttyo36EzRdL91EWbJR9yNiE60"}]}
-
-- [x] `https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json` serves at least one key
-
-### A6. Enable PostGIS and apply backend migrations to Supabase Postgres
-
-The backend consolidates onto the Supabase dev database — no separate hosted Postgres. Its
-Alembic config only touches the allowlisted platform/location tables, so Supabase-managed
-auth/RLS tables are safe.
-
-1. Dashboard → Database → Extensions → enable `postgis`.
-2. Copy the **direct (session) connection string** from Dashboard → Settings → Database.
-   Do not run migrations through the transaction pooler.
-3. Apply:
-
-```sh
-cd backend
-DISCOVERY_DATABASE_URL='postgresql://postgres:bEfpax-camgyh-9zarxi@db.kwezyzbqbmkcagmglspk.supabase.co:5432/postgres' .venv/bin/alembic upgrade head
-```
-
-- [x] `postgis` extension enabled
-- [x] Alembic upgraded to head (includes `0008_video_media_lifecycle`)
-
-### A7. Seed geography into the Supabase dev database
-
-Discovery needs `places` rows to resolve cities and neighbourhoods:
-
-```sh
-cd backend
-DISCOVERY_DATABASE_URL='postgresql://postgres:bEfpax-camgyh-9zarxi@db.kwezyzbqbmkcagmglspk.supabase.co:5432/postgres' \
-  .venv/bin/discovery-ingest --cities 'San Francisco:us'
-```
-
-Then smoke-test a local API pointed at the Supabase database:
-
-```sh
-DISCOVERY_DATABASE_URL='postgresql://postgres:bEfpax-camgyh-9zarxi@db.kwezyzbqbmkcagmglspk.supabase.co:5432/postgres' \
-  .venv/bin/uvicorn main:app --app-dir src --port 8000
-curl "http://127.0.0.1:8000/discovery-regions?lat=37.7749&lng=-122.4194"
-```
-
-- [x] Ingest completed for at least one city
-- [x] `/discovery-regions` returns regions from the Supabase-backed API
-
-### A8. Create real dev test accounts
-
-The in-app dev-role bypass does not create a Supabase JWT, so it cannot call the authenticated
-feed/upload APIs. Create two real users via the app sign-up flow (or Dashboard → Authentication):
-
-- [x] One `fan` account signs in successfully
-- [x] One `comedian` account signs in successfully (role verified in `profiles`)
-
-### A9. Sentry (free tier)
-
-- [x] Create an org/project at sentry.io (React Native platform)
-- [x] In `app.json`, replace `REPLACE_WITH_SENTRY_ORG` and
-      `REPLACE_WITH_SENTRY_PROJECT` (under the `@sentry/react-native/expo`
-      plugin) with your real org slug and project name
-- [x] Put the DSN in `.env.local` as `EXPO_PUBLIC_SENTRY_DSN`
-      (Sentry is a no-op until this is set, and disabled in dev builds)
-
-The EAS environment-variable and source-map steps move to B5 (they need the funded EAS setup).
-
-### A10. Xcode Command Line Tools + optional local database
-
-Homebrew is currently blocked — macOS Command Line Tools are outdated.
-Run `xcode-select --install` (or install CLT for Xcode 26.3 from
-https://developer.apple.com/download/all/) first.
-
-- [x] Update Xcode Command Line Tools
-
-The Docker Postgres/Redis compose services are now an optional backend-debug path (the Supabase
-dev database from A6 is canonical). To verify migrations locally:
-
-- [x] Run `cd backend && docker compose up -d db redis`
-- [x] Run `DISCOVERY_DATABASE_URL='postgresql://platform:platform@127.0.0.1:54329/platform' .venv/bin/alembic upgrade head`
-
-### A11. GitHub repo protection
-
-- [ ] Protect `main`: require PR + passing status checks (Settings → Branches)
-
-### A12. Pick the hosting vendor and domain name (no spend yet)
-
-Create the hosting account now so Phase B starts with purchases, not research. Fly.io or
-Railway are good fits for a two-container (API + worker) deploy in the $10–25/mo range.
-
-- [ ] Hosting account created
-- [ ] Domain name decided (used for `api-dev.<domain>` and later Universal Links)
+- Supabase migrations are applied; the role-escalation verification passed. The idempotent drift
+  migrations keep `profiles.role` nullable and grant authenticated profile reads/updates.
+- RLS is enabled on every `public` table.
+- Supabase Auth has the 8-character letter-and-digit password policy, leaked-password protection,
+  reviewed rate limits, and only `cue://auth-callback` allowlisted.
+- Asymmetric ES256 JWT signing is enabled and the project's JWKS endpoint is available. This is
+  required for the hosted backend's JWT verification.
+- PostGIS is enabled, backend Alembic is at `0008_video_media_lifecycle`, and San Francisco
+  geography was seeded and verified through the Supabase-backed API.
+- Real dev `fan` and `comedian` accounts exist; the comedian role was verified in `profiles`.
+- Sentry's React Native project and client DSN are configured locally; EAS configuration remains
+  in B4.
+- Xcode Command Line Tools and the optional local Docker Postgres/Redis debug path were verified.
+- `main` requires pull requests and passing status checks.
+- Domains `cuethecomedy.com` and `cuethecomedy.co.uk` are registered with IONOS, with 2FA,
+  registrar lock, and auto-renew enabled. Railway contains an empty `cue-dev` project.
+- Naming is fixed: `cuethecomedy.com` is canonical, `cuethecomedy.co.uk` redirects to it, and
+  `api-dev.cuethecomedy.com` is reserved for the hosted development API. Do not create DNS records
+  until Railway provides the custom-domain target during B1.
 
 ### A13. Rotate credentials exposed during Phase A
 
@@ -221,17 +48,12 @@ environment values and deployment secrets, then confirm the app and backend stil
 
 ## Phase B — next month (funded, from 1 Oct)
 
-Suggested order: start B1 and B4 on day one (Apple approval can take days), then B2 → B3 →
-B5 → B6.
+Suggested order: start B1 and B3 on day one (Apple approval can take days), then B2 → B4 →
+B5.
 
-### B1. Buy the domain and create the dev API hostname
+### B1. Deploy the dev API and worker, then attach the dev API hostname
 
-- [ ] Domain purchased
-- [ ] `api-dev.<domain>` DNS record pointing at the host chosen in A12
-
-### B2. Deploy the dev API and worker
-
-Deploy two processes from `backend/Dockerfile` on the A12 host:
+Deploy two processes from `backend/Dockerfile` to the A12 Railway project:
 
 - **API**: the image's default uvicorn command; the platform terminates HTTPS in front of
   port 8000; healthcheck `GET /health`.
@@ -245,14 +67,20 @@ Environment for both (encrypted host secrets, never `EXPO_PUBLIC_*` values):
 DISCOVERY_DATABASE_URL=<supabase pooler connection string>
 DISCOVERY_SUPABASE_URL=https://<project-ref>.supabase.co
 DISCOVERY_SENTRY_DSN=<backend DSN, optional>
-# Cloudflare values arrive in B3.
+# Cloudflare values arrive in B2.
 ```
 
-- [ ] `https://api-dev.<domain>/health` responds
+After the API service is healthy, add `api-dev.cuethecomedy.com` as its Railway custom domain.
+In IONOS DNS, create exactly the CNAME or other record Railway supplies, wait for Railway's TLS
+validation, then set `EXPO_PUBLIC_API_URL=https://api-dev.cuethecomedy.com` in the EAS
+development environment in B4. Do not point the apex domain at the API.
+
+- [ ] `api-dev.cuethecomedy.com` attached in Railway with the exact IONOS DNS record required
+- [ ] `https://api-dev.cuethecomedy.com/health` responds
 - [ ] Worker deployed with restart policy; `media_reconciliation_complete` appears in logs
 - [ ] Authenticated `/v1/feed/videos` works with an A8 account's JWT
 
-### B3. Cloudflare Stream video setup
+### B2. Cloudflare Stream video setup
 
 Create or select a Cloudflare account with Stream enabled.
 
@@ -266,14 +94,14 @@ DISCOVERY_CLOUDFLARE_ACCOUNT_ID=<account-id>
 DISCOVERY_CLOUDFLARE_API_TOKEN=<stream-edit-token>
 ```
 
-Register the dev webhook once B2 is live:
+Register the dev webhook once B1 is live:
 
 ```sh
 curl -X PUT \
       -H "Authorization: Bearer $DISCOVERY_CLOUDFLARE_API_TOKEN" \
       -H "Content-Type: application/json" \
       "https://api.cloudflare.com/client/v4/accounts/$DISCOVERY_CLOUDFLARE_ACCOUNT_ID/stream/webhook" \
-      --data '{"notificationUrl":"https://api-dev.<domain>/v1/webhooks/cloudflare-stream"}'
+      --data '{"notificationUrl":"https://api-dev.cuethecomedy.com/v1/webhooks/cloudflare-stream"}'
 ```
 
 Save the returned `secret` as `DISCOVERY_CLOUDFLARE_STREAM_WEBHOOK_SECRET`. Cloudflare permits
@@ -288,7 +116,7 @@ Cloudflare cannot call localhost or private IP addresses.
 - [ ] Backend account ID/API token configured as encrypted secrets
 - [ ] HTTPS webhook registered and returned secret configured
 
-### B4. Apple Developer enrollment and device credentials
+### B3. Apple Developer enrollment and device credentials
 
 Start enrollment on day one — approval can take days.
 
@@ -305,11 +133,11 @@ The known local Release device build failure is exactly: no iOS App Development 
 profile exists for `com.billd.cue`. Code signing must be resolved before physical-device video
 validation can run.
 
-### B5. EAS environment variables and the development-device build
+### B4. EAS environment variables and the development-device build
 
 - [ ] In EAS dashboard → Environment variables (development environment), set:
       `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (dev project),
-      `EXPO_PUBLIC_API_URL=https://api-dev.<domain>`, `EXPO_PUBLIC_SENTRY_DSN`;
+      `EXPO_PUBLIC_API_URL=https://api-dev.cuethecomedy.com`, `EXPO_PUBLIC_SENTRY_DSN`;
       keep `.env.local` for local dev only
 - [ ] Add `SENTRY_AUTH_TOKEN` (Sentry → Developer Settings → Auth Tokens) with **sensitive**
       visibility (for source-map upload)
@@ -320,7 +148,7 @@ validation can run.
 - [ ] After your first `eas update`, upload source maps:
       `npx sentry-expo-upload-sourcemaps dist`
 
-### B6. End-to-end acceptance — the daily iPhone loop
+### B5. End-to-end acceptance — the daily iPhone loop
 
 - [ ] Comedian account uploads a short video from the iPhone (TUS transfer completes)
 - [ ] Cloudflare webhook/worker transitions it to `published`
@@ -333,10 +161,10 @@ validation can run.
 ### C1. Universal Links / App Links (OAuth hijack fix)
 
 The `cue://` custom scheme can be registered by other apps. Production should use domain-verified
-links for the OAuth callback. The domain exists after B1:
+links for the OAuth callback. The domain exists after A12:
 
-- [ ] Host an `apple-app-site-association` (AASA) file at `https://<domain>/.well-known/`
-- [ ] Add `"associatedDomains": ["applinks:<domain>"]` to `app.json` → ios (code change — ask
+- [ ] Host an `apple-app-site-association` (AASA) file at `https://cuethecomedy.com/.well-known/`
+- [ ] Add `"associatedDomains": ["applinks:cuethecomedy.com"]` to `app.json` → ios (code change — ask
       for it once the domain exists)
 - [ ] Android: host `assetlinks.json` and add the intent filter (paired code change)
 - [ ] Update Supabase redirect allowlist to the https URL
