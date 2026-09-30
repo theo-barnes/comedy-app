@@ -69,21 +69,29 @@ export const radii = {
 };
 
 /**
- * Shared metrics for top-level tab strips (e.g. FilterChips in browse/home).
- * These values are tuned to match the compact, editorial tab look used in app shells.
+ * Shared metrics for horizontal filter-chip rows (e.g. FilterChips on Home).
+ * The selected chip renders as a glass pill; inactive chips are plain labels.
  */
 export const navigationTabs = {
   containerHorizontalPadding: spacing.lg,
   containerTopPadding: spacing.xs,
-  containerBorderWidth: 0,
-  itemHorizontalPadding: 2,
-  itemBottomPadding: 0,
-  itemGap: spacing.lg,
-  indicatorThickness: 1,
+  chipPaddingHorizontal: spacing.md,
+  chipPaddingVertical: 6,
+  chipGap: spacing.sm,
   labelFontSize: 14,
   labelLineHeight: 22,
   inactiveLabelWeight: '300',
   activeLabelWeight: '400',
+} as const;
+
+/** Metrics for the collapsible glass search bar and its round toggle. */
+export const searchBar = {
+  height: 36,
+  iconSize: 18,
+  fontSize: 14,
+  gap: spacing.sm,
+  openDurationMs: 320,
+  closeDurationMs: 260,
 } as const;
 
 const typographyScale = {

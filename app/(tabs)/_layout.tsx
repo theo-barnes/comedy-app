@@ -39,15 +39,19 @@ function NativeTabsLayout() {
         <NativeTabs.Trigger.Label>{t('tabs.discover')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'play.circle', selected: 'play.circle.fill' }} />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="map">
+        <NativeTabs.Trigger.Label>{t('tabs.map')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} />
+      </NativeTabs.Trigger>
       {canCreate ? (
         <NativeTabs.Trigger name="create">
           <NativeTabs.Trigger.Label>Create</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon sf="plus.circle.fill" />
         </NativeTabs.Trigger>
       ) : null}
-      <NativeTabs.Trigger name="saved">
-        <NativeTabs.Trigger.Label>{t('tabs.saved')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'bookmark', selected: 'bookmark.fill' }} />
+      <NativeTabs.Trigger name="tickets">
+        <NativeTabs.Trigger.Label>{t('tabs.tickets')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'ticket', selected: 'ticket.fill' }} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>{t('tabs.profile')}</NativeTabs.Trigger.Label>
@@ -95,6 +99,13 @@ function JsTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="map"
+        options={{
+          title: t('tabs.map'),
+          tabBarIcon: tabIcon('map', 'map-outline'),
+        }}
+      />
+      <Tabs.Screen
         name="create"
         options={{
           href: canCreate ? undefined : null,
@@ -103,10 +114,10 @@ function JsTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="saved"
+        name="tickets"
         options={{
-          title: t('tabs.saved'),
-          tabBarIcon: tabIcon('bookmark', 'bookmark-outline'),
+          title: t('tabs.tickets'),
+          tabBarIcon: tabIcon('ticket', 'ticket-outline'),
         }}
       />
       <Tabs.Screen

@@ -17,7 +17,8 @@
   "tabs": {
     "home": "Home",
     "discover": "Discover",
-    "saved": "Saved",
+    "map": "Map",
+    "tickets": "Tickets",
     "profile": "Profile"
   },
   "events": {
@@ -179,7 +180,6 @@
   },
   "home": {
     "fan": {
-      "findYourNextRoom": "Tonight in {{city}}",
       "showsNearYou": "{{count}} shows near you this week",
       "thisWeek": "THIS WEEK",
       "performingNearYou": "PERFORMING NEAR YOU",
@@ -187,9 +187,7 @@
       "becauseYouSaved": "BECAUSE YOU SAVED {{name}}"
     },
     "comedian": {
-      "greeting": "Good {{timeOfDay}}, {{name}}.",
       "nextGigIn": "Your next gig is in {{count}} days",
-      "yourGigs": "YOUR GIGS",
       "manage": "Manage",
       "sameNight": "ON THE SAME NIGHT AS YOU · {{date}}",
       "othersOnCircuit": "OTHERS ON THE CIRCUIT",
@@ -204,7 +202,6 @@
       "doors": "Doors {{time}}"
     },
     "venue": {
-      "yourShows": "Your shows.",
       "salesSummary": "{{title}} — {{percent}}% sold",
       "yourOtherEvents": "YOUR OTHER EVENTS",
       "findActs": "FIND ACTS TO BOOK",

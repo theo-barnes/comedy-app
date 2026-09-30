@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform, View, type ViewProps } from 'react-native';
 import {
+  GlassContainer,
   GlassView,
   isGlassEffectAPIAvailable,
   isLiquidGlassAvailable,
@@ -16,6 +17,11 @@ type GlassSurfaceProps = ViewProps & {
   tintColor?: string;
   /** Enables the interactive (touch-responsive) glass variant. */
   isInteractive?: boolean;
+};
+
+type GlassGroupProps = ViewProps & {
+  /** Distance at which sibling glass surfaces begin to merge. */
+  spacing?: number;
 };
 
 /**
@@ -110,5 +116,23 @@ export function GlassSurface({
     >
       {children}
     </GlassView>
+  );
+}
+
+/**
+ * Groups sibling `GlassSurface`s so they merge when close together.
+ * Degrades to a plain `View` wherever `GlassSurface` degrades.
+ */
+export function GlassGroup({ spacing, children, ...viewProps }: GlassGroupProps) {
+  const glassEnabled = useLiquidGlassSupport();
+
+  if (!glassEnabled) {
+    return <View {...viewProps}>{children}</View>;
+  }
+
+  return (
+    <GlassContainer {...viewProps} spacing={spacing}>
+      {children}
+    </GlassContainer>
   );
 }

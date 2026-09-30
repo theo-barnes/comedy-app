@@ -8,9 +8,9 @@ describe('ComedianHome', () => {
     expect(() => renderWithTheme(<ComedianHome />)).not.toThrow();
   });
 
-  it('uses the role label when no profile name is provided', () => {
+  it('renders the shared brand header', () => {
     renderWithTheme(<ComedianHome />);
-    expect(screen.getByText('home.comedian.yourGigs')).toBeTruthy();
+    expect(screen.getByText('Cues')).toBeTruthy();
   });
 
   it('does not render fixture-driven sections', () => {
@@ -18,10 +18,5 @@ describe('ComedianHome', () => {
     expect(screen.queryByTestId('comedian-home-featured-section')).toBeNull();
     expect(screen.queryByTestId('comedian-home-stats-section')).toBeNull();
     expect(screen.queryByTestId('comedian-home-gigs-section')).toBeNull();
-  });
-
-  it('uses a supplied profile name in the greeting', () => {
-    renderWithTheme(<ComedianHome displayName="Alex" />);
-    expect(screen.getByText('home.comedian.greeting')).toBeTruthy();
   });
 });

@@ -6,13 +6,11 @@ import { HomeHeroHeader } from '@/components/HomeHeroHeader';
 import { useHeaderLocationLabel } from '@/features/location';
 
 export type HomeScreenLayoutProps = PropsWithChildren<{
-  heroTitle: string;
   avatarUri?: string;
   contentContainerStyle?: StyleProp<ViewStyle>;
 }>;
 
 export function HomeScreenLayout({
-  heroTitle,
   avatarUri,
   contentContainerStyle,
   children,
@@ -25,7 +23,7 @@ export function HomeScreenLayout({
       onCityPress={onCityPress}
       tabLabel="Home"
       avatarUri={avatarUri}
-      hero={<HomeHeroHeader title={heroTitle} />}
+      hero={<HomeHeroHeader />}
       bodyMode="scroll"
       scrollContentContainerStyle={contentContainerStyle}
     >

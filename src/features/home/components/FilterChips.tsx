@@ -1,7 +1,9 @@
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { GlassGroup, GlassSurface, useLiquidGlassSupport } from '@/components/GlassSurface';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
+import { radii } from '@/theme/tokens';
 import type { Theme } from '@/theme/types';
 
 type Props = {
@@ -12,55 +14,64 @@ type Props = {
 
 export function FilterChips({ options, selected, onSelect }: Props) {
   const styles = useThemedStyles(createStyles);
+  const glassEnabled = useLiquidGlassSupport();
+
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}
-    >
-      {options.map((option) => {
-        const isActive = option === selected;
-        return (
-          <Pressable
-            key={option}
-            onPress={() => onSelect(option)}
-            hitSlop={8}
-            style={[styles.chip, isActive ? styles.chipActive : styles.chipInactive]}
-            accessibilityState={{ selected: isActive }}
-          >
-            <AppText
-              variant="body"
-              style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroll}>
+      <GlassGroup style={styles.row}>
+        {options.map((option) => {
+          const isActive = option === selected;
+          return (
+            <Pressable
+              key={option}
+              onPress={() => onSelect(option)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
             >
-              {option}
-            </AppText>
-          </Pressable>
-        );
-      })}
+              {isActive ? (
+                <GlassSurface
+                  testID={`filter-chip-glass-${option}`}
+                  style={[styles.pill, !glassEnabled && styles.pillFallback]}
+                >
+                  <AppText variant="body" style={[styles.label, styles.labelActive]}>
+                    {option}
+                  </AppText>
+                </GlassSurface>
+              ) : (
+                <View style={styles.pill}>
+                  <AppText variant="body" style={[styles.label, styles.labelInactive]}>
+                    {option}
+                  </AppText>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </GlassGroup>
     </ScrollView>
   );
 }
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
-    container: {
-      paddingHorizontal: theme.navigationTabs.containerHorizontalPadding,
-      paddingTop: theme.navigationTabs.containerTopPadding,
-      borderBottomWidth: theme.navigationTabs.containerBorderWidth,
-      borderBottomColor: theme.colors.border,
+    scroll: {
+      // ScrollView defaults to flexGrow: 1 and would fill the page below the hero.
+      flexGrow: 0,
+    },
+    row: {
       flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.navigationTabs.chipGap,
     },
-    chip: {
-      paddingHorizontal: theme.navigationTabs.itemHorizontalPadding,
-      paddingBottom: theme.navigationTabs.itemBottomPadding,
-      marginRight: theme.navigationTabs.itemGap,
-      borderBottomWidth: theme.navigationTabs.indicatorThickness,
+    pill: {
+      paddingHorizontal: theme.navigationTabs.chipPaddingHorizontal,
+      paddingVertical: theme.navigationTabs.chipPaddingVertical,
+      borderRadius: radii.pill,
     },
-    chipActive: {
-      borderBottomColor: theme.colors.primaryRest,
-    },
-    chipInactive: {
-      borderBottomColor: 'transparent',
+    pillFallback: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
     },
     label: {
       fontSize: theme.navigationTabs.labelFontSize,
@@ -70,9 +81,6 @@ const createStyles = (theme: Theme) =>
     labelActive: {
       color: theme.colors.primaryRest,
       fontWeight: theme.navigationTabs.activeLabelWeight,
-      // textShadowColor: 'rgba(0, 0, 0, 0.28)',
-      // textShadowOffset: { width: 0, height: 1 },
-      // textShadowRadius: 0.15,
     },
     labelInactive: {
       color: theme.colors.textMuted,

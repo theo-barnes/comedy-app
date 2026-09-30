@@ -14,6 +14,20 @@ function toDate(value: DateLike): Date {
 }
 
 /**
+ * Formats today's date for the home header (no year).
+ * en:    "Sunday, September 27"
+ * en-GB: "Sunday 27 September"
+ * fr:    "dimanche 27 septembre"
+ */
+export function formatHeaderDate(value: DateLike, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(toDate(value));
+}
+
+/**
  * Formats an event date for display in a listing card.
  * en-GB: "Sat 14 Jun · 8:00 pm"
  * en-US: "Sat Jun 14 · 8:00 PM"
