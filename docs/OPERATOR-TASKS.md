@@ -124,14 +124,15 @@ Start enrollment on day one — approval can take days.
       Associated Domains)
 - [ ] Register devices: `npx eas-cli device:create`
 - [ ] In Apple Developer → Certificates, Identifiers & Profiles, register App ID
-      `com.billd.cue` and create an iOS Development provisioning profile for your team/device
+      `com.cuethecomedy.cuecomedy` and create an iOS Development provisioning profile for your
+      team/device
 - [ ] In Xcode, open `ios/cue.xcworkspace`, select the `cue` target → Signing & Capabilities,
       select team `8K2U73V78J`, enable **Automatically manage signing**, then build once; or use
       EAS device build so EAS manages credentials
 
 The known local Release device build failure is exactly: no iOS App Development provisioning
-profile exists for `com.billd.cue`. Code signing must be resolved before physical-device video
-validation can run.
+profile exists for `com.cuethecomedy.cuecomedy`. Both Xcode build configurations and `app.json`
+must use this value. Code signing must be resolved before physical-device video validation can run.
 
 ### B4. EAS environment variables and the development-device build
 
@@ -143,6 +144,8 @@ validation can run.
       visibility (for source-map upload)
 - [ ] Confirm the iOS build image uses Xcode 26+ (required for Liquid Glass compilation)
 - [ ] Build and install: `eas build --profile development-device --platform ios`
+- [ ] Let EAS create/select credentials for `com.cuethecomedy.cuecomedy`, then remove any prior
+      Cue development client and install this new identity for device testing
 - [ ] Verify picker permissions, local preview, interrupted TUS resume, HLS playback, and
       tab-bar clearance on the device
 - [ ] After your first `eas update`, upload source maps:

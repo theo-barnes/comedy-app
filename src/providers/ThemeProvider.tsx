@@ -1,6 +1,13 @@
 import { createContext, useContext, useMemo, type PropsWithChildren } from 'react';
 
-import { darkTokens, spacing, radii, navigationTabs, createTypography } from '@/theme/tokens';
+import {
+  darkTokens,
+  spacing,
+  radii,
+  navigationTabs,
+  searchBar,
+  createTypography,
+} from '@/theme/tokens';
 import { useAppFonts } from '@/theme/FontRegister';
 import type { Theme } from '@/theme/types';
 
@@ -24,6 +31,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       radii,
       typography: createTypography(fontsLoaded),
       navigationTabs,
+      searchBar,
     }),
     [fontsLoaded],
   );

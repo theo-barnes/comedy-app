@@ -8,7 +8,7 @@ import { isApiConfigured } from '@/lib/api/client';
 import { useSavedItems } from '@/lib/api/saved';
 import { spacing } from '@/theme';
 
-export default function SavedScreen() {
+export default function TicketsScreen() {
   const savedQuery = useSavedItems();
   const { cityLabel, onCityPress } = useHeaderLocationLabel();
   const apiConfigured = isApiConfigured();
@@ -18,7 +18,7 @@ export default function SavedScreen() {
     <AppTabScreenLayout
       city={cityLabel}
       onCityPress={onCityPress}
-      tabLabel="Saved"
+      tabLabel="Tickets"
       bodyStyle={styles.body}
     >
       {!apiConfigured ? (

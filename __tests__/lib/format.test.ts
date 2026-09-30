@@ -1,6 +1,7 @@
 import {
   formatEventDate,
   formatEventDateLong,
+  formatHeaderDate,
   formatTime,
   formatDistance,
   formatPrice,
@@ -9,6 +10,23 @@ import {
 // A fixed Saturday at 20:00 UTC to avoid timezone-dependent flakiness.
 // Using UTC midnight offset so the display time is stable across environments.
 const DATE = new Date('2026-06-13T20:00:00Z');
+
+describe('formatHeaderDate', () => {
+  // Noon UTC keeps the calendar day stable across test-runner timezones.
+  const NOON = new Date('2026-06-13T12:00:00Z');
+
+  it('renders long weekday and month without a year for en', () => {
+    expect(formatHeaderDate(NOON, 'en')).toBe('Saturday, June 13');
+  });
+
+  it('localises for other languages', () => {
+    expect(formatHeaderDate(NOON, 'fr')).toBe('samedi 13 juin');
+  });
+
+  it('accepts an ISO string as well as a Date object', () => {
+    expect(formatHeaderDate('2026-06-13T12:00:00Z', 'en')).toBe(formatHeaderDate(NOON, 'en'));
+  });
+});
 
 describe('formatEventDate', () => {
   it('includes weekday, day, month and time separated by ·', () => {

@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react-native';
 
-import SavedScreen from '../../../app/(tabs)/tickets';
+import TicketsScreen from '../../../app/(tabs)/tickets';
 import { renderWithTheme } from '../../utils/renderWithTheme';
 
 const mockIsApiConfigured = jest.fn(() => true);
@@ -32,36 +32,36 @@ function savedQuery(overrides = {}) {
   };
 }
 
-describe('SavedScreen', () => {
+describe('TicketsScreen', () => {
   beforeEach(() => {
     mockIsApiConfigured.mockReturnValue(true);
     mockUseSavedItems.mockReturnValue(savedQuery());
   });
 
-  it('renders the shared header without duplicating the Saved title', () => {
+  it('renders the shared header without duplicating the Tickets title', () => {
     mockIsApiConfigured.mockReturnValue(false);
 
-    renderWithTheme(<SavedScreen />);
+    renderWithTheme(<TicketsScreen />);
 
     expect(screen.getByText('London')).toBeTruthy();
-    expect(screen.getAllByText('Saved')).toHaveLength(1);
+    expect(screen.getAllByText('Tickets')).toHaveLength(1);
     expect(screen.getByText('Your saved gigs and comedians will appear here.')).toBeTruthy();
   });
 
   it('keeps the shared header visible while loading', () => {
     mockUseSavedItems.mockReturnValue(savedQuery({ isLoading: true }));
 
-    renderWithTheme(<SavedScreen />);
+    renderWithTheme(<TicketsScreen />);
 
     expect(screen.getByText('London')).toBeTruthy();
-    expect(screen.getByText('Saved')).toBeTruthy();
+    expect(screen.getByText('Tickets')).toBeTruthy();
     expect(screen.getByTestId('saved-loading')).toBeTruthy();
   });
 
   it('renders the empty state beneath the shared header', () => {
     mockUseSavedItems.mockReturnValue(savedQuery({ data: { items: [] } }));
 
-    renderWithTheme(<SavedScreen />);
+    renderWithTheme(<TicketsScreen />);
 
     expect(
       screen.getByText('Nothing saved yet. Tap the bookmark on any clip or show to keep it here.'),
@@ -71,7 +71,7 @@ describe('SavedScreen', () => {
   it('renders the error state beneath the shared header', () => {
     mockUseSavedItems.mockReturnValue(savedQuery({ isError: true }));
 
-    renderWithTheme(<SavedScreen />);
+    renderWithTheme(<TicketsScreen />);
 
     expect(
       screen.getByText("We couldn't load your saved items. Pull to refresh or try again later."),
@@ -95,7 +95,7 @@ describe('SavedScreen', () => {
       }),
     );
 
-    renderWithTheme(<SavedScreen />);
+    renderWithTheme(<TicketsScreen />);
 
     expect(screen.getByText('Late Set')).toBeTruthy();
     expect(screen.getByText(/Clip · saved/)).toBeTruthy();

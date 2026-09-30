@@ -1,4 +1,4 @@
-import type { spacing, radii, typography, navigationTabs } from './tokens';
+import type { spacing, radii, typography, navigationTabs, searchBar } from './tokens';
 
 /**
  * Semantic colour roles — every key has a clearly defined job.
@@ -90,6 +90,8 @@ export type Radii = typeof radii;
 export type Typography = typeof typography;
 /** Navigation tab metrics — mode-agnostic */
 export type NavigationTabs = typeof navigationTabs;
+/** Collapsible search bar metrics — mode-agnostic */
+export type SearchBar = typeof searchBar;
 
 /**
  * A complete resolved theme — the abstraction all components depend on.
@@ -101,4 +103,5 @@ export interface Theme {
   radii: Radii;
   typography: Typography;
   navigationTabs: NavigationTabs;
+  searchBar: SearchBar;
 }

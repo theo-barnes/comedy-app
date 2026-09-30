@@ -19,11 +19,6 @@ export function HomeScreen() {
   // During auth bootstrap, render nothing rather than a flash of the wrong screen.
   if (isLoading) return null;
 
-  const role = profile?.role ?? 'fan';
-  if (role === 'comedian') {
-    return <ComedianHome displayName={profile?.display_name} />;
-  }
-
-  const RoleHome = HOME_BY_ROLE[role];
+  const RoleHome = HOME_BY_ROLE[profile?.role ?? 'fan'];
   return <RoleHome />;
 }

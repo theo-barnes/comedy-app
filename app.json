@@ -17,14 +17,14 @@
       "url": "https://u.expo.dev/13242deb-ac3a-451f-b603-7afce2755fa7"
     },
     "ios": {
-      "bundleIdentifier": "com.billd.cue",
+      "bundleIdentifier": "com.cuethecomedy.cuecomedy",
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.billd.cue",
+      "package": "com.cuethecomedy.cuecomedy",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

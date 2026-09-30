@@ -8,9 +8,9 @@ describe('VenueHome', () => {
     expect(() => renderWithTheme(<VenueHome />)).not.toThrow();
   });
 
-  it('renders the venue shell title', () => {
+  it('renders the shared brand header', () => {
     renderWithTheme(<VenueHome />);
-    expect(screen.getByText('home.venue.yourShows')).toBeTruthy();
+    expect(screen.getByText('Cues')).toBeTruthy();
   });
 
   it('does not render fixture-driven sections', () => {
