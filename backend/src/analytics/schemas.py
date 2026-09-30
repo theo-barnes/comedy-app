@@ -1,3 +1,5 @@
+"""API response schemas for the creator analytics endpoints."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -8,6 +10,8 @@ from .models.domain import AudiencePlace, ContentStatsDaily, CreatorStatsDaily
 
 
 class ContentStatsDaySchema(BaseModel):
+    """Wire schema for one day's stats for a single content post."""
+
     contentId: str
     date: date
     views: int
@@ -30,6 +34,8 @@ class ContentStatsDaySchema(BaseModel):
 
 
 class CreatorStatsDaySchema(BaseModel):
+    """Wire schema for one day's aggregated stats for a creator."""
+
     date: date
     followersGained: int
     profileViews: int
@@ -46,6 +52,8 @@ class CreatorStatsDaySchema(BaseModel):
 
 
 class OverviewTotals(BaseModel):
+    """Sums of ContentStatsDaySchema/CreatorStatsDaySchema over the requested window."""
+
     views: int = 0
     completions: int = 0
     shares: int = 0
@@ -56,16 +64,22 @@ class OverviewTotals(BaseModel):
 
 
 class OverviewResponse(BaseModel):
+    """Wire schema for GET /creator/analytics/overview."""
+
     totals: OverviewTotals
     contentDaily: list[ContentStatsDaySchema] = Field(default_factory=list)
     creatorDaily: list[CreatorStatsDaySchema] = Field(default_factory=list)
 
 
 class ContentStatsResponse(BaseModel):
+    """Wire schema for GET /creator/analytics/content/{content_id}."""
+
     days: list[ContentStatsDaySchema] = Field(default_factory=list)
 
 
 class AudiencePlaceSchema(BaseModel):
+    """Wire schema for a single audience-place entry."""
+
     placeId: str
     name: str | None = None
     views: int
@@ -76,4 +90,6 @@ class AudiencePlaceSchema(BaseModel):
 
 
 class AudienceResponse(BaseModel):
+    """Wire schema for GET /creator/analytics/audience."""
+
     topPlaces: list[AudiencePlaceSchema] = Field(default_factory=list)

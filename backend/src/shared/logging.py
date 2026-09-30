@@ -1,3 +1,5 @@
+"""Structured (JSON) logging setup shared by the API process and workers."""
+
 from __future__ import annotations
 
 import logging

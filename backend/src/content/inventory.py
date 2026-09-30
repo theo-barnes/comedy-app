@@ -1,3 +1,5 @@
+"""Content-inventory counts for the location module's discovery scoring."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

@@ -1,3 +1,5 @@
+"""Business logic for creator-facing analytics: overview, per-content stats, audience."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
@@ -10,6 +12,8 @@ from .repository import AnalyticsRepository
 
 
 class AnalyticsService:
+    """Read-only analytics for a creator's own content, enforcing ownership checks."""
+
     def __init__(self, repository: AnalyticsRepository) -> None:
         self._repository = repository
 
@@ -44,5 +48,9 @@ class AnalyticsService:
 
     @staticmethod
     def _window(days: int) -> tuple[date, date]:
+        """Use the real wall-clock date (not an injectable clock) — tests must pin
+        `datetime.now(timezone.utc).date()`-relative fixtures, not a fixed date.
+        """
+
         today = datetime.now(timezone.utc).date()
         return today - timedelta(days=days - 1), today

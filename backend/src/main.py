@@ -1,3 +1,5 @@
+"""FastAPI app assembly: middleware, error handlers, and router mounting for all modules."""
+
 from __future__ import annotations
 
 from fastapi import FastAPI
@@ -20,6 +22,8 @@ from social.controller import router as social_router
 
 
 def create_app() -> FastAPI:
+    """Build the FastAPI app: logging/Sentry, middleware, error handlers, then every module's router."""
+
     configure_logging(settings.log_level)
     init_sentry(settings)
 

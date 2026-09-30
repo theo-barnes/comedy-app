@@ -1,3 +1,5 @@
+"""Discovery-region use case: resolve a city, classify it, and run its strategy (cached)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

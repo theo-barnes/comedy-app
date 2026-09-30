@@ -1,3 +1,5 @@
+"""Discovery strategy for MarketSize.MID."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

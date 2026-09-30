@@ -1,3 +1,5 @@
+"""FastAPI dependencies that authenticate a request and enforce role checks."""
+
 from __future__ import annotations
 
 from typing import Annotated
@@ -26,18 +28,24 @@ def _authenticate(token: str) -> AuthenticatedUser:
 
 
 def get_current_user(credentials: Credentials = None) -> AuthenticatedUser:
+    """FastAPI dependency: require and verify a bearer token, raising if absent/invalid."""
+
     if credentials is None:
         raise UnauthorizedError('missing bearer token')
     return _authenticate(credentials.credentials)
 
 
 def get_optional_user(credentials: Credentials = None) -> AuthenticatedUser | None:
+    """FastAPI dependency: verify a bearer token if present, else None (no auth required)."""
+
     if credentials is None:
         return None
     return _authenticate(credentials.credentials)
 
 
 def require_role(*roles: str):  # noqa: ANN201 - FastAPI dependency factory
+    """Build a dependency that requires the caller be authenticated as one of `roles`."""
+
     def dependency(
         user: Annotated[AuthenticatedUser, Depends(get_current_user)],
     ) -> AuthenticatedUser:

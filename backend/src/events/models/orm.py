@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for events and their comedian lineup."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,6 +15,8 @@ EVENT_STATUSES = ('scheduled', 'cancelled')
 
 
 class EventRow(Base):
+    """Row for `events`."""
+
     __tablename__ = 'events'
 
     id: Mapped[str] = mapped_column(
@@ -54,6 +58,8 @@ class EventRow(Base):
 
 
 class EventComedianRow(Base):
+    """Row for `event_comedians`: one row per comedian on an event's lineup."""
+
     __tablename__ = 'event_comedians'
 
     event_id: Mapped[str] = mapped_column(

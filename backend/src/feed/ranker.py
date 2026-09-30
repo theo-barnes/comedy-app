@@ -1,3 +1,5 @@
+"""Deterministic weighted-sum ranking formula for feed candidates."""
+
 from __future__ import annotations
 
 import math
@@ -11,6 +13,8 @@ ENGAGEMENT_SATURATION = 50  # likes+saves where the engagement signal ~saturates
 
 @dataclass(frozen=True, slots=True)
 class RankWeights:
+    """Per-signal weights for FeedRanker.score; must sum to ~1.0 to keep scores comparable."""
+
     location: float = 0.25
     creator_affinity: float = 0.20
     watch_completion: float = 0.20
@@ -31,6 +35,10 @@ class FeedRanker:
         return [c for _, c in scored]
 
     def score(self, candidate: FeedCandidate, ctx: FeedContext) -> float:
+        """Weighted sum of six 0-1 sub-scores (location, affinity, completion, engagement,
+        event conversion, freshness), each independently normalized then combined via RankWeights.
+        """
+
         w = self._weights
         return (
             w.location * self._location(candidate, ctx)
@@ -64,6 +72,8 @@ class FeedRanker:
 
     @staticmethod
     def _engagement(candidate: FeedCandidate) -> float:
+        """Log-saturating curve so early likes/saves matter more than later ones."""
+
         total = candidate.like_count + candidate.save_count
         if total <= 0:
             return 0.0
@@ -79,5 +89,7 @@ class FeedRanker:
 
     @staticmethod
     def _freshness(candidate: FeedCandidate, ctx: FeedContext) -> float:
+        """Exponential decay: score halves every FRESHNESS_HALF_LIFE_DAYS."""
+
         age_days = max((ctx.now - candidate.published_at).total_seconds() / 86_400, 0.0)
         return math.exp(-math.log(2) * age_days / FRESHNESS_HALF_LIFE_DAYS)

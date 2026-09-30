@@ -1,3 +1,5 @@
+"""ASGI middleware for per-request logging context."""
+
 from __future__ import annotations
 
 from uuid import uuid4

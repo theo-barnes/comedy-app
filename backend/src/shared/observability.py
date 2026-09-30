@@ -1,3 +1,5 @@
+"""Optional Sentry error-tracking initialisation."""
+
 from __future__ import annotations
 
 from shared.config import Settings

@@ -1,3 +1,5 @@
+"""Domain types for feed candidates, ranked feed items, and the home-feed aggregate."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -25,6 +27,8 @@ class FeedCandidate:
 
 @dataclass(frozen=True, slots=True)
 class LinkedEvent:
+    """The event a content post promotes, embedded in its FeedItem."""
+
     id: str
     title: str
     start_time: datetime
@@ -34,6 +38,8 @@ class LinkedEvent:
 
 @dataclass(frozen=True, slots=True)
 class FeedItem:
+    """A hydrated, viewer-specific piece of content ready to render in a feed."""
+
     content_id: str
     content_type: str
     title: str
@@ -53,12 +59,16 @@ class FeedItem:
 
 @dataclass(frozen=True, slots=True)
 class FeedPage:
+    """One page of the cursor-paginated video feed."""
+
     items: tuple[FeedItem, ...]
     next_cursor: str | None
 
 
 @dataclass(frozen=True, slots=True)
 class ComedianSummary:
+    """Minimal comedian info shown in the \"new comedians\" home-feed section."""
+
     user_id: str
     stage_name: str
     bio: str | None = None
@@ -66,6 +76,8 @@ class ComedianSummary:
 
 @dataclass(frozen=True, slots=True)
 class HomeFeed:
+    """The aggregate response for the home-feed endpoint."""
+
     nearby_events: tuple['NearbyEvent', ...] = ()
     trending_clips: tuple[FeedItem, ...] = ()
     followed_creators: tuple[FeedItem, ...] = ()
@@ -74,6 +86,8 @@ class HomeFeed:
 
 @dataclass(frozen=True, slots=True)
 class NearbyEvent:
+    """An upcoming event near the viewer, shown in the home feed."""
+
     id: str
     title: str
     start_time: datetime

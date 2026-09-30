@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for the daily content/creator stats rollup tables."""
+
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -10,6 +12,8 @@ from shared.database import Base
 
 
 class ContentStatsDailyRow(Base):
+    """Row for `content_stats_daily`, upserted by the rollup worker."""
+
     __tablename__ = 'content_stats_daily'
 
     content_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
@@ -27,6 +31,8 @@ class ContentStatsDailyRow(Base):
 
 
 class CreatorStatsDailyRow(Base):
+    """Row for `creator_stats_daily`, upserted by the rollup worker."""
+
     __tablename__ = 'creator_stats_daily'
 
     creator_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)

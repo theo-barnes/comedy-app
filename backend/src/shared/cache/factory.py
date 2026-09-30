@@ -1,3 +1,5 @@
+"""Picks a CacheBackend implementation based on configuration and import availability."""
+
 from __future__ import annotations
 
 from .base import CacheBackend

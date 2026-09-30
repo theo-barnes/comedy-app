@@ -1,3 +1,5 @@
+"""Business logic for reading and updating comedian/venue creator profiles."""
+
 from __future__ import annotations
 
 from shared.auth.models import AuthenticatedUser
@@ -8,6 +10,8 @@ from .repository import CreatorRepository
 
 
 class CreatorService:
+    """Reads/updates the caller's own creator profile; role determines comedian vs venue shape."""
+
     def __init__(self, repository: CreatorRepository) -> None:
         self._repository = repository
 

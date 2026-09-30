@@ -1,3 +1,5 @@
+"""Persistence for comedian/venue profiles."""
+
 from __future__ import annotations
 
 from typing import Protocol
@@ -10,6 +12,8 @@ from .models.orm import ComedianProfileRow, VenueProfileRow
 
 
 class CreatorRepository(Protocol):
+    """Reads and upserts comedian/venue profiles, keyed by user_id."""
+
     def get_comedian(self, user_id: str) -> ComedianProfile | None: ...
 
     def upsert_comedian(self, profile: ComedianProfile) -> ComedianProfile: ...
@@ -50,6 +54,8 @@ def _venue_from_row(row: VenueProfileRow) -> VenueProfile:
 
 
 class SqlCreatorRepository:
+    """SQLAlchemy-backed CreatorRepository using upsert-on-conflict for writes."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 

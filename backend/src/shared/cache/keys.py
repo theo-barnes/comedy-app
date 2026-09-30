@@ -1,3 +1,5 @@
+"""Cache key derivation shared by discovery/feed callers."""
+
 from __future__ import annotations
 
 import h3

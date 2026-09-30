@@ -1,3 +1,5 @@
+"""The MediaProvider boundary (protocol + data types) implemented by Cloudflare/stub."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,6 +13,8 @@ class MediaProviderError(Exception):
 
 @dataclass(frozen=True, slots=True)
 class DirectUpload:
+    """Everything a client needs to upload a video directly to the provider."""
+
     upload_url: str
     provider_uid: str
     protocol: str = 'tus'
@@ -21,6 +25,8 @@ class DirectUpload:
 
 @dataclass(frozen=True, slots=True)
 class ProviderStatus:
+    """Current processing/playback state of a video asset."""
+
     provider_uid: str
     state: str
     ready: bool = False

@@ -1,3 +1,5 @@
+"""Domain types for venue events."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,12 +8,16 @@ from enum import Enum
 
 
 class EventStatus(str, Enum):
+    """Lifecycle state of an event."""
+
     SCHEDULED = 'scheduled'
     CANCELLED = 'cancelled'
 
 
 @dataclass(frozen=True, slots=True)
 class Event:
+    """A venue's scheduled (or cancelled) event, with its lineup of comedians."""
+
     id: str
     venue_id: str
     title: str

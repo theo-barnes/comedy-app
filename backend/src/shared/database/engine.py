@@ -1,3 +1,5 @@
+"""SQLAlchemy engine/session-factory construction (singleton, lazily built from settings)."""
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -42,6 +44,8 @@ def get_sessionmaker() -> sessionmaker[Session]:
 
 @contextmanager
 def session_scope() -> Iterator[Session]:
+    """Yield a session, committing on success and rolling back on any exception."""
+
     session = get_sessionmaker()()
     try:
         yield session

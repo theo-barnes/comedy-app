@@ -1,3 +1,5 @@
+"""Domain types for comedian/venue profiles and the role-agnostic public creator view."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -6,12 +8,16 @@ from enum import Enum
 
 
 class CreatorType(str, Enum):
+    """Which kind of creator profile a user has."""
+
     COMEDIAN = 'comedian'
     VENUE = 'venue'
 
 
 @dataclass(frozen=True, slots=True)
 class ComedianProfile:
+    """A comedian's profile fields."""
+
     user_id: str
     stage_name: str
     bio: str | None = None
@@ -23,6 +29,8 @@ class ComedianProfile:
 
 @dataclass(frozen=True, slots=True)
 class VenueProfile:
+    """A venue's profile fields."""
+
     user_id: str
     venue_name: str
     bio: str | None = None

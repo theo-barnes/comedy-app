@@ -1,3 +1,5 @@
+"""Computes and caches globally-trending content scores from recent engagement events."""
+
 from __future__ import annotations
 
 import json
@@ -6,9 +8,9 @@ from datetime import datetime, timedelta, timezone
 
 from analytics.models.domain import EventRecord
 from analytics.repository import AnalyticsRepository
+from feed.trending_cache import TRENDING_CACHE_KEY
 from shared.cache import CacheBackend
 
-TRENDING_CACHE_KEY = 'feed:trending'
 TRENDING_HALF_LIFE_HOURS = 24.0
 
 _EVENT_WEIGHT = {
@@ -22,6 +24,10 @@ _EVENT_WEIGHT = {
 def compute_trending_scores(
     events: list[EventRecord], *, now: datetime
 ) -> list[tuple[str, float]]:
+    """Sum per-event-type weights with exponential time decay (half-life TRENDING_HALF_LIFE_HOURS),
+    so a recent view counts for more than an old one; returns ids sorted by score descending.
+    """
+
     scores: dict[str, float] = {}
     for event in events:
         if event.content_id is None:
@@ -44,6 +50,8 @@ def run_trending(
     limit: int = 100,
     ttl_seconds: int = 600,
 ) -> int:
+    """Recompute the trending list from the last `window_days` of events and cache the top `limit`."""
+
     now = now or datetime.now(timezone.utc)
     events = repository.events_between(now - timedelta(days=window_days), now)
     top = compute_trending_scores(events, now=now)[:limit]

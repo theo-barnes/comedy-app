@@ -1,3 +1,5 @@
+"""The Alembic migration allowlist for this backend's platform tables."""
+
 from __future__ import annotations
 
 # Tables owned and migrated by this backend's Alembic environment.

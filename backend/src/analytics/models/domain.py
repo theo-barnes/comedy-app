@@ -1,3 +1,5 @@
+"""Domain types for creator-facing analytics stats and rollup inputs."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,6 +8,8 @@ from datetime import date, datetime
 
 @dataclass(frozen=True, slots=True)
 class ContentStatsDaily:
+    """One day's aggregated stats for a single content post."""
+
     content_id: str
     date: date
     views: int = 0
@@ -17,6 +21,8 @@ class ContentStatsDaily:
 
 @dataclass(frozen=True, slots=True)
 class CreatorStatsDaily:
+    """One day's aggregated stats for a creator across all their content."""
+
     creator_id: str
     date: date
     followers_gained: int = 0
@@ -37,6 +43,8 @@ class EventRecord:
 
 @dataclass(frozen=True, slots=True)
 class AudiencePlace:
+    """A place where a creator's viewers are located, with a view count."""
+
     place_id: str
     name: str | None
     views: int

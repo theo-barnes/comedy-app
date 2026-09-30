@@ -1,3 +1,5 @@
+"""Persistence for events and their comedian lineup."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -12,6 +14,8 @@ from .models.orm import EventComedianRow, EventRow
 
 
 class EventRepository(Protocol):
+    """Reads and writes events and their comedian lineup."""
+
     def create(self, event: Event) -> Event: ...
 
     def get(self, event_id: str) -> Event | None: ...
@@ -53,6 +57,8 @@ def _event_from_row(row: EventRow, comedian_ids: tuple[str, ...]) -> Event:
 
 
 class SqlEventRepository:
+    """SQLAlchemy-backed EventRepository."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 

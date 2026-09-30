@@ -1,3 +1,5 @@
+"""The cache-backend interface every service depends on (never a concrete Redis import)."""
+
 from __future__ import annotations
 
 from typing import Protocol

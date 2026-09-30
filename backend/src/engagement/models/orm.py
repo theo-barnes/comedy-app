@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for saves, likes, and raw engagement events."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -19,6 +21,8 @@ ENGAGEMENT_EVENT_TYPES = (
 
 
 class SaveRow(Base):
+    """Row for `saves`: one (user_id, content_id) pair per row."""
+
     __tablename__ = 'saves'
 
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
@@ -34,6 +38,8 @@ class SaveRow(Base):
 
 
 class LikeRow(Base):
+    """Row for `likes`: one (user_id, content_id) pair per row."""
+
     __tablename__ = 'likes'
 
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
@@ -46,6 +52,8 @@ class LikeRow(Base):
 
 
 class EngagementEventRow(Base):
+    """Row for `engagement_events`: an append-only log of raw analytics events."""
+
     __tablename__ = 'engagement_events'
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)

@@ -1,3 +1,5 @@
+"""Wires the location module's repository/inventory/service singletons from settings."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -13,6 +15,8 @@ from .strategies import StrategyRegistry
 
 
 def build_repository() -> PlaceRepository:
+    """Return the PostGIS-backed repository, or a no-op one when no database is configured."""
+
     if not settings.database_url:
         return EmptyPlaceRepository()
 
@@ -22,6 +26,8 @@ def build_repository() -> PlaceRepository:
 
 
 def _build_inventory() -> InventoryProvider:
+    """Return the content-backed inventory provider, or a stub when no database is configured."""
+
     if not settings.database_url:
         return StubInventoryProvider()
 

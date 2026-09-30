@@ -1,3 +1,5 @@
+"""Wires the engagement module's repository/service singletons from settings."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -7,6 +9,8 @@ from .service import ContentLookup, EngagementService
 
 
 class RepositoryContentLookup:
+    """Adapts the content repository to the ContentLookup protocol."""
+
     def __init__(self, content_repository) -> None:  # noqa: ANN001
         self._content = content_repository
 

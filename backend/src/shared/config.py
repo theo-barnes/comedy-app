@@ -1,3 +1,5 @@
+"""Process-wide runtime settings, loaded once from env vars / .env at import time."""
+
 from __future__ import annotations
 
 from functools import lru_cache

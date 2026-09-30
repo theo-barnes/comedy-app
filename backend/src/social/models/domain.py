@@ -1,3 +1,5 @@
+"""Domain types for follows, blocks, and content/creator reports."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,12 +8,16 @@ from enum import Enum
 
 
 class ReportTargetType(str, Enum):
+    """What kind of entity a report is filed against."""
+
     CONTENT = 'content'
     CREATOR = 'creator'
 
 
 @dataclass(frozen=True, slots=True)
 class Follow:
+    """A follower -> creator relationship."""
+
     follower_id: str
     creator_id: str
     created_at: datetime | None = None
@@ -19,6 +25,8 @@ class Follow:
 
 @dataclass(frozen=True, slots=True)
 class Report:
+    """A user-filed report against a piece of content or a creator."""
+
     id: str
     reporter_id: str
     target_type: ReportTargetType

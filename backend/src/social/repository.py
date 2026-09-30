@@ -1,3 +1,5 @@
+"""Persistence for follows, blocks, and content/creator reports."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -12,6 +14,8 @@ from .models.orm import ContentReportRow, FollowRow, UserBlockRow
 
 
 class SocialRepository(Protocol):
+    """Reads and writes follows, blocks, and reports."""
+
     def add_follow(self, follower_id: str, creator_id: str) -> bool: ...
 
     def remove_follow(self, follower_id: str, creator_id: str) -> bool: ...
@@ -39,6 +43,8 @@ class SocialRepository(Protocol):
 
 
 class SqlSocialRepository:
+    """SQLAlchemy-backed SocialRepository."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 

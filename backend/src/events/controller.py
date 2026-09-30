@@ -1,3 +1,5 @@
+"""HTTP layer for the events domain."""
+
 from __future__ import annotations
 
 from typing import Annotated
@@ -5,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from shared.auth import AuthenticatedUser, get_current_user, require_role
+from shared.ratelimit import rate_limited
 
 from .factory import get_service
 from .schemas import CreateEventRequest, EventListResponse, EventSchema, UpdateEventRequest
@@ -16,9 +19,13 @@ CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
 VenueUser = Annotated[AuthenticatedUser, Depends(require_role('venue'))]
 Service = Annotated[EventService, Depends(get_service)]
 
+EventWriteRateLimit = Depends(rate_limited('event-write', limit=20, window_seconds=3600))
+
 
 @router.post('/events', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
-def create_event(body: CreateEventRequest, user: VenueUser, service: Service) -> EventSchema:
+def create_event(
+    body: CreateEventRequest, user: VenueUser, service: Service, _rl: None = EventWriteRateLimit
+) -> EventSchema:
     event = service.create(
         user,
         title=body.title,
@@ -34,13 +41,17 @@ def create_event(body: CreateEventRequest, user: VenueUser, service: Service) ->
 
 @router.patch('/events/{event_id}', response_model=EventSchema)
 def update_event(
-    event_id: str, body: UpdateEventRequest, user: VenueUser, service: Service
+    event_id: str,
+    body: UpdateEventRequest,
+    user: VenueUser,
+    service: Service,
+    _rl: None = EventWriteRateLimit,
 ) -> EventSchema:
     return EventSchema.from_domain(service.update(event_id, user, body.to_fields()))
 
 
 @router.delete('/events/{event_id}', status_code=status.HTTP_204_NO_CONTENT)
-def cancel_event(event_id: str, user: VenueUser, service: Service) -> None:
+def cancel_event(event_id: str, user: VenueUser, service: Service, _rl: None = EventWriteRateLimit) -> None:
     service.cancel(event_id, user)
 
 
@@ -48,7 +59,7 @@ def cancel_event(event_id: str, user: VenueUser, service: Service) -> None:
     '/events/{event_id}/comedians/{comedian_id}', status_code=status.HTTP_204_NO_CONTENT
 )
 def add_event_comedian(
-    event_id: str, comedian_id: str, user: VenueUser, service: Service
+    event_id: str, comedian_id: str, user: VenueUser, service: Service, _rl: None = EventWriteRateLimit
 ) -> None:
     service.add_comedian(event_id, comedian_id, user)
 
@@ -57,7 +68,7 @@ def add_event_comedian(
     '/events/{event_id}/comedians/{comedian_id}', status_code=status.HTTP_204_NO_CONTENT
 )
 def remove_event_comedian(
-    event_id: str, comedian_id: str, user: VenueUser, service: Service
+    event_id: str, comedian_id: str, user: VenueUser, service: Service, _rl: None = EventWriteRateLimit
 ) -> None:
     service.remove_comedian(event_id, comedian_id, user)
 

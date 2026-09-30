@@ -1,13 +1,14 @@
+"""HTTP layer for saves, likes, and analytics-event ingestion."""
+
 from __future__ import annotations
 
 from datetime import datetime
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
 from shared.auth import AuthenticatedUser, get_current_user
-from shared.ratelimit import RateLimiter
+from shared.ratelimit import rate_limited
 
 from .factory import get_service
 from .schemas import (
@@ -23,32 +24,28 @@ router = APIRouter(tags=['engagement'])
 CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
 Service = Annotated[EngagementService, Depends(get_service)]
 
-
-@lru_cache(maxsize=1)
-def _analytics_limiter() -> RateLimiter:
-    from shared.cache import create_cache
-    from shared.config import settings
-
-    return RateLimiter(create_cache(settings.redis_url), limit=60, window_seconds=60)
+SaveRateLimit = Depends(rate_limited('save', limit=60, window_seconds=60))
+LikeRateLimit = Depends(rate_limited('like', limit=60, window_seconds=60))
+AnalyticsRateLimit = Depends(rate_limited('analytics', limit=60, window_seconds=60))
 
 
 @router.post('/content/{content_id}/save', status_code=status.HTTP_204_NO_CONTENT)
-def save_content(content_id: str, user: CurrentUser, service: Service) -> None:
+def save_content(content_id: str, user: CurrentUser, service: Service, _rl: None = SaveRateLimit) -> None:
     service.save(user, content_id)
 
 
 @router.delete('/content/{content_id}/save', status_code=status.HTTP_204_NO_CONTENT)
-def unsave_content(content_id: str, user: CurrentUser, service: Service) -> None:
+def unsave_content(content_id: str, user: CurrentUser, service: Service, _rl: None = SaveRateLimit) -> None:
     service.unsave(user, content_id)
 
 
 @router.post('/content/{content_id}/like', status_code=status.HTTP_204_NO_CONTENT)
-def like_content(content_id: str, user: CurrentUser, service: Service) -> None:
+def like_content(content_id: str, user: CurrentUser, service: Service, _rl: None = LikeRateLimit) -> None:
     service.like(user, content_id)
 
 
 @router.delete('/content/{content_id}/like', status_code=status.HTTP_204_NO_CONTENT)
-def unlike_content(content_id: str, user: CurrentUser, service: Service) -> None:
+def unlike_content(content_id: str, user: CurrentUser, service: Service, _rl: None = LikeRateLimit) -> None:
     service.unlike(user, content_id)
 
 
@@ -65,8 +62,7 @@ def list_saved(
 
 @router.post('/analytics/events', response_model=AnalyticsBatchResponse)
 def record_analytics_events(
-    body: AnalyticsBatchRequest, user: CurrentUser, service: Service
+    body: AnalyticsBatchRequest, user: CurrentUser, service: Service, _rl: None = AnalyticsRateLimit
 ) -> AnalyticsBatchResponse:
-    _analytics_limiter().check(f'analytics:{user.user_id}')
     accepted = service.record_events(user, [e.to_domain() for e in body.events])
     return AnalyticsBatchResponse(accepted=accepted)

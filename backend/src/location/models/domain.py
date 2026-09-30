@@ -1,3 +1,5 @@
+"""Domain types for the place hierarchy and discovery-region results."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -30,12 +32,16 @@ class MarketSize(StrEnum):
 
 @dataclass(slots=True, frozen=True)
 class DiscoveryRegionCenter:
+    """A region's centroid, in WGS84 lat/lng."""
+
     lat: float
     lng: float
 
 
 @dataclass(slots=True, frozen=True)
 class DiscoveryRegion:
+    """A single place surfaced to the client as a discovery option."""
+
     id: str
     name: str
     type: PlaceType

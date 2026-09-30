@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react-native';
 
-import SavedScreen from '../../../app/(tabs)/saved';
+import SavedScreen from '../../../app/(tabs)/tickets';
 import { renderWithTheme } from '../../utils/renderWithTheme';
 
 const mockIsApiConfigured = jest.fn(() => true);

@@ -1,3 +1,5 @@
+"""HTTP layer for the location/discovery domain."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query

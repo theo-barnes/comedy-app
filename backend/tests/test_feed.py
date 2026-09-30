@@ -59,6 +59,10 @@ class FakeFeedRepository:
     def candidates_trending(self, *, since, limit: int):  # noqa: ANN001
         return self.trending[:limit]
 
+    def candidates_by_ids(self, content_ids: Sequence[str]) -> list[FeedCandidate]:
+        by_id = {c.content_id: c for c in self.trending}
+        return [by_id[cid] for cid in content_ids if cid in by_id]
+
     def followed_creator_ids(self, user_id: str) -> tuple[str, ...]:
         return self.followed
 
@@ -85,12 +89,12 @@ class FakeFeedRepository:
         return {vid: self.venues.get(vid, 'Unknown venue') for vid in venue_ids}
 
 
-class FakePlaceResolver:
+class FakePlaceLookup:
     def resolve_city(self, lat: float, lng: float):  # noqa: ANN201
         return None
 
 
-class FakeEventsPort:
+class FakeEventsLookup:
     def __init__(self, events: list | None = None) -> None:
         self.events = events or []
 
@@ -98,22 +102,63 @@ class FakeEventsPort:
         return self.events[:limit]
 
 
-def _service(repo: FakeFeedRepository) -> FeedService:
+def _service(repo: FakeFeedRepository, *, trending_cache: MemoryCache | None = None) -> FeedService:
     return FeedService(
         repository=repo,
         sources=FeedSources(
             followed=FollowedCreatorsSource(repo),
             nearby=NearbyContentSource(repo),
-            trending=TrendingSource(repo),
+            trending=TrendingSource(repo, trending_cache or MemoryCache()),
         ),
         ranker=FeedRanker(),
         cache=MemoryCache(),
-        place_resolver=FakePlaceResolver(),
-        events=FakeEventsPort(),
+        place_resolver=FakePlaceLookup(),
+        events=FakeEventsLookup(),
         venue_names=repo,
         page_size=2,
         cache_ttl_seconds=300,
     )
+
+
+# ---------------------------------------------------------------- trending source
+
+
+def test_trending_source_uses_cache_order_when_present() -> None:
+    import json
+
+    repo = FakeFeedRepository()
+    repo.trending = [_candidate('c1'), _candidate('c2'), _candidate('c3')]
+    cache = MemoryCache()
+    cache.set('feed:trending', json.dumps([['c3', 9.0], ['c1', 5.0]]), ttl_seconds=600)
+    source = TrendingSource(repo, cache)
+
+    result = source.collect(_ctx())
+
+    assert [c.content_id for c in result] == ['c3', 'c1']
+
+
+def test_trending_source_drops_cached_ids_no_longer_available() -> None:
+    import json
+
+    repo = FakeFeedRepository()
+    repo.trending = [_candidate('c1')]
+    cache = MemoryCache()
+    cache.set('feed:trending', json.dumps([['deleted-id', 9.0], ['c1', 5.0]]), ttl_seconds=600)
+    source = TrendingSource(repo, cache)
+
+    result = source.collect(_ctx())
+
+    assert [c.content_id for c in result] == ['c1']
+
+
+def test_trending_source_falls_back_to_db_query_when_cache_cold() -> None:
+    repo = FakeFeedRepository()
+    repo.trending = [_candidate('c1'), _candidate('c2')]
+    source = TrendingSource(repo, MemoryCache())
+
+    result = source.collect(_ctx())
+
+    assert [c.content_id for c in result] == ['c1', 'c2']
 
 
 # ---------------------------------------------------------------- ranker

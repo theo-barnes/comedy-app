@@ -1,3 +1,5 @@
+"""API request/response schemas for the creators endpoints."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -8,6 +10,8 @@ from .models.domain import CreatorPublic
 
 
 class UpdateCreatorProfileRequest(BaseModel):
+    """Body for PUT /creators/me."""
+
     name: str = Field(..., min_length=1, max_length=120)
     bio: str | None = Field(None, max_length=2000)
     genres: list[str] = Field(default_factory=list, max_length=10)
@@ -18,6 +22,8 @@ class UpdateCreatorProfileRequest(BaseModel):
 
 
 class CreatorPublicSchema(BaseModel):
+    """Wire schema for the public creator view returned by all creators endpoints."""
+
     id: str
     creatorType: Literal['comedian', 'venue']
     name: str

@@ -1,3 +1,5 @@
+"""In-process CacheBackend implementation; also used as the Redis fallback."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

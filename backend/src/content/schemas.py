@@ -1,3 +1,5 @@
+"""API request/response schemas for the content endpoints."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -11,6 +13,8 @@ ContentTypeLiteral = Literal['video_clip', 'image', 'event_promotion', 'announce
 
 
 class VideoFileSchema(BaseModel):
+    """Metadata about a video file the client is about to upload."""
+
     name: str | None = Field(None, max_length=255)
     sizeBytes: int = Field(..., gt=0)
     mimeType: str = Field(..., min_length=1, max_length=100)
@@ -20,6 +24,8 @@ class VideoFileSchema(BaseModel):
 
 
 class CreateContentRequest(BaseModel):
+    """Body for POST /content."""
+
     type: ContentTypeLiteral
     title: str = Field(..., min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
@@ -32,6 +38,8 @@ class CreateContentRequest(BaseModel):
 
 
 class MediaSchema(BaseModel):
+    """Wire schema for a content post's current media asset."""
+
     id: str
     status: str
     hlsUrl: str | None = None
@@ -45,6 +53,8 @@ class MediaSchema(BaseModel):
 
 
 class ContentSchema(BaseModel):
+    """Wire schema for a content post."""
+
     id: str
     creatorId: str
     type: ContentTypeLiteral
@@ -93,12 +103,16 @@ class ContentSchema(BaseModel):
 
 
 class CreateContentResponse(BaseModel):
+    """Response for POST /content: the created post plus upload details for videos."""
+
     content: ContentSchema
     uploadUrl: str | None = None
     upload: 'UploadDescriptorSchema | None' = None
 
 
 class UploadDescriptorSchema(BaseModel):
+    """Wire schema describing where/how the client should upload a video file."""
+
     mediaAssetId: str
     protocol: str
     url: str
@@ -107,9 +121,13 @@ class UploadDescriptorSchema(BaseModel):
 
 
 class CompleteUploadRequest(BaseModel):
+    """Body for POST /content/{id}/complete-upload."""
+
     mediaAssetId: str
     bytesUploaded: int | None = Field(None, ge=0)
 
 
 class ContentListResponse(BaseModel):
+    """Wire schema for a paginated list of content posts."""
+
     items: list[ContentSchema]

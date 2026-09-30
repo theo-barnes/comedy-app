@@ -1,3 +1,5 @@
+"""Domain types for content posts and their attached media (video/image) assets."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,6 +8,8 @@ from enum import Enum
 
 
 class ContentType(str, Enum):
+    """What kind of post this is."""
+
     VIDEO_CLIP = 'video_clip'
     IMAGE = 'image'
     EVENT_PROMOTION = 'event_promotion'
@@ -13,6 +17,8 @@ class ContentType(str, Enum):
 
 
 class ContentStatus(str, Enum):
+    """Lifecycle state of a content post."""
+
     DRAFT = 'draft'
     PROCESSING = 'processing'
     PUBLISHED = 'published'
@@ -20,11 +26,15 @@ class ContentStatus(str, Enum):
 
 
 class ContentVisibility(str, Enum):
+    """Who can see a published post."""
+
     PUBLIC = 'public'
     UNLISTED = 'unlisted'
 
 
 class MediaStatus(str, Enum):
+    """Lifecycle state of a video media asset as it moves through the provider."""
+
     PENDING_UPLOAD = 'pending_upload'
     PENDING = 'pending_upload'
     UPLOADED = 'uploaded'
@@ -38,6 +48,8 @@ class MediaStatus(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class MediaAsset:
+    """A single upload attempt for a content post's video, tracked through the provider lifecycle."""
+
     id: str
     content_id: str
     provider: str
@@ -66,6 +78,8 @@ class MediaAsset:
 
 @dataclass(frozen=True, slots=True)
 class Content:
+    """A creator's post: video clip, image, event promo, or announcement."""
+
     id: str
     creator_id: str
     type: ContentType

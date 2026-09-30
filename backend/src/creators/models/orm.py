@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for comedian and venue profiles."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -10,6 +12,8 @@ from shared.database import Base
 
 
 class ComedianProfileRow(Base):
+    """Row for `comedian_profiles`, keyed by the Supabase auth user_id."""
+
     __tablename__ = 'comedian_profiles'
 
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
@@ -24,6 +28,8 @@ class ComedianProfileRow(Base):
 
 
 class VenueProfileRow(Base):
+    """Row for `venue_profiles`, keyed by the Supabase auth user_id."""
+
     __tablename__ = 'venue_profiles'
 
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)

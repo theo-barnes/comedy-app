@@ -1,3 +1,7 @@
+"""Alembic migration environment: registers all module ORM metadata and restricts
+autogenerate/migration targets to PLATFORM_TABLES so Supabase-managed tables are never touched.
+"""
+
 from __future__ import annotations
 
 from logging.config import fileConfig

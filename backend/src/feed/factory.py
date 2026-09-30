@@ -1,3 +1,5 @@
+"""Wires the feed module's repository/service singletons from settings."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -39,12 +41,13 @@ def get_service() -> FeedService:
     from shared.config import settings
 
     repository = build_repository()
+    cache = create_cache(settings.redis_url)
     return FeedService(
         repository=repository,
         sources=FeedSources(
             followed=FollowedCreatorsSource(repository),
             nearby=NearbyContentSource(repository),
-            trending=TrendingSource(repository),
+            trending=TrendingSource(repository, cache),
         ),
         ranker=FeedRanker(
             RankWeights(
@@ -56,7 +59,7 @@ def get_service() -> FeedService:
                 freshness=settings.feed_weight_freshness,
             )
         ),
-        cache=create_cache(settings.redis_url),
+        cache=cache,
         place_resolver=build_place_repository(),
         events=get_events_service(),
         venue_names=repository,

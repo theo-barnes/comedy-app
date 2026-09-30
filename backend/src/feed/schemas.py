@@ -1,3 +1,5 @@
+"""API response schemas for the video feed and home feed endpoints."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -8,6 +10,8 @@ from .models.domain import ComedianSummary, FeedItem, HomeFeed, LinkedEvent, Nea
 
 
 class LinkedEventSchema(BaseModel):
+    """Wire schema for the event a content post promotes."""
+
     id: str
     title: str
     startTime: datetime
@@ -26,6 +30,8 @@ class LinkedEventSchema(BaseModel):
 
 
 class FeedItemSchema(BaseModel):
+    """Wire schema for a single ranked feed item."""
+
     contentId: str
     contentType: str
     title: str
@@ -68,11 +74,15 @@ class FeedItemSchema(BaseModel):
 
 
 class VideoFeedResponse(BaseModel):
+    """Wire schema for GET /feed/videos."""
+
     items: list[FeedItemSchema]
     nextCursor: str | None = None
 
 
 class NearbyEventSchema(BaseModel):
+    """Wire schema for an upcoming nearby event shown in the home feed."""
+
     id: str
     title: str
     startTime: datetime
@@ -97,6 +107,8 @@ class NearbyEventSchema(BaseModel):
 
 
 class ComedianSummarySchema(BaseModel):
+    """Wire schema for the "new comedians" home-feed section."""
+
     userId: str
     stageName: str
     bio: str | None = None
@@ -109,6 +121,8 @@ class ComedianSummarySchema(BaseModel):
 
 
 class HomeFeedResponse(BaseModel):
+    """Wire schema for GET /feed/home."""
+
     nearbyEvents: list[NearbyEventSchema] = Field(default_factory=list)
     trendingClips: list[FeedItemSchema] = Field(default_factory=list)
     followedCreators: list[FeedItemSchema] = Field(default_factory=list)

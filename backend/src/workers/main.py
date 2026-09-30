@@ -1,3 +1,5 @@
+"""The platform-worker process: scheduled rollup, trending, and media-reconciliation jobs."""
+
 from __future__ import annotations
 
 from shared.logging import configure_logging, get_logger

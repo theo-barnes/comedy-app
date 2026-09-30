@@ -1,3 +1,5 @@
+"""HTTP layer for the feed domain (video feed and home feed)."""
+
 from __future__ import annotations
 
 from typing import Annotated

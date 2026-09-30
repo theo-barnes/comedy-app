@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for follows, user blocks, and content reports."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,6 +15,8 @@ REPORT_STATUSES = ('open', 'reviewed', 'actioned', 'dismissed')
 
 
 class FollowRow(Base):
+    """Row for `follows`: one follower-creator pair per row."""
+
     __tablename__ = 'follows'
 
     id: Mapped[str] = mapped_column(
@@ -31,6 +35,8 @@ class FollowRow(Base):
 
 
 class ContentReportRow(Base):
+    """Row for `content_reports`."""
+
     __tablename__ = 'content_reports'
 
     id: Mapped[str] = mapped_column(
@@ -54,6 +60,8 @@ class ContentReportRow(Base):
 
 
 class UserBlockRow(Base):
+    """Row for `user_blocks`: one blocker-blocked pair per row."""
+
     __tablename__ = 'user_blocks'
 
     blocker_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)

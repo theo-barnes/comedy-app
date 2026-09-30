@@ -1,3 +1,5 @@
+"""HTTP layer for the creator-analytics domain."""
+
 from __future__ import annotations
 
 from typing import Annotated

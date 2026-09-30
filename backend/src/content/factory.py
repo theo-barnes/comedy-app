@@ -1,3 +1,5 @@
+"""Wires the content module's repository/service singletons from settings."""
+
 from __future__ import annotations
 
 from functools import lru_cache

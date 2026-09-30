@@ -1,3 +1,5 @@
+"""Shared in-memory fakes and builder helpers reused across the test suite."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

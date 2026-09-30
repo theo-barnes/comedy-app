@@ -1,3 +1,5 @@
+"""Persistence for content posts and their media assets."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -18,6 +20,8 @@ from .models.orm import ContentRow, MediaAssetRow
 
 
 class ContentRepository(Protocol):
+    """Reads and writes content posts and their media-asset upload lifecycle."""
+
     def create_content(self, content: Content) -> Content: ...
 
     def get_content(self, content_id: str) -> Content | None: ...
@@ -130,6 +134,8 @@ def _content_from_row(row: ContentRow) -> Content:
 
 
 class SqlContentRepository:
+    """SQLAlchemy-backed ContentRepository."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 

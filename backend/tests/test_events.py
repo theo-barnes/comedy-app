@@ -105,7 +105,7 @@ class FakeComedianLookup:
         return comedian_id in self.existing
 
 
-class FakePlaceResolver:
+class FakePlaceLookup:
     def __init__(self, place: Any | None = None) -> None:
         self.place = place
 
@@ -131,7 +131,7 @@ def service(repo: FakeEventRepository) -> EventService:
     return EventService(
         repository=repo,
         comedians=FakeComedianLookup({'comedian-1'}),
-        place_resolver=FakePlaceResolver(),
+        place_resolver=FakePlaceLookup(),
         h3_resolution=9,
     )
 

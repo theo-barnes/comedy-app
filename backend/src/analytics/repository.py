@@ -1,3 +1,5 @@
+"""Persistence for analytics: rollup reads/writes plus creator-facing stats queries."""
+
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -17,6 +19,8 @@ from .models.orm import ContentStatsDailyRow, CreatorStatsDailyRow
 
 
 class AnalyticsRepository(Protocol):
+    """Rollup-worker inputs/outputs plus the read queries AnalyticsService needs."""
+
     # rollup inputs
     def events_between(self, start: datetime, end: datetime) -> list[EventRecord]: ...
 
@@ -46,6 +50,8 @@ class AnalyticsRepository(Protocol):
 
 
 class SqlAnalyticsRepository:
+    """SQLAlchemy-backed AnalyticsRepository."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 

@@ -44,6 +44,8 @@ DEFAULT_CITIES = [
 
 @dataclass(slots=True)
 class PlaceRecord:
+    """A single place ready to upsert, before it has a stable id assigned."""
+
     type: str
     name: str
     country_code: str
@@ -55,6 +57,8 @@ class PlaceRecord:
 
 @dataclass(slots=True)
 class CityIngestResult:
+    """A fetched city plus its resolved country/region names and child places."""
+
     city: PlaceRecord
     country_name: str
     region_name: str | None
@@ -93,6 +97,8 @@ def build_session() -> requests.Session:
 
 
 def fetch_city(session: requests.Session, city_name: str, country_code: str) -> CityIngestResult:
+    """Geocode a city via Nominatim and enrich it with population from GeoNames."""
+
     response = session.get(
         'https://nominatim.openstreetmap.org/search',
         params={
@@ -179,6 +185,10 @@ def fetch_neighbourhoods(
     max_results: int,
     overpass_url: str,
 ) -> list[PlaceRecord]:
+    """Query Overpass for administrative/place boundaries inside the city's bbox,
+    keeping only ones that actually intersect the city boundary and de-duping by name.
+    """
+
     if max_results <= 0 or city.boundary is None:
         return []
 
@@ -387,6 +397,10 @@ def persist_city(
     result: CityIngestResult,
     h3_resolution: int,
 ) -> tuple[uuid.UUID, int]:
+    """Upsert the full country -> region -> city -> neighbourhood chain and closure rows,
+    pruning any previously-ingested children no longer present in `result`.
+    """
+
     city = result.city
 
     # Country (centroid-first: reuse city centroid as an approximation).
@@ -456,6 +470,8 @@ def run_ingest(
     h3_resolution: int,
     dry_run: bool,
 ) -> None:
+    """Fetch and persist each requested city; rolls back the whole transaction if dry_run."""
+
     db_url = load_database_url()
     session = build_session()
 

@@ -1,15 +1,14 @@
+"""HTTP layer for the content domain, plus the Cloudflare Stream webhook receiver."""
+
 from __future__ import annotations
 
 from datetime import datetime
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from shared.auth import AuthenticatedUser, get_current_user, require_role
-from shared.cache import create_cache
-from shared.config import settings
-from shared.ratelimit import RateLimiter
+from shared.ratelimit import get_rate_limiter, rate_limited
 
 from .factory import get_service
 from .models.domain import ContentType, ContentVisibility
@@ -30,19 +29,16 @@ CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
 CreatorUser = Annotated[AuthenticatedUser, Depends(require_role('comedian', 'venue'))]
 Service = Annotated[ContentService, Depends(get_service)]
 
-
-@lru_cache(maxsize=1)
-def _upload_limiter() -> RateLimiter:
-    return RateLimiter(create_cache(settings.redis_url), limit=5, window_seconds=60)
+ContentCreateRateLimit = Depends(rate_limited('content-create', limit=20, window_seconds=60))
 
 
 @router.post('/content', response_model=CreateContentResponse,
              status_code=status.HTTP_201_CREATED)
 def create_content(
-    body: CreateContentRequest, user: CreatorUser, service: Service
+    body: CreateContentRequest, user: CreatorUser, service: Service, _rl: None = ContentCreateRateLimit
 ) -> CreateContentResponse:
     if body.type == 'video_clip':
-        _upload_limiter().check(f'video-upload:{user.user_id}')
+        get_rate_limiter(5, 60).check(f'video-upload:{user.user_id}')
     content, upload = service.create(
         user,
         type=ContentType(body.type),
