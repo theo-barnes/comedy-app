@@ -166,7 +166,7 @@ def _as_dict(content: Content) -> dict[str, Any]:
     }
 
 
-class FakePlaceResolver:
+class FakePlaceLookup:
     def __init__(self, place: Any | None = None) -> None:
         self.place = place
 
@@ -197,7 +197,7 @@ def service(repo: FakeContentRepository, provider: StubMediaProvider) -> Content
     return ContentService(
         repository=repo,
         media_provider=provider,
-        place_resolver=FakePlaceResolver(_Place()),
+        place_resolver=FakePlaceLookup(_Place()),
         h3_resolution=9,
     )
 
@@ -314,7 +314,7 @@ def test_webhook_invalid_signature_rejected(
     service = ContentService(
         repository=repo,
         media_provider=RejectingProvider(),
-        place_resolver=FakePlaceResolver(),
+        place_resolver=FakePlaceLookup(),
     )
     with pytest.raises(UnauthorizedError):
         service.handle_webhook(b'{}', None, {'uid': 'x'})

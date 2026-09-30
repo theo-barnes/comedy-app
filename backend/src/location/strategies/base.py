@@ -1,3 +1,5 @@
+"""Shared types for the discovery-strategy pattern (one strategy per market size)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -26,6 +28,8 @@ class DiscoveryContext:
 
 @dataclass(slots=True, frozen=True)
 class DiscoveryResult:
+    """The regions a strategy chose to surface, tagged with the scope that produced them."""
+
     scope_type: ScopeType
     regions: list[DiscoveryRegion]
 

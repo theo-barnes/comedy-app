@@ -1,3 +1,5 @@
+"""Bearer-token verification: JWKS-backed (Supabase), static-key (tests), or unconfigured."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,12 +16,16 @@ class TokenVerificationError(Exception):
 
 @dataclass(frozen=True, slots=True)
 class TokenClaims:
+    """The subset of a verified JWT's claims the app cares about."""
+
     user_id: str
     email: str | None
     claims: dict[str, Any]
 
 
 class TokenVerifier(Protocol):
+    """Verifies a raw bearer token string and returns its claims, or raises."""
+
     def verify(self, token: str) -> TokenClaims: ...
 
 

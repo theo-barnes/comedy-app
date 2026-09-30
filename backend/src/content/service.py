@@ -1,8 +1,10 @@
+"""Business logic for creating content, managing video uploads, and provider reconciliation."""
+
 from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
-from typing import Any, Protocol
+from typing import Any
 
 import h3
 
@@ -16,6 +18,7 @@ from shared.errors import (
     ValidationFailedError,
 )
 from shared.logging import get_logger
+from shared.ports import PlaceLookup
 
 from .models.domain import (
     Content,
@@ -29,18 +32,14 @@ from .repository import ContentRepository
 logger = get_logger(__name__)
 
 
-class PlaceResolver(Protocol):
-    """Narrow view of the location repository used for content stamping."""
-
-    def resolve_city(self, lat: float, lng: float) -> Any | None: ...
-
-
 class ContentService:
+    """Business logic for creating, publishing, and reconciling content."""
+
     def __init__(
         self,
         repository: ContentRepository,
         media_provider: MediaProvider,
-        place_resolver: PlaceResolver,
+        place_resolver: PlaceLookup,
         *,
         h3_resolution: int = 9,
         max_video_duration_seconds: int = 300,
@@ -149,6 +148,8 @@ class ContentService:
     def confirm_upload(
         self, content_id: str, media_asset_id: str, user: AuthenticatedUser
     ) -> Content:
+        """Mark a direct upload as received; idempotent once processing/ready."""
+
         content = self._repository.get_content(content_id)
         if content is None:
             raise NotFoundError('content not found')
@@ -169,6 +170,8 @@ class ContentService:
     def handle_webhook(
         self, body: bytes, signature_header: str | None, payload: dict[str, Any]
     ) -> None:
+        """Verify and apply a provider processing-status webhook to the matching content."""
+
         if not self._media.verify_webhook(body, signature_header):
             raise UnauthorizedError('invalid webhook signature')
         event = self._media.parse_webhook(payload)
@@ -194,6 +197,11 @@ class ContentService:
         )
 
     def reconcile_stale_media(self, *, stale_after_seconds: int = 120, limit: int = 50) -> tuple[int, int]:
+        """Poll the provider for media assets that haven't been updated recently (e.g. a missed
+        webhook), expiring uploads past their URL's expiry and syncing the rest. Returns
+        (repaired_count, failed_count).
+        """
+
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=stale_after_seconds)
         repaired = 0
         failed = 0
@@ -234,6 +242,8 @@ class ContentService:
         return repaired, failed
 
     def _apply_provider_result(self, content: Content, result: ProviderStatus) -> None:
+        """Transition content/media status based on the provider's reported processing state."""
+
         if result.error:
             self._repository.mark_media_errored(
                 self._media.name, result.provider_uid, result.error

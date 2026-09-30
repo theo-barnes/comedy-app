@@ -1,7 +1,13 @@
+"""Generic request rate limiting, backed by the shared CacheBackend."""
+
 from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from functools import lru_cache
+from typing import Annotated
+
+from fastapi import Depends
 
 from shared.cache.base import CacheBackend
 from shared.errors import RateLimitedError
@@ -38,3 +44,32 @@ class RateLimiter:
     def check(self, key: str) -> None:
         if not self.allow(key):
             raise RateLimitedError('too many requests')
+
+
+@lru_cache(maxsize=None)
+def get_rate_limiter(limit: int, window_seconds: int) -> RateLimiter:
+    """One RateLimiter (and cache client) per distinct (limit, window) pair, reused across routes.
+
+    Use this directly (instead of `rate_limited`) when a limit only applies conditionally
+    within a route body (e.g. only for one request-body variant).
+    """
+
+    from shared.cache import create_cache
+    from shared.config import settings
+
+    return RateLimiter(create_cache(settings.redis_url), limit=limit, window_seconds=window_seconds)
+
+
+def rate_limited(key: str, *, limit: int, window_seconds: int):  # noqa: ANN201 - FastAPI dependency factory
+    """FastAPI dependency factory: rate-limit a route per authenticated user under `key`.
+
+    Pass the same `key` to multiple routes (e.g. follow + unfollow) to share one bucket.
+    """
+
+    from shared.auth import AuthenticatedUser, get_current_user
+
+    def dependency(user: Annotated[AuthenticatedUser, Depends(get_current_user)]) -> None:
+        get_rate_limiter(limit, window_seconds).check(f'{key}:{user.user_id}')
+
+    return dependency
+

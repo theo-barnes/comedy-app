@@ -1,3 +1,5 @@
+"""MediaProvider implementation backed by Cloudflare Stream."""
+
 from __future__ import annotations
 
 import hashlib
@@ -43,6 +45,8 @@ class CloudflareStreamProvider:
         size_bytes: int | None = None,
         mime_type: str | None = None,
     ) -> DirectUpload:
+        """Use the resumable tus protocol when size is known upfront, else basic upload."""
+
         if size_bytes is None:
             return self._create_basic_upload(max_duration_seconds)
 

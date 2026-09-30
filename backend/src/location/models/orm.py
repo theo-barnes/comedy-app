@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for the place hierarchy and its durable cache fallback."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -24,7 +26,11 @@ PLACE_TYPES = ('country', 'region', 'metro', 'city', 'borough', 'neighbourhood')
 
 
 class Place(Base):
-    """A node in the geographic hierarchy backed by a PostGIS boundary."""
+    """A node in the geographic hierarchy backed by a PostGIS boundary.
+
+    Named `Place`, not `PlaceRow` like other ORM classes in this codebase — kept as an
+    intentional exception since it predates that convention and is referenced widely.
+    """
 
     __tablename__ = 'places'
 

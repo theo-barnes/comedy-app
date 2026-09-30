@@ -1,3 +1,5 @@
+"""Persistence for saves, likes, and raw engagement events."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -14,6 +16,8 @@ from .models.orm import EngagementEventRow, LikeRow, SaveRow
 
 
 class EngagementRepository(Protocol):
+    """Reads and writes saves, likes, and raw engagement events."""
+
     def save(self, user_id: str, content_id: str) -> bool: ...
 
     def unsave(self, user_id: str, content_id: str) -> bool: ...
@@ -38,6 +42,8 @@ class EngagementRepository(Protocol):
 
 
 class SqlEngagementRepository:
+    """SQLAlchemy-backed EngagementRepository."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 

@@ -1,3 +1,5 @@
+"""Public surface of the discovery-strategy package."""
+
 from .base import DiscoveryContext, DiscoveryResult, DiscoveryStrategy
 from .large_city import LargeCityStrategy
 from .mega_city import MegaCityStrategy

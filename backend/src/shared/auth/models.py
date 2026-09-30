@@ -1,3 +1,5 @@
+"""Domain type for the authenticated request principal used across all controllers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

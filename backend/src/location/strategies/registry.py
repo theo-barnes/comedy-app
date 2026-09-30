@@ -1,3 +1,5 @@
+"""Looks up the DiscoveryStrategy for a given market size."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

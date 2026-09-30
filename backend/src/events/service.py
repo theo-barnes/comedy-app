@@ -1,3 +1,5 @@
+"""Business logic for creating, updating, and querying events."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -7,25 +9,26 @@ import h3
 
 from shared.auth.models import AuthenticatedUser
 from shared.errors import NotFoundError, PermissionDeniedError, ValidationFailedError
+from shared.ports import PlaceLookup
 
 from .models.domain import Event, EventStatus
 from .repository import EventRepository
 
 
 class ComedianLookup(Protocol):
+    """Narrow view of the creators module used to validate a comedian_id exists."""
+
     def comedian_exists(self, comedian_id: str) -> bool: ...
 
 
-class PlaceResolver(Protocol):
-    def resolve_city(self, lat: float, lng: float) -> Any | None: ...
-
-
 class EventService:
+    """Business logic for creating, updating, and querying events."""
+
     def __init__(
         self,
         repository: EventRepository,
         comedians: ComedianLookup,
-        place_resolver: PlaceResolver,
+        place_resolver: PlaceLookup,
         *,
         h3_resolution: int = 9,
     ) -> None:
@@ -82,6 +85,8 @@ class EventService:
         user: AuthenticatedUser,
         fields: dict[str, Any],
     ) -> Event:
+        """Apply a partial update; re-derives h3_index/place_id when coordinates change."""
+
         event = self._owned_event(event_id, user)
         start = fields.get('start_time', event.start_time)
         end = fields.get('end_time', event.end_time)

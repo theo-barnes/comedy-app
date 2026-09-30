@@ -1,3 +1,5 @@
+"""Wires up the process-wide auth singleton (token verifier + role resolver) from settings."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,6 +12,8 @@ from shared.config import settings
 
 @dataclass(slots=True)
 class AuthComponents:
+    """The verifier + role resolver pair used by shared.auth.dependencies."""
+
     verifier: TokenVerifier
     role_resolver: RoleResolver
 
@@ -18,6 +22,10 @@ _components: AuthComponents | None = None
 
 
 def _build() -> AuthComponents:
+    """Derive JWKS URL/issuer from settings (falling back to the Supabase project URL
+    convention) and fall back to an always-reject verifier when auth isn't configured.
+    """
+
     jwks_url = settings.supabase_jwks_url
     if not jwks_url and settings.supabase_url:
         jwks_url = f'{settings.supabase_url.rstrip("/")}/auth/v1/.well-known/jwks.json'

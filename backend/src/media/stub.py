@@ -1,3 +1,5 @@
+"""In-memory MediaProvider used for tests and local dev without Cloudflare credentials."""
+
 from __future__ import annotations
 
 from typing import Any

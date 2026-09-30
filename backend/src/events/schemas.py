@@ -1,3 +1,5 @@
+"""API request/response schemas for the events endpoints."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -8,6 +10,8 @@ from .models.domain import Event
 
 
 class CreateEventRequest(BaseModel):
+    """Body for POST /events."""
+
     title: str = Field(..., min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
     startTime: datetime
@@ -18,6 +22,8 @@ class CreateEventRequest(BaseModel):
 
 
 class UpdateEventRequest(BaseModel):
+    """Body for PATCH /events/{event_id}; all fields optional (partial update)."""
+
     title: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
     startTime: datetime | None = None
@@ -27,6 +33,8 @@ class UpdateEventRequest(BaseModel):
     ticketUrl: str | None = Field(None, max_length=1000)
 
     def to_fields(self) -> dict:
+        """Convert to the {field: value} shape EventService.update expects, dropping unset fields."""
+
         mapping = {
             'title': self.title,
             'description': self.description,
@@ -44,6 +52,8 @@ class UpdateEventRequest(BaseModel):
 
 
 class EventSchema(BaseModel):
+    """Wire schema for an event."""
+
     id: str
     venueId: str
     title: str
@@ -76,4 +86,6 @@ class EventSchema(BaseModel):
 
 
 class EventListResponse(BaseModel):
+    """Wire schema for endpoints that return a list of events."""
+
     items: list[EventSchema]

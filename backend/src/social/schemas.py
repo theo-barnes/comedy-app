@@ -1,3 +1,5 @@
+"""API request/response schemas for the social endpoints (follows, blocks, reports)."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -9,6 +11,8 @@ from .models.domain import Follow, Report
 
 
 class FollowSchema(BaseModel):
+    """Wire schema for a single followed creator."""
+
     creatorId: str
     createdAt: datetime | None = None
 
@@ -18,14 +22,20 @@ class FollowSchema(BaseModel):
 
 
 class FollowingResponse(BaseModel):
+    """Wire schema for GET /me/following."""
+
     items: list[FollowSchema]
 
 
 class BlockedResponse(BaseModel):
+    """Wire schema for GET /me/blocks."""
+
     userIds: list[str]
 
 
 class CreateReportRequest(BaseModel):
+    """Body for POST /reports."""
+
     targetType: Literal['content', 'creator']
     targetId: str = Field(..., min_length=1)
     reason: str = Field(..., min_length=1, max_length=200)
@@ -33,6 +43,8 @@ class CreateReportRequest(BaseModel):
 
 
 class ReportSchema(BaseModel):
+    """Wire schema for a created report."""
+
     id: str
     status: str
 

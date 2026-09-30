@@ -1,3 +1,5 @@
+"""Persistence and cross-module reads (content, engagement, social, events) for the feed."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -16,6 +18,8 @@ from .models.domain import ComedianSummary, FeedCandidate, FeedItem, LinkedEvent
 
 
 class FeedRepository(Protocol):
+    """Reads candidate content by signal and hydrates content_ids into viewer-specific FeedItems."""
+
     def candidates_by_creators(
         self, creator_ids: Sequence[str], *, limit: int
     ) -> list[FeedCandidate]: ...
@@ -25,6 +29,8 @@ class FeedRepository(Protocol):
     ) -> list[FeedCandidate]: ...
 
     def candidates_trending(self, *, since: datetime, limit: int) -> list[FeedCandidate]: ...
+
+    def candidates_by_ids(self, content_ids: Sequence[str]) -> list[FeedCandidate]: ...
 
     def followed_creator_ids(self, user_id: str) -> tuple[str, ...]: ...
 
@@ -39,6 +45,8 @@ _PUBLISHED = (ContentRow.status == 'published', ContentRow.visibility == 'public
 
 
 class SqlFeedRepository:
+    """SQLAlchemy-backed FeedRepository."""
+
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
 
@@ -88,6 +96,12 @@ class SqlFeedRepository:
             .scalar_subquery()
         )
         stmt = select(ContentRow).where(*_PUBLISHED, ContentRow.id.in_(trending_ids))
+        return self._load_candidates(stmt)
+
+    def candidates_by_ids(self, content_ids: Sequence[str]) -> list[FeedCandidate]:
+        if not content_ids:
+            return []
+        stmt = select(ContentRow).where(*_PUBLISHED, ContentRow.id.in_(content_ids))
         return self._load_candidates(stmt)
 
     def followed_creator_ids(self, user_id: str) -> tuple[str, ...]:

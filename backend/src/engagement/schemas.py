@@ -1,3 +1,5 @@
+"""API request/response schemas for saves and analytics-event batches."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -9,6 +11,8 @@ from .models.domain import EngagementEvent, EngagementEventType, SavedItem
 
 
 class SavedItemSchema(BaseModel):
+    """Wire schema for a single saved content item."""
+
     contentId: str
     savedAt: datetime
     title: str
@@ -31,10 +35,14 @@ class SavedItemSchema(BaseModel):
 
 
 class SavedListResponse(BaseModel):
+    """Wire schema for GET /me/saved."""
+
     items: list[SavedItemSchema]
 
 
 class AnalyticsEventSchema(BaseModel):
+    """Wire schema for a single client-reported analytics event."""
+
     eventType: EngagementEventType
     occurredAt: datetime
     contentId: str | None = None
@@ -50,8 +58,12 @@ class AnalyticsEventSchema(BaseModel):
 
 
 class AnalyticsBatchRequest(BaseModel):
+    """Body for POST /analytics/events (or wherever the batch endpoint is mounted)."""
+
     events: list[AnalyticsEventSchema] = Field(..., max_length=50)
 
 
 class AnalyticsBatchResponse(BaseModel):
+    """Response confirming how many events were accepted."""
+
     accepted: int

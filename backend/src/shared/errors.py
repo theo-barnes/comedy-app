@@ -1,3 +1,5 @@
+"""Domain error hierarchy that maps to HTTP responses via a shared FastAPI exception handler."""
+
 from __future__ import annotations
 
 from fastapi import FastAPI, Request

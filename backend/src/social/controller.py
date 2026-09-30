@@ -1,13 +1,14 @@
+"""HTTP layer for the social domain (follows, blocks, reports)."""
+
 from __future__ import annotations
 
 from datetime import datetime
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 
 from shared.auth import AuthenticatedUser, get_current_user
-from shared.ratelimit import RateLimiter
+from shared.ratelimit import rate_limited
 
 from .factory import get_service
 from .models.domain import ReportTargetType
@@ -25,22 +26,18 @@ router = APIRouter(tags=['social'])
 CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
 Service = Annotated[SocialService, Depends(get_service)]
 
-
-@lru_cache(maxsize=1)
-def _report_limiter() -> RateLimiter:
-    from shared.cache import create_cache
-    from shared.config import settings
-
-    return RateLimiter(create_cache(settings.redis_url), limit=10, window_seconds=3600)
+FollowRateLimit = Depends(rate_limited('follow', limit=30, window_seconds=60))
+BlockRateLimit = Depends(rate_limited('block', limit=20, window_seconds=60))
+ReportRateLimit = Depends(rate_limited('reports', limit=10, window_seconds=3600))
 
 
 @router.post('/follows/{creator_id}', status_code=status.HTTP_204_NO_CONTENT)
-def follow(creator_id: str, user: CurrentUser, service: Service) -> None:
+def follow(creator_id: str, user: CurrentUser, service: Service, _rl: None = FollowRateLimit) -> None:
     service.follow(user, creator_id)
 
 
 @router.delete('/follows/{creator_id}', status_code=status.HTTP_204_NO_CONTENT)
-def unfollow(creator_id: str, user: CurrentUser, service: Service) -> None:
+def unfollow(creator_id: str, user: CurrentUser, service: Service, _rl: None = FollowRateLimit) -> None:
     service.unfollow(user, creator_id)
 
 
@@ -56,12 +53,12 @@ def list_following(
 
 
 @router.post('/blocks/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
-def block(user_id: str, user: CurrentUser, service: Service) -> None:
+def block(user_id: str, user: CurrentUser, service: Service, _rl: None = BlockRateLimit) -> None:
     service.block(user, user_id)
 
 
 @router.delete('/blocks/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
-def unblock(user_id: str, user: CurrentUser, service: Service) -> None:
+def unblock(user_id: str, user: CurrentUser, service: Service, _rl: None = BlockRateLimit) -> None:
     service.unblock(user, user_id)
 
 
@@ -71,8 +68,9 @@ def list_blocks(user: CurrentUser, service: Service) -> BlockedResponse:
 
 
 @router.post('/reports', response_model=ReportSchema, status_code=status.HTTP_201_CREATED)
-def create_report(body: CreateReportRequest, user: CurrentUser, service: Service) -> ReportSchema:
-    _report_limiter().check(f'reports:{user.user_id}')
+def create_report(
+    body: CreateReportRequest, user: CurrentUser, service: Service, _rl: None = ReportRateLimit
+) -> ReportSchema:
     report = service.report(
         user,
         target_type=ReportTargetType(body.targetType),

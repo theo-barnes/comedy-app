@@ -1,3 +1,5 @@
+"""Maps a resolved place's population to a discovery-strategy market-size band."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +9,8 @@ from .models.domain import MarketSize, ResolvedPlace
 
 @dataclass(slots=True, frozen=True)
 class ClassificationThresholds:
+    """Population cutoffs (inclusive, descending) between market-size bands."""
+
     mega_city_population: int
     large_city_population: int
     mid_city_population: int

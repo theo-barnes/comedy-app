@@ -1,3 +1,5 @@
+"""Place lookups: PostGIS-backed in production, no-op when no database is configured."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -16,6 +18,8 @@ from .models.domain import (
 
 
 class PlaceRepository(Protocol):
+    """Read access to the place hierarchy, used by DiscoveryRegionService and strategies."""
+
     def resolve_city(self, latitude: float, longitude: float) -> ResolvedPlace | None: ...
 
     def list_children(
@@ -52,6 +56,10 @@ class PostGISPlaceRepository:
     session_factory: 'type'  # sessionmaker[Session]
 
     def resolve_city(self, latitude: float, longitude: float) -> ResolvedPlace | None:
+        """Find the containing city via ST_Contains, falling back to nearest-by-distance
+        (`<->` KNN) when the point falls outside every known city boundary.
+        """
+
         query = text(
             """
             select

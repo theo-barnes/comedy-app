@@ -1,3 +1,5 @@
+"""Domain types for saves, likes, and raw analytics engagement events."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -7,6 +9,8 @@ from typing import Any
 
 
 class EngagementEventType(str, Enum):
+    """The kinds of raw analytics events clients report."""
+
     VIDEO_VIEWED = 'video_viewed'
     VIDEO_COMPLETED = 'video_completed'
     VIDEO_SHARED = 'video_shared'
@@ -16,6 +20,8 @@ class EngagementEventType(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class SavedItem:
+    """A content post the current user has saved, denormalized for list rendering."""
+
     content_id: str
     saved_at: datetime
     title: str
@@ -27,6 +33,8 @@ class SavedItem:
 
 @dataclass(frozen=True, slots=True)
 class EngagementEvent:
+    """A single raw analytics event (view, share, ticket click, ...)."""
+
     event_type: EngagementEventType
     occurred_at: datetime
     content_id: str | None = None

@@ -1,3 +1,5 @@
+"""SQLAlchemy ORM models for content posts and their media assets."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -30,6 +32,8 @@ MEDIA_STATUSES = (
 
 
 class ContentRow(Base):
+    """Row for `content`."""
+
     __tablename__ = 'content'
 
     id: Mapped[str] = mapped_column(
@@ -72,6 +76,8 @@ class ContentRow(Base):
 
 
 class MediaAssetRow(Base):
+    """Row for `media_assets`: one row per upload attempt, `is_current` marks the active one."""
+
     __tablename__ = 'media_assets'
 
     id: Mapped[str] = mapped_column(

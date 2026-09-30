@@ -1,3 +1,5 @@
+"""Resolves a user's app role (fan/comedian/venue) from `public.profiles`, with caching."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -12,6 +14,8 @@ _NULL_ROLE = '__none__'
 
 
 class RoleResolver(Protocol):
+    """Resolves a user_id to their app role, or None if unset/unknown."""
+
     def resolve(self, user_id: str) -> str | None: ...
 
 

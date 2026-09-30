@@ -1,3 +1,5 @@
+"""Aggregates raw engagement events into the daily content/creator stats rollup tables."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -15,6 +17,10 @@ _EVENT_FIELD = {
 
 
 def compute_content_stats(events: list[EventRecord]) -> list[ContentStatsDaily]:
+    """Bucket raw events by (content_id, day), counting one column per event type
+    and summing `watchSeconds` metadata off `video_viewed` events.
+    """
+
     buckets: dict[tuple[str, object], dict[str, float]] = defaultdict(
         lambda: {'views': 0, 'completions': 0, 'shares': 0, 'ticket_clicks': 0, 'watch_seconds': 0.0}
     )
@@ -51,6 +57,10 @@ def compute_creator_stats(
     *,
     day_of_follows: object,
 ) -> list[CreatorStatsDaily]:
+    """Bucket profile views/content views by (creator_id, day), attributing `video_viewed`
+    events to their content's creator, plus one `followers_gained` row per new follow.
+    """
+
     buckets: dict[tuple[str, object], dict[str, int]] = defaultdict(
         lambda: {'followers_gained': 0, 'profile_views': 0, 'total_views': 0}
     )

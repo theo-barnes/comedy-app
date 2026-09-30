@@ -1,3 +1,5 @@
+"""Content-inventory signal used to decide discovery granularity (stubbed until content exists)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

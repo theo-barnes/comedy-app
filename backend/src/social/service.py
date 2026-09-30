@@ -1,3 +1,5 @@
+"""Business logic for following, blocking, and reporting."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -17,6 +19,8 @@ class CreatorLookup(Protocol):
 
 
 class SocialService:
+    """Follows, blocks (which also severs any mutual follow), and reports."""
+
     def __init__(self, repository: SocialRepository, creators: CreatorLookup) -> None:
         self._repository = repository
         self._creators = creators

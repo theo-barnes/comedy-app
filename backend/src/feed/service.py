@@ -12,6 +12,7 @@ import h3
 
 from shared.cache import CacheBackend
 from shared.errors import GoneError, ValidationFailedError
+from shared.ports import PlaceLookup
 
 from .models.domain import (
     ComedianSummary,
@@ -26,22 +27,24 @@ from .repository import FeedRepository
 from .sources import CandidateSource
 
 
-class PlaceResolver(Protocol):
-    def resolve_city(self, lat: float, lng: float) -> Any | None: ...
+class EventsLookup(Protocol):
+    """Narrow view of the events module used to fetch nearby events for the home feed."""
 
-
-class EventsPort(Protocol):
     def list_nearby(
         self, lat: float, lng: float, *, radius_meters: int, limit: int
     ) -> list[Any]: ...
 
 
-class VenueNames(Protocol):
+class VenueNameLookup(Protocol):
+    """Narrow view of the events module used to resolve venue_id -> display name."""
+
     def venue_names(self, venue_ids: Sequence[str]) -> dict[str, str]: ...
 
 
 @dataclass(frozen=True, slots=True)
 class FeedSources:
+    """The three candidate sources merged into a user's home/video feed."""
+
     followed: CandidateSource
     nearby: CandidateSource
     trending: CandidateSource
@@ -51,15 +54,17 @@ class FeedSources:
 
 
 class FeedService:
+    """Assembles ranked video and home feeds from multiple candidate sources."""
+
     def __init__(
         self,
         repository: FeedRepository,
         sources: FeedSources,
         ranker: FeedRanker,
         cache: CacheBackend,
-        place_resolver: PlaceResolver,
-        events: EventsPort,
-        venue_names: VenueNames,
+        place_resolver: PlaceLookup,
+        events: EventsLookup,
+        venue_names: VenueNameLookup,
         *,
         page_size: int = 20,
         cache_ttl_seconds: int = 300,
@@ -93,6 +98,11 @@ class FeedService:
         cursor: str | None = None,
         limit: int | None = None,
     ) -> FeedPage:
+        """Page through a ranked video feed via a cached, stable "snapshot" of ranked ids:
+        the first call computes and caches the full ranked id list once, and subsequent
+        pages just slice it by cursor offset so results stay consistent across pages.
+        """
+
         page_size = min(limit or self._page_size, 50)
         anchor = self._anchor_cell(lat, lng)
         offset = 0
@@ -119,6 +129,8 @@ class FeedService:
     def home_feed(
         self, user_id: str, *, lat: float | None = None, lng: float | None = None
     ) -> HomeFeed:
+        """Assemble the four home-feed sections: nearby events, trending, followed, and new comedians."""
+
         ctx = self._build_context(user_id, lat, lng)
 
         nearby_events: tuple[NearbyEvent, ...] = ()
@@ -166,6 +178,10 @@ class FeedService:
     def _snapshot(
         self, user_id: str, anchor: str, lat: float | None, lng: float | None
     ) -> tuple[str, list[str]]:
+        """Reuse the caller's existing snapshot for this anchor cell if still cached,
+        otherwise merge+rank all video candidates and cache the result under a new snapshot id.
+        """
+
         pointer_key = f'feed:videos:{user_id}:{anchor}'
         snapshot_id = self._cache.get(pointer_key)
         if snapshot_id is not None:
@@ -234,6 +250,8 @@ class FeedService:
 
     @staticmethod
     def _encode_cursor(anchor: str, snapshot_id: str, offset: int) -> str:
+        """Opaque cursor: base64url of a small JSON envelope {anchor, snapshot_id, offset}."""
+
         payload = json.dumps({'a': anchor, 's': snapshot_id, 'o': offset}).encode()
         return base64.urlsafe_b64encode(payload).decode()
 
@@ -253,9 +271,9 @@ class FeedService:
 
 __all__ = [
     'ComedianSummary',
-    'EventsPort',
+    'EventsLookup',
     'FeedService',
     'FeedSources',
-    'PlaceResolver',
-    'VenueNames',
+    'PlaceLookup',
+    'VenueNameLookup',
 ]

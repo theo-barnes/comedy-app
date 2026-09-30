@@ -1,3 +1,5 @@
+"""Inventory-based scoring used to decide whether to widen the discovery radius."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

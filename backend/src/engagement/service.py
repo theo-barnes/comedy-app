@@ -1,3 +1,5 @@
+"""Business logic for saves, likes, and analytics event batches."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -13,12 +15,16 @@ MAX_EVENT_BATCH = 50
 
 
 class ContentLookup(Protocol):
+    """Minimal view of the content module needed to validate engagement targets."""
+
     def content_is_engageable(self, content_id: str) -> bool:
         """True when the content exists and is published."""
         ...
 
 
 class EngagementService:
+    """Saves/likes on content (guarded by ContentLookup) plus raw analytics events."""
+
     def __init__(self, repository: EngagementRepository, content: ContentLookup) -> None:
         self._repository = repository
         self._content = content
@@ -45,6 +51,10 @@ class EngagementService:
     def record_events(
         self, user: AuthenticatedUser | None, events: list[EngagementEvent]
     ) -> int:
+        """Persist a batch of client-reported analytics events, clamping any
+        future-dated `occurred_at` to the server clock.
+        """
+
         if not events:
             return 0
         if len(events) > MAX_EVENT_BATCH:

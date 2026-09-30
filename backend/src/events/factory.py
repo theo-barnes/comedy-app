@@ -1,3 +1,5 @@
+"""Wires the events module's repository/service singletons from settings."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -7,6 +9,8 @@ from .service import ComedianLookup, EventService
 
 
 class RepositoryComedianLookup:
+    """Adapts the creators repository to the ComedianLookup protocol."""
+
     def __init__(self, creators_repository) -> None:  # noqa: ANN001
         self._creators = creators_repository
 
