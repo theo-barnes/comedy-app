@@ -40,9 +40,9 @@ def main() -> None:
         log.info('media_reconciliation_complete', repaired=repaired, failures=failures)
 
     scheduler = BlockingScheduler(timezone='UTC')
-    scheduler.add_job(rollup_job, 'interval', minutes=15, next_run_time=None)
-    scheduler.add_job(trending_job, 'interval', minutes=5, next_run_time=None)
-    scheduler.add_job(media_reconciliation_job, 'interval', minutes=2, next_run_time=None,
+    scheduler.add_job(rollup_job, 'interval', minutes=15)
+    scheduler.add_job(trending_job, 'interval', minutes=5)
+    scheduler.add_job(media_reconciliation_job, 'interval', minutes=2,
                       max_instances=1, coalesce=True)
 
     # run both once at startup so fresh deployments have data immediately
