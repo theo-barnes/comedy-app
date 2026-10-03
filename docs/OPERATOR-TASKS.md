@@ -157,8 +157,8 @@ must use this value. Code signing must be resolved before physical-device video 
 
 ### B5. End-to-end acceptance — the daily iPhone loop
 
-- [ ] Comedian account uploads a short video from the iPhone (TUS transfer completes)
-- [ ] Cloudflare webhook/worker transitions it to `published`
+- [x] Comedian account uploads a short video from the iPhone (TUS transfer completes)
+- [x] Cloudflare webhook/worker transitions it to `published`
 - [ ] Its HLS URL plays in-app
 - [ ] Fan account sees and plays the clip in Discover (refresh + pagination)
 - [ ] The installed dev client opens and works with no Mac, Metro, or Docker running
