@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-import pytest
+from typing import Annotated, get_args, get_origin, get_type_hints
 
+import pytest
+from fastapi import params
+
+from shared.auth import get_current_user
 from shared.auth.models import AuthenticatedUser
 from shared.cache.memory import MemoryCache
 from shared.errors import RateLimitedError
@@ -59,6 +63,19 @@ def test_get_rate_limiter_distinct_instance_for_different_params() -> None:
 
 def _user(user_id: str) -> AuthenticatedUser:
     return AuthenticatedUser(user_id=user_id, email=None, role='fan')
+
+
+def test_rate_limited_user_param_resolves_as_auth_dependency() -> None:
+    # Regression: with PEP 563 string annotations, names imported inside the factory were
+    # unresolvable, so FastAPI treated `user` as a required `?user=` query parameter.
+    dependency = rate_limited('rl-sig', limit=1, window_seconds=6106)
+    hint = get_type_hints(dependency, include_extras=True)['user']
+    assert get_origin(hint) is Annotated
+    base, *metadata = get_args(hint)
+    assert base is AuthenticatedUser
+    assert any(
+        isinstance(m, params.Depends) and m.dependency is get_current_user for m in metadata
+    )
 
 
 def test_rate_limited_shares_bucket_across_dependencies_with_same_key() -> None:

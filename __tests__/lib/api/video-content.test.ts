@@ -28,7 +28,45 @@ describe('video content API', () => {
         body: expect.objectContaining({
           type: 'video_clip',
           description: 'A short set',
-          file: { name: 'clip.mp4', sizeBytes: 1024, mimeType: 'video/mp4' },
+          file: {
+            name: 'clip.mp4',
+            sizeBytes: 1024,
+            mimeType: 'video/mp4',
+            durationMs: null,
+            width: null,
+            height: null,
+          },
+        }),
+      }),
+    );
+  });
+
+  it('normalizes picker metadata to the positive-integer contract', async () => {
+    mockApiMutation.mockResolvedValue({});
+    await createVideo({
+      caption: '',
+      file: {
+        sizeBytes: 1024,
+        mimeType: 'video/quicktime',
+        durationMs: 12345.678,
+        width: 1080,
+        height: 0,
+      },
+    });
+
+    expect(mockApiMutation).toHaveBeenCalledWith(
+      '/content',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          title: 'Comedy clip',
+          file: {
+            name: null,
+            sizeBytes: 1024,
+            mimeType: 'video/quicktime',
+            durationMs: 12346,
+            width: 1080,
+            height: null,
+          },
         }),
       }),
     );

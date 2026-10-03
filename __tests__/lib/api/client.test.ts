@@ -127,6 +127,21 @@ describe('apiFetch', () => {
     });
   });
 
+  it('includes FastAPI validation details in errors', async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(
+        {
+          detail: [{ loc: ['body', 'file', 'durationMs'], msg: 'Input should be greater than 0' }],
+        },
+        { ok: false, status: 422 },
+      ),
+    );
+
+    await expect(apiFetch('/content', { schema, method: 'POST' })).rejects.toThrow(
+      'Request to /content failed (422): body.file.durationMs: Input should be greater than 0',
+    );
+  });
+
   it('throws ApiError when no API URL is configured', async () => {
     delete process.env.EXPO_PUBLIC_API_URL;
 

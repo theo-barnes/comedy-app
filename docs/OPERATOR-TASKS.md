@@ -75,10 +75,10 @@ In IONOS DNS, create exactly the CNAME or other record Railway supplies, wait fo
 validation, then set `EXPO_PUBLIC_API_URL=https://api-dev.cuethecomedy.com` in the EAS
 development environment in B4. Do not point the apex domain at the API.
 
-- [ ] `api-dev.cuethecomedy.com` attached in Railway with the exact IONOS DNS record required
-- [ ] `https://api-dev.cuethecomedy.com/health` responds
-- [ ] Worker deployed with restart policy; `media_reconciliation_complete` appears in logs
-- [ ] Authenticated `/v1/feed/videos` works with an A8 account's JWT
+- [x] `api-dev.cuethecomedy.com` attached in Railway with the exact IONOS DNS record required
+- [x] `https://api-dev.cuethecomedy.com/health` responds
+- [x] Worker deployed with restart policy; `media_reconciliation_complete` appears in logs
+- [x] Authenticated `/v1/feed/videos` works with an A8 account's JWT
 
 ### B2. Cloudflare Stream video setup
 
@@ -112,23 +112,27 @@ For local webhook testing, expose port 8000 with a temporary HTTPS tunnel, regis
 `https://<tunnel-host>/v1/webhooks/cloudflare-stream`, then restore the dev webhook.
 Cloudflare cannot call localhost or private IP addresses.
 
-- [ ] Stream account and least-privilege API token created
-- [ ] Backend account ID/API token configured as encrypted secrets
-- [ ] HTTPS webhook registered and returned secret configured
+- [x] Stream account and least-privilege API token created
+- [x] Backend account ID/API token configured as encrypted secrets
+- [x] HTTPS webhook registered and returned secret configured
 
 ### B3. Apple Developer enrollment and device credentials
 
 Start enrollment on day one — approval can take days.
 
-- [ ] Enroll in the Apple Developer Program (needed for device builds, TestFlight,
+- [x] Enroll in the Apple Developer Program (needed for device builds, TestFlight,
       Associated Domains)
-- [ ] Register devices: `npx eas-cli device:create`
-- [ ] In Apple Developer → Certificates, Identifiers & Profiles, register App ID
+- [x] Register devices: `npx eas-cli device:create`
+- [x] In Apple Developer → Certificates, Identifiers & Profiles, register App ID
       `com.cuethecomedy.cuecomedy` and create an iOS Development provisioning profile for your
-      team/device
-- [ ] In Xcode, open `ios/cue.xcworkspace`, select the `cue` target → Signing & Capabilities,
-      select team `8K2U73V78J`, enable **Automatically manage signing**, then build once; or use
+      team/device, or let EAS manage the equivalent internal-distribution credentials
+- [x] In Xcode, open `ios/cue.xcworkspace`, select the `cue` target → Signing & Capabilities,
+      select team `YQJFRVGDJV`, enable **Automatically manage signing**, then build once; or use
       EAS device build so EAS manages credentials
+
+Completed through EAS-managed credentials: the App ID `com.cuethecomedy.cuecomedy`, an Apple
+distribution certificate, and an ad hoc provisioning profile containing the registered iPhone
+were created for team `YQJFRVGDJV` on 2026-10-03.
 
 The known local Release device build failure is exactly: no iOS App Development provisioning
 profile exists for `com.cuethecomedy.cuecomedy`. Both Xcode build configurations and `app.json`
@@ -136,15 +140,15 @@ must use this value. Code signing must be resolved before physical-device video 
 
 ### B4. EAS environment variables and the development-device build
 
-- [ ] In EAS dashboard → Environment variables (development environment), set:
+- [x] In EAS dashboard → Environment variables (development environment), set:
       `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (dev project),
       `EXPO_PUBLIC_API_URL=https://api-dev.cuethecomedy.com`, `EXPO_PUBLIC_SENTRY_DSN`;
       keep `.env.local` for local dev only
-- [ ] Add `SENTRY_AUTH_TOKEN` (Sentry → Developer Settings → Auth Tokens) with **sensitive**
+- [x] Add `SENTRY_AUTH_TOKEN` (Sentry → Developer Settings → Auth Tokens) with **sensitive**
       visibility (for source-map upload)
-- [ ] Confirm the iOS build image uses Xcode 26+ (required for Liquid Glass compilation)
-- [ ] Build and install: `eas build --profile development-device --platform ios`
-- [ ] Let EAS create/select credentials for `com.cuethecomedy.cuecomedy`, then remove any prior
+- [x] Confirm the iOS build image uses Xcode 26+ (required for Liquid Glass compilation)
+- [x] Build and install: `eas build --profile development-device --platform ios`
+- [x] Let EAS create/select credentials for `com.cuethecomedy.cuecomedy`, then remove any prior
       Cue development client and install this new identity for device testing
 - [ ] Verify picker permissions, local preview, interrupted TUS resume, HLS playback, and
       tab-bar clearance on the device
