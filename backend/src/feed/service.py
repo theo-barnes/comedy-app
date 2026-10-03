@@ -45,12 +45,13 @@ class VenueNameLookup(Protocol):
 class FeedSources:
     """The three candidate sources merged into a user's home/video feed."""
 
+    recent: CandidateSource
     followed: CandidateSource
     nearby: CandidateSource
     trending: CandidateSource
 
     def all(self) -> tuple[CandidateSource, ...]:
-        return (self.followed, self.nearby, self.trending)
+        return (self.recent, self.followed, self.nearby, self.trending)
 
 
 class FeedService:

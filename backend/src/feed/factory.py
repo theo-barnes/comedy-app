@@ -7,7 +7,7 @@ from functools import lru_cache
 from .ranker import FeedRanker, RankWeights
 from .repository import FeedRepository
 from .service import FeedService, FeedSources
-from .sources import FollowedCreatorsSource, NearbyContentSource, TrendingSource
+from .sources import FollowedCreatorsSource, NearbyContentSource, RecentContentSource, TrendingSource
 
 
 class UnavailableFeedRepository:
@@ -45,6 +45,7 @@ def get_service() -> FeedService:
     return FeedService(
         repository=repository,
         sources=FeedSources(
+            recent=RecentContentSource(repository),
             followed=FollowedCreatorsSource(repository),
             nearby=NearbyContentSource(repository),
             trending=TrendingSource(repository, cache),

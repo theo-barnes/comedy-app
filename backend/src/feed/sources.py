@@ -18,6 +18,16 @@ class CandidateSource(Protocol):
     def collect(self, ctx: FeedContext) -> list[FeedCandidate]: ...
 
 
+class RecentContentSource:
+    """A bounded cold-start source so new public clips can receive their first views."""
+
+    def __init__(self, repository: FeedRepository) -> None:
+        self._repository = repository
+
+    def collect(self, ctx: FeedContext) -> list[FeedCandidate]:
+        return self._repository.candidates_recent(limit=ctx.candidate_limit)
+
+
 class FollowedCreatorsSource:
     """Content from creators the viewer follows."""
 

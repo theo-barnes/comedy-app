@@ -8,7 +8,7 @@ import pytest
 from feed.models.domain import ComedianSummary, FeedCandidate, FeedContext, FeedItem
 from feed.ranker import FeedRanker, RankWeights
 from feed.service import FeedService, FeedSources
-from feed.sources import FollowedCreatorsSource, NearbyContentSource, TrendingSource
+from feed.sources import FollowedCreatorsSource, NearbyContentSource, RecentContentSource, TrendingSource
 from shared.cache import MemoryCache
 
 NOW = datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)
@@ -42,6 +42,7 @@ def _ctx(**overrides) -> FeedContext:
 
 class FakeFeedRepository:
     def __init__(self) -> None:
+        self.recent: list[FeedCandidate] = []
         self.by_creators: list[FeedCandidate] = []
         self.nearby: list[FeedCandidate] = []
         self.trending: list[FeedCandidate] = []
@@ -49,6 +50,9 @@ class FakeFeedRepository:
         self.blocked: tuple[str, ...] = ()
         self.comedians: list[ComedianSummary] = []
         self.venues: dict[str, str] = {}
+
+    def candidates_recent(self, *, limit: int):
+        return self.recent[:limit]
 
     def candidates_by_creators(self, creator_ids: Sequence[str], *, limit: int):
         return [c for c in self.by_creators if c.creator_id in creator_ids][:limit]
@@ -106,6 +110,7 @@ def _service(repo: FakeFeedRepository, *, trending_cache: MemoryCache | None = N
     return FeedService(
         repository=repo,
         sources=FeedSources(
+            recent=RecentContentSource(repo),
             followed=FollowedCreatorsSource(repo),
             nearby=NearbyContentSource(repo),
             trending=TrendingSource(repo, trending_cache or MemoryCache()),
@@ -229,6 +234,15 @@ def test_feed_videos_paginates_with_cursor() -> None:
     page3 = service.feed_videos('user-1', cursor=page2.next_cursor)
     assert len(page3.items) == 1
     assert page3.next_cursor is None
+
+
+def test_feed_videos_includes_recent_public_clips_without_other_signals() -> None:
+    repo = FakeFeedRepository()
+    repo.recent = [_candidate('new-clip')]
+
+    page = _service(repo).feed_videos('new-fan')
+
+    assert [item.content_id for item in page.items] == ['new-clip']
 
 
 def test_feed_videos_uses_cached_snapshot() -> None:
