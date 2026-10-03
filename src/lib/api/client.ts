@@ -23,6 +23,23 @@ export class ApiError extends Error {
   }
 }
 
+function formatErrorDetail(body: unknown): string | undefined {
+  if (body === null || typeof body !== 'object' || !('detail' in body)) return undefined;
+
+  const detail = body.detail;
+  if (typeof detail === 'string') return detail;
+  if (!Array.isArray(detail)) return undefined;
+
+  const messages = detail.flatMap((issue) => {
+    if (issue === null || typeof issue !== 'object' || !('msg' in issue)) return [];
+    if (typeof issue.msg !== 'string') return [];
+
+    const location = 'loc' in issue && Array.isArray(issue.loc) ? issue.loc.join('.') : 'request';
+    return `${location}: ${issue.msg}`;
+  });
+  return messages.length > 0 ? messages.join('; ') : undefined;
+}
+
 type ApiFetchOptions<T> = {
   schema: z.ZodType<T>;
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -72,7 +89,9 @@ async function request(
   });
 
   if (!response.ok) {
-    throw new ApiError(`Request to ${path} failed (${response.status})`, response.status);
+    const detail = formatErrorDetail(await response.json().catch(() => undefined));
+    const message = `Request to ${path} failed (${response.status})`;
+    throw new ApiError(detail ? `${message}: ${detail}` : message, response.status);
   }
 
   return response;

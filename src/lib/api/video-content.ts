@@ -59,6 +59,24 @@ export type CreateVideoInput = {
   };
 };
 
+/** Backend requires positive integers; pickers report floats (e.g. duration) or 0 for unknown. */
+function positiveInteger(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const rounded = Math.round(value);
+  return rounded > 0 ? rounded : null;
+}
+
+export function normalizeVideoFile(file: CreateVideoInput['file']): CreateVideoInput['file'] {
+  return {
+    name: file.name ?? null,
+    sizeBytes: file.sizeBytes,
+    mimeType: file.mimeType,
+    durationMs: positiveInteger(file.durationMs),
+    width: positiveInteger(file.width),
+    height: positiveInteger(file.height),
+  };
+}
+
 export function createVideo(input: CreateVideoInput): Promise<CreateVideoResponse> {
   return apiMutation('/content', {
     method: 'POST',
@@ -68,7 +86,7 @@ export function createVideo(input: CreateVideoInput): Promise<CreateVideoRespons
       title: input.caption.trim().slice(0, 200) || 'Comedy clip',
       description: input.caption.trim() || null,
       visibility: 'public',
-      file: input.file,
+      file: normalizeVideoFile(input.file),
     },
   });
 }

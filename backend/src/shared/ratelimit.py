@@ -9,8 +9,12 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from shared.auth import AuthenticatedUser, get_current_user
 from shared.cache.base import CacheBackend
 from shared.errors import RateLimitedError
+
+# Module-level so FastAPI can resolve the (string, PEP 563) annotation from this module's globals.
+CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]
 
 
 class RateLimiter:
@@ -66,9 +70,7 @@ def rate_limited(key: str, *, limit: int, window_seconds: int):  # noqa: ANN201 
     Pass the same `key` to multiple routes (e.g. follow + unfollow) to share one bucket.
     """
 
-    from shared.auth import AuthenticatedUser, get_current_user
-
-    def dependency(user: Annotated[AuthenticatedUser, Depends(get_current_user)]) -> None:
+    def dependency(user: CurrentUser) -> None:
         get_rate_limiter(limit, window_seconds).check(f'{key}:{user.user_id}')
 
     return dependency
