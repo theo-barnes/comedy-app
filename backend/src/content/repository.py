@@ -243,6 +243,7 @@ class SqlContentRepository:
                 provider=provider,
                 provider_uid=provider_uid,
                 attempt_number=attempt + 1,
+                status=MediaStatus.PENDING_UPLOAD.value,
                 upload_protocol=upload_protocol,
                 upload_expires_at=upload_expires_at,
                 source_mime_type=source_mime_type,
