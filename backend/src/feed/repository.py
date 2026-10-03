@@ -20,6 +20,8 @@ from .models.domain import ComedianSummary, FeedCandidate, FeedItem, LinkedEvent
 class FeedRepository(Protocol):
     """Reads candidate content by signal and hydrates content_ids into viewer-specific FeedItems."""
 
+    def candidates_recent(self, *, limit: int) -> list[FeedCandidate]: ...
+
     def candidates_by_creators(
         self, creator_ids: Sequence[str], *, limit: int
     ) -> list[FeedCandidate]: ...
@@ -49,6 +51,15 @@ class SqlFeedRepository:
 
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
+
+    def candidates_recent(self, *, limit: int) -> list[FeedCandidate]:
+        stmt = (
+            select(ContentRow)
+            .where(*_PUBLISHED)
+            .order_by(ContentRow.published_at.desc())
+            .limit(limit)
+        )
+        return self._load_candidates(stmt)
 
     def candidates_by_creators(
         self, creator_ids: Sequence[str], *, limit: int
