@@ -52,6 +52,7 @@ function RootNavigator() {
       <Stack.Protected guard={showApp}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="discover-search" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="profile/[userId]" />
       </Stack.Protected>
     </Stack>
   );

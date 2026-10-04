@@ -6,6 +6,7 @@ import { renderWithTheme } from '../../utils/renderWithTheme';
 
 const mockUseVideoFeed = jest.fn();
 const mockMutate = jest.fn();
+const mockPush = jest.fn();
 
 function flatten(style: unknown): Record<string, unknown> {
   return Object.assign({}, ...[style].flat(3).filter(Boolean));
@@ -13,6 +14,7 @@ function flatten(style: unknown): Record<string, unknown> {
 
 jest.mock('expo-router', () => ({
   useFocusEffect: () => {},
+  useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock('@/lib/api/video-feed', () => ({
@@ -72,6 +74,7 @@ function videoFeedQuery() {
 describe('DiscoverFeed', () => {
   beforeEach(() => {
     mockMutate.mockReset();
+    mockPush.mockReset();
     mockUseVideoFeed.mockReturnValue(videoFeedQuery());
   });
 
@@ -121,5 +124,20 @@ describe('DiscoverFeed', () => {
     expect(
       screen.getByTestId('discover-search-input', { includeHiddenElements: true }).props.value,
     ).toBe('');
+  });
+
+  it('pushes the uploader public profile when the caption name is pressed', async () => {
+    renderWithTheme(<DiscoverFeed />);
+    fireEvent(screen.getByTestId('discover-feed'), 'layout', {
+      nativeEvent: { layout: { height: 600 } },
+    });
+    await act(async () => {});
+
+    fireEvent.press(screen.getByRole('button', { name: "View Asha's profile" }));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/profile/[userId]',
+      params: { userId: 'creator-1' },
+    });
   });
 });

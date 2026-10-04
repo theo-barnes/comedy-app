@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,6 +25,7 @@ import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { VideoCaption } from './VideoCaption';
 
 export function DiscoverFeed() {
+  const router = useRouter();
   const location = useContext(LocationContext);
   const insets = useContext(SafeAreaInsetsContext) ?? { top: 0, right: 0, bottom: 0, left: 0 };
   const query = useVideoFeed(location?.latitude ?? null, location?.longitude ?? null);
@@ -153,7 +154,16 @@ export function DiscoverFeed() {
                   style={[styles.overlay, { bottom: insets.bottom + 68 }]}
                   pointerEvents="box-none"
                 >
-                  <VideoCaption creatorName={item.creatorName} description={item.description} />
+                  <VideoCaption
+                    creatorName={item.creatorName}
+                    description={item.description}
+                    onCreatorPress={() =>
+                      router.push({
+                        pathname: '/profile/[userId]',
+                        params: { userId: item.creatorId },
+                      })
+                    }
+                  />
                 </View>
                 <DiscoverClipActionRail
                   liked={liked}
