@@ -10,7 +10,6 @@ type FeedVideoPlayerProps = {
   uri: string;
   thumbnailUri?: string;
   isActive: boolean;
-  muted: boolean;
   onPlaybackError?: () => void;
   contentType?: ContentType;
 };
@@ -23,7 +22,6 @@ export function FeedVideoPlayer({
   uri,
   thumbnailUri,
   isActive,
-  muted,
   onPlaybackError,
   contentType = 'hls',
 }: FeedVideoPlayerProps) {
@@ -34,12 +32,6 @@ export function FeedVideoPlayer({
     instance.staysActiveInBackground = false;
   });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
-
-  useEffect(() => {
-    // expo-video exposes mutable player controls as its imperative API.
-    // eslint-disable-next-line react-hooks/immutability
-    player.muted = muted;
-  }, [muted, player]);
 
   useEffect(() => {
     if (isActive) {
