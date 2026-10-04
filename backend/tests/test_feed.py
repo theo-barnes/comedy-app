@@ -6,12 +6,33 @@ from typing import Sequence
 import pytest
 
 from feed.models.domain import ComedianSummary, FeedCandidate, FeedContext, FeedItem
+from feed.repository import _creator_names
 from feed.ranker import FeedRanker, RankWeights
 from feed.service import FeedService, FeedSources
 from feed.sources import FollowedCreatorsSource, NearbyContentSource, RecentContentSource, TrendingSource
 from shared.cache import MemoryCache
 
 NOW = datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)
+
+
+class FakeProfileResult:
+    def __init__(self, rows: list[tuple[str, str | None]]) -> None:
+        self._rows = rows
+
+    def all(self) -> list[tuple[str, str | None]]:
+        return self._rows
+
+
+class FakeProfileSession:
+    def __init__(self, rows: list[tuple[str, str | None]]) -> None:
+        self.rows = rows
+        self.statement = None
+        self.params = None
+
+    def execute(self, statement, params):  # noqa: ANN001, ANN201
+        self.statement = statement
+        self.params = params
+        return FakeProfileResult(self.rows)
 
 
 def _candidate(content_id: str, **overrides) -> FeedCandidate:
@@ -91,6 +112,24 @@ class FakeFeedRepository:
 
     def venue_names(self, venue_ids: Sequence[str]) -> dict[str, str]:
         return {vid: self.venues.get(vid, 'Unknown venue') for vid in venue_ids}
+
+
+def test_creator_names_reads_account_display_names_in_one_batched_query() -> None:
+    session = FakeProfileSession([('comedian-1', 'Jo King'), ('venue-1', 'The Comedy Cellar')])
+
+    names = _creator_names(session, ['comedian-1', 'venue-1', 'comedian-1'])
+
+    assert names == {'comedian-1': 'Jo King', 'venue-1': 'The Comedy Cellar'}
+    assert 'SELECT id::text, display_name FROM public.profiles' in str(session.statement)
+    assert session.params == {'creator_ids': ['comedian-1', 'venue-1']}
+
+
+def test_creator_names_uses_stable_fallback_for_blank_account_names() -> None:
+    session = FakeProfileSession([('comedian-1', '  '), ('venue-1', None)])
+
+    names = _creator_names(session, ['comedian-1', 'venue-1'])
+
+    assert names == {'comedian-1': 'Creator', 'venue-1': 'Creator'}
 
 
 class FakePlaceLookup:
