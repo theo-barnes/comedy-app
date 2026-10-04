@@ -10,8 +10,11 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "test:ci": "jest",
+    "test:focused": "jest --runInBand",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "quality": "pnpm typecheck && pnpm lint && pnpm test:ci",
+    "validate:governance": "node scripts/validate-agent-governance.mjs",
     "format": "prettier --write .",
     "prepare": "husky"
   },
