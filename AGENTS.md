@@ -39,9 +39,11 @@ For every code or documentation change, work on a fresh, appropriately named bra
 the current `origin/main` (for example, `fix/<concise-problem>` or `feat/<concise-feature>`).
 Before creating the branch, preserve and do not revert unrelated user changes. Run focused
 validation, commit with a Conventional Commit title and a descriptive body when the why is not
-obvious, then push the branch to `origin`. Report the branch, commit SHA, validation performed,
-and a compare URL ready to create a pull request. Do not merge or delete branches unless the user
-explicitly asks.
+obvious, then prepare a completed pull-request description from
+`.github/pull_request_template.md` before pushing the branch to `origin`. Paste that completed
+description into the pull request without its placeholder comments. Report the branch, commit SHA,
+validation performed, completed description, and a compare URL ready to create a pull request. Do
+not merge or delete branches unless the user explicitly asks.
 
 For multi-session or multi-PR work, maintain a plan in `docs/plans/active/` and move it to
 `docs/plans/completed/` when finished. At delivery, report affected boundaries, validation,
