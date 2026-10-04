@@ -6,16 +6,30 @@ import { AppText } from '@/components/AppText';
 type VideoCaptionProps = {
   creatorName: string;
   description?: string | null;
+  onCreatorPress?: () => void;
 };
 
-export function VideoCaption({ creatorName, description }: VideoCaptionProps) {
+export function VideoCaption({ creatorName, description, onCreatorPress }: VideoCaptionProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <View style={styles.container}>
-      <AppText variant="label" style={styles.creator}>
-        @{creatorName}
-      </AppText>
+      {onCreatorPress ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`View ${creatorName}'s profile`}
+          hitSlop={8}
+          onPress={onCreatorPress}
+        >
+          <AppText variant="label" style={styles.creator}>
+            @{creatorName}
+          </AppText>
+        </Pressable>
+      ) : (
+        <AppText variant="label" style={styles.creator}>
+          @{creatorName}
+        </AppText>
+      )}
       {description ? (
         <ScrollView
           style={expanded ? styles.expanded : undefined}

@@ -13,6 +13,7 @@ from engagement.controller import router as engagement_router
 from events.controller import router as events_router
 from feed.controller import router as feed_router
 from location.controller import router as discovery_router
+from profiles.controller import router as profiles_router
 from shared.config import settings
 from shared.errors import register_error_handlers
 from shared.logging import configure_logging
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     # Versioned API surface. The unversioned discovery route is kept for
     # backwards compatibility with existing app builds.
     app.include_router(discovery_router, prefix='/v1')
+    app.include_router(profiles_router, prefix='/v1')
     app.include_router(creators_router, prefix='/v1')
     app.include_router(social_router, prefix='/v1')
     app.include_router(content_router, prefix='/v1')
