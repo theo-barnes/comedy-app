@@ -1,5 +1,13 @@
 # Comedy App
 
+## Engineering Workflow
+
+Repository engineering standards and agent workflow live in [AGENTS.md](AGENTS.md),
+[docs/engineering-playbook.md](docs/engineering-playbook.md), and
+[docs/agent-workflow.md](docs/agent-workflow.md). Before submitting a change, run the proportional
+validation described there; the full frontend gate is `pnpm quality`, and repository instruction
+structure is checked by `pnpm validate:governance`.
+
 ## Development environments
 
 - **Hosted dev (default for the physical iPhone)** — deployed dev API + worker, the Supabase

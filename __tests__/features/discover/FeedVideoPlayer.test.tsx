@@ -43,17 +43,15 @@ describe('FeedVideoPlayer', () => {
     mockReplaceAsync.mockClear();
   });
 
-  it('plays only while active and applies mute state', () => {
+  it('plays only while active with audio enabled', () => {
     const { rerender } = renderWithTheme(
-      <FeedVideoPlayer uri="https://example.com/video.m3u8" isActive muted />,
+      <FeedVideoPlayer uri="https://example.com/video.m3u8" isActive />,
     );
 
     expect(mockPlay).toHaveBeenCalled();
-    expect(mockPlayer.muted).toBe(true);
+    expect(mockPlayer.muted).toBe(false);
 
-    rerender(
-      <FeedVideoPlayer uri="https://example.com/video.m3u8" isActive={false} muted={false} />,
-    );
+    rerender(<FeedVideoPlayer uri="https://example.com/video.m3u8" isActive={false} />);
 
     expect(mockPause).toHaveBeenCalled();
     expect(mockPlayer.muted).toBe(false);
@@ -65,7 +63,6 @@ describe('FeedVideoPlayer', () => {
         uri="https://example.com/video.m3u8"
         thumbnailUri="https://example.com/thumb.jpg"
         isActive
-        muted
       />,
     );
 
@@ -81,7 +78,6 @@ describe('FeedVideoPlayer', () => {
       <FeedVideoPlayer
         uri="https://example.com/video.m3u8"
         isActive
-        muted
         onPlaybackError={onPlaybackError}
       />,
     );

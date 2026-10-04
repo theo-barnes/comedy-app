@@ -160,7 +160,6 @@ export function UploadVideoScreen() {
               uri={selected.uri}
               contentType="auto"
               isActive={!controller && !processing && !published}
-              muted={false}
             />
           </View>
         ) : (

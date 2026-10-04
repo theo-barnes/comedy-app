@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   AppState,
   FlatList,
-  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -16,9 +15,11 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { LocationContext } from '@/features/location';
+import { useToggleLike } from '@/lib/api/engagement';
 import { useVideoFeed } from '@/lib/api/video-feed';
 import type { FeedItem } from '@/lib/api/home-feed';
 
+import { DiscoverClipActionRail } from './DiscoverClipActionRail';
 import { FeedVideoPlayer } from './FeedVideoPlayer';
 import { VideoCaption } from './VideoCaption';
 
@@ -30,7 +31,8 @@ export function DiscoverFeed() {
   const [activeContentId, setActiveContentId] = useState<string | null>(null);
   const [screenFocused, setScreenFocused] = useState(false);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
-  const [muted, setMuted] = useState(true);
+  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({});
+  const toggleLike = useToggleLike();
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
   useFocusEffect(
@@ -57,6 +59,17 @@ export function DiscoverFeed() {
   function handleLayout(event: LayoutChangeEvent) {
     const height = event.nativeEvent.layout.height;
     if (height > 0 && height !== itemHeight) setItemHeight(height);
+  }
+
+  function handleToggleLike(item: FeedItem) {
+    const liked = optimisticLikes[item.contentId] ?? item.viewerLiked;
+    setOptimisticLikes((current) => ({ ...current, [item.contentId]: !liked }));
+    toggleLike.mutate(
+      { contentId: item.contentId, liked },
+      {
+        onError: () => setOptimisticLikes((current) => ({ ...current, [item.contentId]: liked })),
+      },
+    );
   }
 
   if (query.isPending) {
@@ -95,7 +108,7 @@ export function DiscoverFeed() {
   }
 
   return (
-    <View style={styles.container} onLayout={handleLayout}>
+    <View testID="discover-feed" style={styles.container} onLayout={handleLayout}>
       {itemHeight > 0 ? (
         <FlatList
           data={items}
@@ -116,40 +129,39 @@ export function DiscoverFeed() {
           }}
           onRefresh={() => void query.refetch()}
           refreshing={query.isRefetching && !query.isFetchingNextPage}
-          renderItem={({ item }) => (
-            <View style={[styles.item, { height: itemHeight }]}>
-              {item.hlsUrl ? (
-                <FeedVideoPlayer
-                  uri={item.hlsUrl}
-                  thumbnailUri={item.thumbnailUrl ?? undefined}
-                  isActive={activeContentId === item.contentId && screenFocused && appActive}
-                  muted={muted}
-                />
-              ) : (
-                <View style={styles.centered}>
-                  <AppText style={styles.whiteText}>Video unavailable</AppText>
-                </View>
-              )}
-              <View
-                style={[styles.overlay, { bottom: insets.bottom + 68 }]}
-                pointerEvents="box-none"
-              >
-                <VideoCaption creatorName={item.creatorName} description={item.description} />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={muted ? 'Unmute video' : 'Mute video'}
-                  style={styles.audioButton}
-                  onPress={() => setMuted((value) => !value)}
-                >
-                  <Ionicons
-                    name={muted ? 'volume-mute' : 'volume-high'}
-                    size={24}
-                    color="#FFFFFF"
+          renderItem={({ item }) => {
+            const liked = optimisticLikes[item.contentId] ?? item.viewerLiked;
+            const likePending =
+              toggleLike.isPending && toggleLike.variables?.contentId === item.contentId;
+
+            return (
+              <View style={[styles.item, { height: itemHeight }]}>
+                {item.hlsUrl ? (
+                  <FeedVideoPlayer
+                    uri={item.hlsUrl}
+                    thumbnailUri={item.thumbnailUrl ?? undefined}
+                    isActive={activeContentId === item.contentId && screenFocused && appActive}
                   />
-                </Pressable>
+                ) : (
+                  <View style={styles.centered}>
+                    <AppText style={styles.whiteText}>Video unavailable</AppText>
+                  </View>
+                )}
+                <View
+                  style={[styles.overlay, { bottom: insets.bottom + 68 }]}
+                  pointerEvents="box-none"
+                >
+                  <VideoCaption creatorName={item.creatorName} description={item.description} />
+                </View>
+                <DiscoverClipActionRail
+                  liked={liked}
+                  likePending={likePending}
+                  onToggleLike={() => handleToggleLike(item)}
+                  style={[styles.actionRail, { bottom: insets.bottom + 76 }]}
+                />
               </View>
-            </View>
-          )}
+            );
+          }}
         />
       ) : null}
     </View>
@@ -170,19 +182,11 @@ const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
     left: 18,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 16,
+    right: 88,
   },
-  audioButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+  actionRail: {
+    position: 'absolute',
+    right: 16,
   },
   whiteText: { color: '#FFFFFF', textAlign: 'center' },
   mutedText: { color: 'rgba(255,255,255,0.7)', textAlign: 'center' },

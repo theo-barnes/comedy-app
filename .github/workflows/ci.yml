@@ -63,13 +63,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm quality
 
-      - name: Lint
-        run: pnpm lint
-
-      - name: Test
-        run: pnpm test:ci
+      - name: Validate agent governance
+        run: pnpm validate:governance
 
   backend:
     name: Backend tests
