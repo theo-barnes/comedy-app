@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   AppState,
   FlatList,
-  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -30,7 +29,6 @@ export function DiscoverFeed() {
   const [activeContentId, setActiveContentId] = useState<string | null>(null);
   const [screenFocused, setScreenFocused] = useState(false);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
-  const [muted, setMuted] = useState(true);
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
   useFocusEffect(
@@ -123,7 +121,6 @@ export function DiscoverFeed() {
                   uri={item.hlsUrl}
                   thumbnailUri={item.thumbnailUrl ?? undefined}
                   isActive={activeContentId === item.contentId && screenFocused && appActive}
-                  muted={muted}
                 />
               ) : (
                 <View style={styles.centered}>
@@ -135,18 +132,6 @@ export function DiscoverFeed() {
                 pointerEvents="box-none"
               >
                 <VideoCaption creatorName={item.creatorName} description={item.description} />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={muted ? 'Unmute video' : 'Mute video'}
-                  style={styles.audioButton}
-                  onPress={() => setMuted((value) => !value)}
-                >
-                  <Ionicons
-                    name={muted ? 'volume-mute' : 'volume-high'}
-                    size={24}
-                    color="#FFFFFF"
-                  />
-                </Pressable>
               </View>
             </View>
           )}
@@ -175,14 +160,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: 16,
-  },
-  audioButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   whiteText: { color: '#FFFFFF', textAlign: 'center' },
   mutedText: { color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
