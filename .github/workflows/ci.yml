@@ -7,6 +7,42 @@ on:
     branches: [main]
 
 jobs:
+  pr-description:
+    name: Pull request description
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require completed delivery description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request?.body ?? '';
+            const requiredHeadings = ['Summary', 'Engineering Decisions', 'Validation', 'Delivery'];
+            const requiredFields = [
+              'Risk',
+              'Affected layers and contracts',
+              'Reuse or abstraction decision',
+              'ADR or execution plan',
+              'Commands run and results',
+              'User-journey evidence',
+              'Documentation impact',
+              'Rollout and rollback',
+              'Remaining risks or follow-up',
+            ];
+            const missingHeadings = requiredHeadings.filter((heading) => !body.includes(`## ${heading}`));
+            const missingFields = requiredFields.filter((field) => {
+              const match = body.match(new RegExp(`^- ${field}:\\s*(.+)$`, 'm'));
+              return !match || !match[1].replace(/<!--.*?-->/g, '').trim();
+            });
+            const summary = body.split('## Engineering Decisions')[0]?.replace('## Summary', '').replace(/<!--[\s\S]*?-->/g, '').trim();
+
+            if (!summary || missingHeadings.length > 0 || missingFields.length > 0) {
+              core.setFailed(
+                `Complete the pull request template. Missing headings: ${missingHeadings.join(', ') || 'none'}; missing fields: ${missingFields.join(', ') || 'none'}.`,
+              );
+            }
+
   test:
     name: Typecheck, lint & test
     runs-on: ubuntu-latest
