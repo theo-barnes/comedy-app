@@ -161,7 +161,40 @@ must use this value. Code signing must be resolved before physical-device video 
 - [x] Cloudflare webhook/worker transitions it to `published`
 - [x] Its HLS URL plays in-app
 - [x] Fan account sees and plays the clip in Discover (refresh + pagination)
-- [ ] The installed dev client opens and works with no Mac, Metro, or Docker running
+- [ ] The installed preview build opens and works with no Mac, Metro, or Docker running
+
+### B6. Portable preview and staged iOS distribution
+
+The `development-device` build remains the fast local UI/debugging tool: it is a development
+client and intentionally loads JavaScript from Metro. The `preview` build is a separate,
+standalone internal-distribution app with its JavaScript bundle embedded. It works away from the
+Mac and local Wi-Fi, but it still needs ordinary internet access for Supabase, the hosted API,
+video upload, and Cloudflare Stream playback.
+
+- [ ] In EAS dashboard -> Environment variables (preview environment), set the preview values for
+      `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`,
+      `EXPO_PUBLIC_API_URL=https://api-dev.cuethecomedy.com`, and `EXPO_PUBLIC_SENTRY_DSN`; add
+      `SENTRY_AUTH_TOKEN` with sensitive visibility
+- [ ] Build and install the portable iOS preview app:
+      `npx eas-cli build --profile preview --platform ios`
+- [ ] With Metro, Docker, and the Mac unavailable, verify the preview app can sign in, upload a
+      video on cellular, receive its published state, and play its Cloudflare HLS stream on
+      cellular
+- [ ] Publish the first compatible JavaScript-only preview update:
+      `npx eas-cli update --channel preview --environment preview --message "..."`; upload the
+      corresponding Sentry source maps and complete B4's source-map task
+- [ ] Use EAS Update for compatible JavaScript, styling, and asset changes only; make and install
+      a new preview binary after changes to native dependencies, `app.json`, permissions, Expo
+      SDK/runtime, or any other native configuration
+- [ ] For each additional iPhone/iPad receiving the ad hoc preview app, register the device with
+      `npx eas-cli device:create`, then create a new preview build so its provisioning profile
+      includes that device (Apple's ad hoc registration limits apply)
+- [ ] When testing must scale beyond registered devices, create the App Store Connect record,
+      submit a production build to TestFlight, and invite testers there; internal testers can be
+      invited directly, while external testers may require Apple Beta App Review
+- [ ] Before public release, point the production build at the dedicated production Supabase/API
+      environment, submit the production build to App Store review, and release through the App
+      Store
 
 ## Phase C — pre-launch / when relevant
 
