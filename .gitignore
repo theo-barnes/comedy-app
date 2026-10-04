@@ -33,6 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# local development runbook
+/docs/OPERATOR-TASKS.md
+
 # typescript
 *.tsbuildinfo
 
