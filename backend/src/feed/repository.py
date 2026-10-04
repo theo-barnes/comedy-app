@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol, Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from content.models.orm import ContentRow, MediaAssetRow
@@ -44,6 +44,25 @@ class FeedRepository(Protocol):
 
 
 _PUBLISHED = (ContentRow.status == 'published', ContentRow.visibility == 'public')
+_UNKNOWN_CREATOR_NAME = 'Creator'
+
+
+def _creator_names(session: Session, creator_ids: Sequence[str]) -> dict[str, str]:
+    """Read account display names for feed items without owning the profiles table."""
+
+    if not creator_ids:
+        return {}
+    rows = session.execute(
+        text(
+            'SELECT id::text, display_name FROM public.profiles '
+            'WHERE id = ANY(CAST(:creator_ids AS uuid[]))'
+        ),
+        {'creator_ids': list(dict.fromkeys(creator_ids))},
+    ).all()
+    return {
+        str(user_id): display_name.strip() if display_name and display_name.strip() else _UNKNOWN_CREATOR_NAME
+        for user_id, display_name in rows
+    }
 
 
 class SqlFeedRepository:
@@ -134,19 +153,16 @@ class SqlFeedRepository:
             return []
         with self._session_factory() as session:
             rows = session.execute(
-                select(ContentRow, MediaAssetRow, ComedianProfileRow, VenueProfileRow)
+                select(ContentRow, MediaAssetRow)
                 .outerjoin(
                     MediaAssetRow,
                     (MediaAssetRow.content_id == ContentRow.id)
                     & MediaAssetRow.is_current.is_(True)
                     & (MediaAssetRow.status == 'ready'),
                 )
-                .outerjoin(
-                    ComedianProfileRow, ComedianProfileRow.user_id == ContentRow.creator_id
-                )
-                .outerjoin(VenueProfileRow, VenueProfileRow.user_id == ContentRow.creator_id)
                 .where(ContentRow.id.in_(content_ids))
             ).all()
+            creator_names = _creator_names(session, [content.creator_id for content, _ in rows])
             like_counts = self._pair_counts(session, LikeRow, content_ids)
             save_counts = self._pair_counts(session, SaveRow, content_ids)
             viewer_likes = self._viewer_pairs(session, LikeRow, viewer_id, content_ids)
@@ -161,12 +177,8 @@ class SqlFeedRepository:
                     events[event.id] = event
 
             by_id: dict[str, FeedItem] = {}
-            for content, media, comedian, venue in rows:
-                name = (
-                    comedian.stage_name
-                    if comedian is not None
-                    else venue.venue_name if venue is not None else 'Unknown'
-                )
+            for content, media in rows:
+                name = creator_names.get(content.creator_id, _UNKNOWN_CREATOR_NAME)
                 linked: LinkedEvent | None = None
                 event = events.get(content.event_id) if content.event_id else None
                 if event is not None:

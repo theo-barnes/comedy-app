@@ -82,6 +82,8 @@ describe('DiscoverFeed', () => {
       nativeEvent: { layout: { height: 600 } },
     });
 
+    expect(screen.getByText('@Asha')).toBeTruthy();
+
     fireEvent.press(screen.getByRole('button', { name: 'Like clip' }));
 
     expect(mockMutate).toHaveBeenCalledWith(
