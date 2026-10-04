@@ -150,7 +150,7 @@ must use this value. Code signing must be resolved before physical-device video 
 - [x] Build and install: `eas build --profile development-device --platform ios`
 - [x] Let EAS create/select credentials for `com.cuethecomedy.cuecomedy`, then remove any prior
       Cue development client and install this new identity for device testing
-- [ ] Verify picker permissions, local preview, interrupted TUS resume, HLS playback, and
+- [x] Verify picker permissions, local preview, interrupted TUS resume, HLS playback, and
       tab-bar clearance on the device
 - [ ] After your first `eas update`, upload source maps:
       `npx sentry-expo-upload-sourcemaps dist`
@@ -159,8 +159,8 @@ must use this value. Code signing must be resolved before physical-device video 
 
 - [x] Comedian account uploads a short video from the iPhone (TUS transfer completes)
 - [x] Cloudflare webhook/worker transitions it to `published`
-- [ ] Its HLS URL plays in-app
-- [ ] Fan account sees and plays the clip in Discover (refresh + pagination)
+- [x] Its HLS URL plays in-app
+- [x] Fan account sees and plays the clip in Discover (refresh + pagination)
 - [ ] The installed dev client opens and works with no Mac, Metro, or Docker running
 
 ## Phase C — pre-launch / when relevant
