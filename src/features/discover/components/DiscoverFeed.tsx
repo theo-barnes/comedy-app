@@ -14,6 +14,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
+import { ExpandingSearchBar } from '@/components/ExpandingSearchBar';
 import { LocationContext } from '@/features/location';
 import { useToggleLike } from '@/lib/api/engagement';
 import { useVideoFeed } from '@/lib/api/video-feed';
@@ -32,6 +33,7 @@ export function DiscoverFeed() {
   const [screenFocused, setScreenFocused] = useState(false);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState('');
   const toggleLike = useToggleLike();
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -164,6 +166,15 @@ export function DiscoverFeed() {
           }}
         />
       ) : null}
+      <ExpandingSearchBar
+        testID="discover-search"
+        style={[styles.search, { top: insets.top + 12 }]}
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        onSubmit={setSearchQuery}
+      >
+        <View />
+      </ExpandingSearchBar>
     </View>
   );
 }
@@ -187,6 +198,13 @@ const styles = StyleSheet.create({
   actionRail: {
     position: 'absolute',
     right: 16,
+  },
+  search: {
+    position: 'absolute',
+    right: 18,
+    width: '75%',
+    zIndex: 1,
+    elevation: 1,
   },
   whiteText: { color: '#FFFFFF', textAlign: 'center' },
   mutedText: { color: 'rgba(255,255,255,0.7)', textAlign: 'center' },

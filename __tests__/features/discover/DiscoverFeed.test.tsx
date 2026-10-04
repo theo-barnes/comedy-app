@@ -7,6 +7,10 @@ import { renderWithTheme } from '../../utils/renderWithTheme';
 const mockUseVideoFeed = jest.fn();
 const mockMutate = jest.fn();
 
+function flatten(style: unknown): Record<string, unknown> {
+  return Object.assign({}, ...[style].flat(3).filter(Boolean));
+}
+
 jest.mock('expo-router', () => ({
   useFocusEffect: () => {},
 }));
@@ -71,7 +75,7 @@ describe('DiscoverFeed', () => {
     mockUseVideoFeed.mockReturnValue(videoFeedQuery());
   });
 
-  it('optimistically likes a clip and restores its feed state if the mutation fails', () => {
+  it('optimistically likes a clip and restores its feed state if the mutation fails', async () => {
     let mutationOptions: { onError?: () => void } | undefined;
     mockMutate.mockImplementation((_variables, options) => {
       mutationOptions = options;
@@ -81,6 +85,7 @@ describe('DiscoverFeed', () => {
     fireEvent(screen.getByTestId('discover-feed'), 'layout', {
       nativeEvent: { layout: { height: 600 } },
     });
+    await act(async () => {});
 
     expect(screen.getByText('@Asha')).toBeTruthy();
 
@@ -94,5 +99,27 @@ describe('DiscoverFeed', () => {
 
     act(() => mutationOptions?.onError?.());
     expect(screen.getByRole('button', { name: 'Like clip' })).toBeTruthy();
+  });
+
+  it('keeps a UI-only search control in a fixed overlay above the clip feed', async () => {
+    renderWithTheme(<DiscoverFeed />);
+    fireEvent(screen.getByTestId('discover-feed'), 'layout', {
+      nativeEvent: { layout: { height: 600 } },
+    });
+    await act(async () => {});
+
+    const search = screen.getByTestId('discover-search');
+    expect(flatten(search.props.style)).toMatchObject({ position: 'absolute' });
+
+    fireEvent.press(screen.getByTestId('discover-search-toggle'));
+    const input = screen.getByTestId('discover-search-input');
+    fireEvent.changeText(input, 'late night');
+    fireEvent(input, 'submitEditing');
+    expect(input.props.value).toBe('late night');
+
+    fireEvent.press(screen.getByTestId('discover-search-toggle'));
+    expect(
+      screen.getByTestId('discover-search-input', { includeHiddenElements: true }).props.value,
+    ).toBe('');
   });
 });

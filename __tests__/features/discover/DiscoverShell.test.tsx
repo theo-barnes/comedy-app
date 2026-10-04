@@ -17,7 +17,6 @@ describe('DiscoverShell', () => {
 
     expect(screen.queryByRole('button', { name: 'Browse' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Map' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open discover search' })).toBeNull();
   });
 
   it('does not render static clip or browse content', () => {
