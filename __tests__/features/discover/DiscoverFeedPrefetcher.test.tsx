@@ -75,7 +75,7 @@ describe('DiscoverFeedPrefetcher', () => {
     mockApiFetch.mockReset();
     mockApiFetch.mockResolvedValue({ items: [], nextCursor: null });
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      defaultOptions: { queries: { retry: false, gcTime: Infinity } },
     });
   });
 
