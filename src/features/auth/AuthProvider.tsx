@@ -30,6 +30,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   // Prevent stale closure on profile fetch
   const isMounted = useRef(true);
+  const feedUserId = useRef<string | null>(null);
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -77,6 +78,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   // ── Bootstrap: load persisted session on mount ──────────────────────────────
   useEffect(() => {
+    function applySession(nextSession: Session | null) {
+      const nextUserId = nextSession?.user.id ?? null;
+      if (feedUserId.current !== nextUserId) {
+        queryClient.removeQueries({ queryKey: queryKeys.videoFeedRoot });
+        feedUserId.current = nextUserId;
+      }
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+    }
+
     supabase.auth.getSession().then(async ({ data: { session: s }, error }) => {
       if (!isMounted.current) return;
       // A stale/invalidated refresh token produces an AuthApiError here.
@@ -87,8 +98,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsSessionLoading(false);
         return;
       }
-      setSession(s);
-      setUser(s?.user ?? null);
+      applySession(s);
       setIsSessionLoading(false);
     });
 
@@ -96,8 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!isMounted.current) return;
-      setSession(s);
-      setUser(s?.user ?? null);
+      applySession(s);
       if (s?.user) {
         // Token refresh / user update for the same user: refetch their profile.
         queryClient.invalidateQueries({ queryKey: queryKeys.profile(s.user.id) });

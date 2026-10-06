@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { z } from 'zod/v3';
 
 import { apiFetch, isApiConfigured } from '@/lib/api/client';
@@ -36,8 +36,8 @@ export function fetchVideoFeedPage({
   });
 }
 
-export function useVideoFeed(latitude: number | null, longitude: number | null) {
-  return useInfiniteQuery({
+export function videoFeedInfiniteQueryOptions(latitude: number | null, longitude: number | null) {
+  return infiniteQueryOptions({
     queryKey: queryKeys.videoFeed(latitude, longitude),
     queryFn: ({ pageParam }) => fetchVideoFeedPage({ latitude, longitude, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
@@ -45,4 +45,8 @@ export function useVideoFeed(latitude: number | null, longitude: number | null) 
     enabled: isApiConfigured(),
     staleTime: 30 * 1000,
   });
+}
+
+export function useVideoFeed(latitude: number | null, longitude: number | null) {
+  return useInfiniteQuery(videoFeedInfiniteQueryOptions(latitude, longitude));
 }
