@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/i18n';
 import { queryClient } from '@/lib/query-client';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { DiscoverFeedPrefetcher } from '@/features/discover/DiscoverFeedPrefetcher';
 import { LocationProvider } from '@/features/location';
 import { OnboardingProvider } from '@/providers/OnboardingProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
@@ -21,7 +22,10 @@ export function AppProviders({ children }: PropsWithChildren) {
             <ErrorBoundary>
               <OnboardingProvider>
                 <AuthProvider>
-                  <LocationProvider>{children}</LocationProvider>
+                  <LocationProvider>
+                    <DiscoverFeedPrefetcher />
+                    {children}
+                  </LocationProvider>
                 </AuthProvider>
               </OnboardingProvider>
             </ErrorBoundary>
