@@ -56,6 +56,8 @@ class CreatorPublic:
     address: str | None = None
     capacity: int | None = None
     verified: bool = True
+    latitude: float | None = None
+    longitude: float | None = None
 
     @staticmethod
     def from_comedian(profile: ComedianProfile) -> 'CreatorPublic':
@@ -78,4 +80,6 @@ class CreatorPublic:
             address=profile.address,
             capacity=profile.capacity,
             verified=profile.verified,
+            latitude=profile.latitude,
+            longitude=profile.longitude,
         )
