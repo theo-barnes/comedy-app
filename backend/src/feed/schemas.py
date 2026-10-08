@@ -17,6 +17,9 @@ class LinkedEventSchema(BaseModel):
     startTime: datetime
     venueId: str
     ticketUrl: str | None = None
+    posterUrl: str | None = None
+    posterWidth: int | None = None
+    posterHeight: int | None = None
 
     @staticmethod
     def from_domain(event: LinkedEvent) -> 'LinkedEventSchema':
@@ -26,6 +29,9 @@ class LinkedEventSchema(BaseModel):
             startTime=event.start_time,
             venueId=event.venue_id,
             ticketUrl=event.ticket_url,
+            posterUrl=event.poster_url,
+            posterWidth=event.poster_width,
+            posterHeight=event.poster_height,
         )
 
 
@@ -91,6 +97,9 @@ class NearbyEventSchema(BaseModel):
     ticketUrl: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    posterUrl: str | None = None
+    posterWidth: int | None = None
+    posterHeight: int | None = None
 
     @staticmethod
     def from_domain(event: NearbyEvent) -> 'NearbyEventSchema':
@@ -103,6 +112,9 @@ class NearbyEventSchema(BaseModel):
             ticketUrl=event.ticket_url,
             latitude=event.latitude,
             longitude=event.longitude,
+            posterUrl=event.poster_url,
+            posterWidth=event.poster_width,
+            posterHeight=event.poster_height,
         )
 
 

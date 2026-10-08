@@ -26,6 +26,8 @@ PLATFORM_TABLES: frozenset[str] = frozenset(
         # events domain
         'events',
         'event_comedians',
+        'native_event_submissions',
+        'image_assets',
         # engagement domain
         'saves',
         'likes',

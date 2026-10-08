@@ -32,3 +32,8 @@ class Event:
     ticket_url: str | None = None
     comedian_ids: tuple[str, ...] = ()
     created_at: datetime | None = None
+    poster_asset_id: str | None = None
+    poster_url: str | None = None
+    poster_revision: int = 0
+    poster_width: int | None = None
+    poster_height: int | None = None

@@ -118,6 +118,24 @@ describe('apiFetch', () => {
     expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
   });
 
+  it('sends an idempotency key and abort signal without replacing session authorization', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { access_token: 'jwt-123' } } });
+    mockFetch.mockResolvedValue(jsonResponse({ value: 'ok' }));
+    const abort = new AbortController();
+    await apiFetch('/events/native', {
+      schema,
+      method: 'POST',
+      body: { title: 'Friday comedy' },
+      idempotencyKey: 'submission-1',
+      signal: abort.signal,
+    });
+    expect(mockFetch.mock.calls[0][1]).toMatchObject({
+      headers: { 'Idempotency-Key': 'submission-1' },
+      signal: abort.signal,
+    });
+    expect(mockFetch.mock.calls[0][1].headers.Authorization).toBeDefined();
+  });
+
   it('throws ApiError with the response status on failure', async () => {
     mockFetch.mockResolvedValue(jsonResponse({}, { ok: false, status: 401 }));
 
@@ -147,6 +165,18 @@ describe('apiFetch', () => {
 
     await expect(apiFetch('/feed/videos', { schema })).rejects.toThrow(ApiError);
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the platform domain error message without exposing arbitrary error details', async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(
+        { error: { code: 'validation_failed', message: 'The poster is not a supported image.' } },
+        { ok: false, status: 422 },
+      ),
+    );
+    await expect(apiFetch('/events/event-1/poster', { schema, method: 'PUT' })).rejects.toThrow(
+      'Request to /events/event-1/poster failed (422): The poster is not a supported image.',
+    );
   });
 
   it('rejects responses that fail schema validation', async () => {

@@ -30,6 +30,10 @@ export const eventSchema = z.object({
   ticketUrl: z.string().nullish(),
   status: z.enum(['scheduled', 'cancelled']),
   comedianIds: z.array(z.string()),
+  posterUrl: z.string().url().nullish(),
+  posterRevision: z.number().int().nonnegative().optional(),
+  posterWidth: z.number().int().positive().nullish(),
+  posterHeight: z.number().int().positive().nullish(),
 });
 
 export type CreatorProfile = z.infer<typeof creatorProfileSchema>;
@@ -69,8 +73,16 @@ export function saveVenueProfile(input: VenueProfileInput): Promise<CreatorProfi
   });
 }
 
-export function createNativeEvent(input: NativeEventInput): Promise<VenueEvent> {
-  return apiMutation('/events/native', { method: 'POST', body: input, schema: eventSchema });
+export function createNativeEvent(
+  input: NativeEventInput & { idempotencyKey?: string },
+): Promise<VenueEvent> {
+  const { idempotencyKey, ...body } = input;
+  return apiMutation('/events/native', {
+    method: 'POST',
+    body,
+    schema: eventSchema,
+    ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
+  });
 }
 
 export function useMyCreatorProfile(userId: string | undefined, enabled = true) {

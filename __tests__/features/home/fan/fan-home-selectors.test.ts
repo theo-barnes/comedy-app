@@ -79,4 +79,22 @@ describe('selectFanHomeSections', () => {
     });
     expect(sections.performersNearYou).toEqual([{ id: 'user-2', name: 'Sam Roe', subtitle: '' }]);
   });
+
+  it('preserves managed gig artwork without turning the event into a content post', () => {
+    const event = POPULATED_FEED.nearbyEvents[0];
+    if (!event) throw new Error('Missing event fixture');
+    const sections = selectFanHomeSections({
+      ...POPULATED_FEED,
+      nearbyEvents: [{ ...event, posterUrl: 'https://storage.example.com/poster.png' }],
+    });
+    expect(sections.thisWeek).toEqual([
+      {
+        id: 'event-1',
+        title: 'Open Mic Night',
+        subtitle: 'The Basement Room',
+        imageUri: 'https://storage.example.com/poster.png',
+      },
+    ]);
+    expect(sections.freshClips).toEqual(selectFanHomeSections(POPULATED_FEED).freshClips);
+  });
 });

@@ -7,9 +7,11 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { useAuth } from '@/features/auth/useAuth';
+import { GigPosterImage } from '@/features/events/GigPosterImage';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { isApiConfigured } from '@/lib/api/client';
 import { useVenueEvents } from '@/lib/api/events';
+import { usePosterConfig } from '@/lib/api/gig-posters';
 import { spacing } from '@/theme/tokens';
 
 export function VenueHome() {
@@ -17,6 +19,7 @@ export function VenueHome() {
   const { profile, isGuest } = useAuth();
   const allowed = !isGuest && profile?.role === 'venue';
   const events = useVenueEvents(profile?.id, allowed);
+  const posterConfig = usePosterConfig(allowed);
   return (
     <HomeScreenLayout>
       <View style={styles.content}>
@@ -24,6 +27,14 @@ export function VenueHome() {
           <Button onPress={() => router.push('/create-event')}>{t('events.create.heading')}</Button>
         )}
         <AppText variant="subheading">{t('venues.eventsHere')}</AppText>
+        {posterConfig.isError && (
+          <>
+            <ErrorBanner message={posterConfig.error.message} />
+            <Button variant="ghost" onPress={() => void posterConfig.refetch()}>
+              {t('common.retry')}
+            </Button>
+          </>
+        )}
         {!isApiConfigured() ? (
           <AppText muted>{t('events.create.unconfigured')}</AppText>
         ) : events.isPending ? (
@@ -41,6 +52,13 @@ export function VenueHome() {
           events.data?.items.map((event) => (
             <Card key={event.id}>
               <AppText variant="subheading">{event.title}</AppText>
+              {event.posterUrl && (
+                <GigPosterImage
+                  uri={event.posterUrl}
+                  label={t('events.poster.imageLabel', { title: event.title })}
+                  style={styles.poster}
+                />
+              )}
               {event.status === 'cancelled' && <AppText>{t('events.cancelled')}</AppText>}
               <AppText muted>
                 {new Intl.DateTimeFormat(i18n.language, {
@@ -51,6 +69,16 @@ export function VenueHome() {
                 UTC
               </AppText>
               {event.description ? <AppText>{event.description}</AppText> : null}
+              {allowed && event.venueId === profile.id && posterConfig.data?.enabled && (
+                <Button
+                  variant="secondary"
+                  onPress={() =>
+                    router.push({ pathname: '/manage-gig-poster', params: { eventId: event.id } })
+                  }
+                >
+                  {t('events.poster.manage')}
+                </Button>
+              )}
             </Card>
           ))
         )}
@@ -59,4 +87,7 @@ export function VenueHome() {
   );
 }
 
-const styles = StyleSheet.create({ content: { padding: spacing.lg, gap: spacing.md } });
+const styles = StyleSheet.create({
+  content: { padding: spacing.lg, gap: spacing.md },
+  poster: { width: '100%', height: 220 },
+});

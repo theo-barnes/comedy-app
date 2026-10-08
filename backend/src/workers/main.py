@@ -19,6 +19,7 @@ def main() -> None:
     from workers.rollup import run_rollup
     from workers.trending import run_trending
     from content.factory import get_service as get_content_service
+    from images.factory import get_service as get_poster_service
 
     if not settings.database_url:
         raise SystemExit('platform-worker requires DISCOVERY_DATABASE_URL')
@@ -39,11 +40,23 @@ def main() -> None:
         repaired, failures = content_service.reconcile_stale_media()
         log.info('media_reconciliation_complete', repaired=repaired, failures=failures)
 
+    def poster_cleanup_job() -> None:
+        candidates, failures = get_poster_service().cleanup(
+            dry_run=settings.gig_poster_cleanup_dry_run,
+        )
+        log.info(
+            'poster_cleanup_complete', candidates=candidates, failures=failures,
+            dry_run=settings.gig_poster_cleanup_dry_run,
+        )
+
     scheduler = BlockingScheduler(timezone='UTC')
     scheduler.add_job(rollup_job, 'interval', minutes=15)
     scheduler.add_job(trending_job, 'interval', minutes=5)
     scheduler.add_job(media_reconciliation_job, 'interval', minutes=2,
                       max_instances=1, coalesce=True)
+    if settings.supabase_url and settings.supabase_service_role_key:
+        scheduler.add_job(poster_cleanup_job, 'interval', minutes=60,
+                          max_instances=1, coalesce=True)
 
     # run both once at startup so fresh deployments have data immediately
     rollup_job()

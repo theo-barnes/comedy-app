@@ -1,6 +1,6 @@
 import type { HomeFeedResponse } from '@/lib/api/home-feed';
 
-export type FanHomeEvent = { id: string; title: string; subtitle: string };
+export type FanHomeEvent = { id: string; title: string; subtitle: string; imageUri?: string };
 export type FanHomePerformer = { id: string; name: string; subtitle: string };
 export type FanHomeClip = {
   id: string;
@@ -22,6 +22,7 @@ export function selectFanHomeSections(feed: HomeFeedResponse | undefined): FanHo
       id: event.id,
       title: event.title,
       subtitle: event.venueName,
+      ...(event.posterUrl ? { imageUri: event.posterUrl } : {}),
     })) ?? [];
 
   const performersNearYou =

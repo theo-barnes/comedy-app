@@ -188,6 +188,9 @@ class SqlFeedRepository:
                         start_time=event.start_time,
                         venue_id=event.venue_id,
                         ticket_url=event.ticket_url,
+                        poster_url=event.poster_url,
+                        poster_width=event.poster_width,
+                        poster_height=event.poster_height,
                     )
                 by_id[content.id] = FeedItem(
                     content_id=content.id,

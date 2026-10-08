@@ -31,7 +31,7 @@ Shared across modules (defined once in [shared/ports.py](../backend/src/shared/p
 - **`PlaceLookup`** (`resolve_city`) — implemented by `location`'s `PlaceRepository`. Consumed by
   `content`, `events`, and `feed` services to stamp posts/events with a resolved place.
 
-Module-local (defined in that module's own `service.py`, implemented via an adapter class in the
+Module-local (defined in that module's own `service.py` or focused ports module, implemented via an adapter class in the
 _consuming_ module's `factory.py`):
 
 | Protocol          | Declared in             | Method                  | Implemented by                                                                                         |
@@ -56,8 +56,28 @@ _consuming_ module's `factory.py`):
 | [feed](../backend/src/feed)             | Ranked video feed + home feed, assembled from `content`/`social`/`events`/`engagement` data via its own repository. Trending section reads `workers`' cached score list (falls back to an on-demand query if cold). | `location` (`PlaceLookup`), `events`, `workers` (cache contract only, via `feed/trending_cache.py`) |
 | [analytics](../backend/src/analytics)   | Creator-facing stats, read from rollup tables written by `workers`.                                                                                                                                                 | `content`, `engagement`, `social`, `location` (read-only joins)                                     |
 | [media](../backend/src/media)           | `MediaProvider` boundary: Cloudflare Stream or in-memory stub.                                                                                                                                                      | none                                                                                                |
-| [workers](../backend/src/workers)       | `platform-worker` process: scheduled rollup/trending/media-reconciliation jobs.                                                                                                                                     | `analytics`, `content`                                                                              |
+| [images](../backend/src/images)         | Managed gig-poster upload, processing, publication and cleanup; Supabase private originals/public derivatives.                                                                                                      | `events` (`PosterEvents`, session-bound adapter in consuming factory)                               |
+| [workers](../backend/src/workers)       | `platform-worker` process: scheduled rollup/trending/video-reconciliation/poster-cleanup jobs.                                                                                                                      | `analytics`, `content`, `images`                                                                    |
 | [shared](../backend/src/shared)         | Config, auth (JWT + role cache), cache (Redis/memory), database (engine/session), errors, logging, middleware, rate limiting, cross-module `ports`.                                                                 | none (foundation module)                                                                            |
+
+## Managed event posters
+
+The [images domain](../backend/src/images) owns event-bound image assets, private signed uploads,
+validation/re-encoding, publication and cleanup. It is separate from video `media`/Cloudflare.
+Its [PosterEvents port](../backend/src/images/ports.py) is implemented by the consuming factory's
+adapter over event-repository operations. `ImageTransaction` binds the event port to the same
+Session as the locked asset: ownership/reference reads and CAS must not open nested connections.
+This prevents connection-pool starvation when multiple requests wait on one asset lock.
+
+Publication first commits a lease, then writes a new immutable public object. Event reference
+CAS and attached-asset state commit together in the second database transaction; failed/replaced
+objects remain tracked for reconciliation. Database/Storage are not an atomic transaction.
+Do not substitute an ordinary JWT TUS endpoint for the signed `/upload/resumable/sign` endpoint.
+
+`image_assets` and `native_event_submissions` are backend-only tables: Alembic enables RLS and
+revokes public/anon/authenticated access. Storage bucket/policy configuration belongs to the
+versioned Supabase migration. See the [poster plan](plans/active/gig-posters.md) for contracts,
+activation settings, resource limits, migration order and pending live acceptance.
 
 ## Known naming exception
 
@@ -83,6 +103,7 @@ bypass the limit.
 | `save`           | `POST`/`DELETE /content/{id}/save`                                                                                | 60 / min  |
 | `analytics`      | `POST /analytics/events`                                                                                          | 60 / min  |
 | `event-write`    | `POST /events`, `POST /events/native`, `PATCH`/`DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{id}` | 20 / hour |
+| `event-poster`   | Poster upload intent/completion and `PUT`/`DELETE /events/{id}/poster`                                            | 30 / hour |
 | `content-create` | `POST /content` (all types)                                                                                       | 20 / min  |
 | `video-upload`   | `POST /content` (only when `type=video_clip`; additive on top of `content-create`)                                | 5 / min   |
 
@@ -139,6 +160,14 @@ mounted under `/v1` (see each module's `controller.py` for the full request/resp
   The venue's stored nonblank name/address and valid paired coordinates are required; venue
   identity/location cannot be supplied by the client. The existing event response, persistence,
   place/H3 resolution and write limit are reused. Missing storage is explicitly unavailable.
+- Native publishing additionally accepts optional UUID `Idempotency-Key`: same-owner/payload
+  replay returns the original gig even after its start; mismatched payload returns 409 without
+  inserting another event. Definitive input/service validation returns 422 before persistence.
+- When the poster capability is enabled, venue owners can create a private signed upload intent,
+  complete processing and attach/replace/remove one poster through `/events/{id}/poster` routes.
+  Existing event/Home responses include nullable public display URL/dimensions and event poster
+  revision; no original keys or signed original URLs are exposed. The
+  [poster plan](plans/active/gig-posters.md) records the exact request/response surfaces.
 - Create, update, and cancel events, and manage the comedian lineup: `POST /events`,
   `PATCH /events/{id}`, `DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{comedian_id}`
   ([events](../backend/src/events)).
@@ -148,6 +177,9 @@ mounted under `/v1` (see each module's `controller.py` for the full request/resp
 
 **Automatic / background (no direct user action)**
 
+- Hourly when Storage is configured: reference-safe poster cleanup/reconciliation, initially
+  dry-run, at most 100 candidates. Requires inactivity grace and the signed-capability/TUS floor;
+  activation and destructive cleanup require separate operator verification.
 - Every 2 minutes: reconcile any video upload that's gone stale — expire uploads whose signed URL
   lapsed, and re-poll Cloudflare for ones that missed their webhook
   (`ContentService.reconcile_stale_media`, run from [workers/main.py](../backend/src/workers/main.py)).

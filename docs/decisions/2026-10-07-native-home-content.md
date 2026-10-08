@@ -23,6 +23,11 @@ records the next bounded slice and unresolved processing/retention defaults; the
 This is planning, not delivered poster functionality or acceptance of the broader draft,
 promoter, promotional-post and article decisions below. External portability remains independent.
 
+The user subsequently authorized implementation of this bounded venue-poster slice. Its
+default-off implementation uses a separate managed image lifecycle, additive event/Home
+projections and failure-safe two-step gig publication, with Supabase setup and live acceptance
+still required. This does not accept the unrelated proposals below or expand venue ownership.
+
 ## Context
 
 Events, photos/posters/promotional material and articles should normally be authored and managed

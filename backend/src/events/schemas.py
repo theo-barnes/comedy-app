@@ -93,6 +93,10 @@ class EventSchema(BaseModel):
     ticketUrl: str | None = None
     status: str
     comedianIds: list[str] = Field(default_factory=list)
+    posterUrl: str | None = None
+    posterRevision: int = 0
+    posterWidth: int | None = None
+    posterHeight: int | None = None
 
     @staticmethod
     def from_domain(event: Event) -> 'EventSchema':
@@ -109,6 +113,10 @@ class EventSchema(BaseModel):
             ticketUrl=event.ticket_url,
             status=event.status.value,
             comedianIds=list(event.comedian_ids),
+            posterUrl=event.poster_url,
+            posterRevision=event.poster_revision,
+            posterWidth=event.poster_width,
+            posterHeight=event.poster_height,
         )
 
 

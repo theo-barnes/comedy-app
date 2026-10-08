@@ -2,8 +2,9 @@
 
 ## Status, Scope and Risk
 
-Status: planning only, 2026-10-08. No image schema, runtime UI, storage resources or policies
-have been implemented/provisioned by this change.
+Status: implemented with activation pending, 2026-10-08. Backend contracts, migrations, image
+processing, cleanup and provisional client journeys are implemented and reviewed.
+Storage resources have not been provisioned; live activation and acceptance remain pending.
 
 The user selected **Supabase Storage**, with **private originals** and **public processed display
 posters for published gigs**, and authorized provisional UI. This is the next bounded slice of
@@ -46,19 +47,20 @@ Selected: Supabase; originals private; processed posters public only for publish
 optional poster per owned gig; provisional UI recorded in the [UI register](../../ui-view-register.md).
 The existing immediate-publication gig lifecycle is retained; this slice does not add drafts.
 
-Recommended defaults to finalize before implementation:
+Implementation defaults for the first release:
 
-| Concern       | Recommendation                                                                                                                     | Decision/verification still needed                                                                                                     |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Input         | JPEG, PNG and WebP; at most 10 MiB                                                                                                 | Server checks actual bytes/format/size; confirm Supabase project upload quota. Reject SVG, animation and unsupported types explicitly. |
-| HEIC/HEIF     | Support conversion only if a verified Expo SDK 56 path produces a supported upload; otherwise give an actionable format error      | Test real iOS assets; do not claim HEIC support from file extension or picker MIME alone.                                              |
-| Decode/output | Bounded decode, initially at most 25 megapixels; preserve aspect ratio; one display rendition with a proposed 2048-pixel long edge | Benchmark memory/CPU and poster-text legibility; finalize JPEG/PNG output and quality against real posters.                            |
-| Privacy       | Re-encode display pixels without EXIF/GPS or embedded metadata; never publish originals                                            | Verify orientation, color and transparency behavior and metadata absence in output.                                                    |
-| Retention     | Retain originals while attached; propose a 24-hour grace for abandoned and superseded assets                                       | Confirm policy and cleanup schedule; wait beyond signed-upload expiry and exclude active/in-flight references.                         |
-| Delivery      | Immutable, server-generated public paths; no overwrite/upsert; deliberate browser cache TTL                                        | Finalize bucket names, TTL, limits and configuration in versioned implementation. Public copies cannot be instantly recalled.          |
+| Concern       | Recommendation                                                                                         | Decision/verification still needed                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input         | JPEG, PNG and WebP; at most 10 MiB                                                                     | Actual bytes, declared size/format and decoded dimensions are checked. Storage buckets permit 20 MiB because they also hold processed PNGs; that does not raise the server input limit. |
+| HEIC/HEIF     | iOS picker uses SDK 56 `Compatible` representation; returned files still require supported MIME/bytes  | Real-device transcoding remains unverified. HEIC not converted by the picker is rejected explicitly; the server does not claim HEIC support.                                            |
+| Decode/output | At most 25 megapixels; one JPEG/PNG rendition, max 2048-pixel long edge, aspect ratio preserved        | Two decoder slots per API process. Fixture benchmarks are not concurrent production load tests; provisionally budget at least 1 GiB per process and validate in staging.                |
+| Privacy       | Fresh, re-encoded display pixels without embedded metadata; originals sealed privately                 | Verify deployed original-read isolation, orientation, transparency and real poster legibility before activation.                                                                        |
+| Retention     | Attached originals retained; at least 24-hour inactivity grace for unreferenced assets                 | Upload intents additionally have a conservative 26-hour signed-capability/TUS floor. Cleanup is hourly, capped at 100 candidates, reference-rechecked and dry-run by default.           |
+| Delivery      | Immutable keys; `gig-poster-originals` private; `gig-poster-display` public; one-hour public cache TTL | Verify deployed signed TUS/RLS and cache behavior. Public copies cannot be instantly recalled.                                                                                          |
 
-These defaults are recommendations, not claims that processing or operational limits are tested.
-Ask the user before materially changing the selected privacy model or retention expectations.
+These limits are implemented defaults, not proof of deployed provider behavior or the concurrent
+memory envelope. Operators must verify them before enabling writes/deletions. Ask the user before
+materially changing the selected privacy model or retention expectations.
 
 ## Lifecycle and Publication
 
@@ -120,6 +122,11 @@ Prefer the smallest honest flow over pretending event creation and Storage are a
 
 This means a new gig can briefly appear without artwork. It is an intentional, documented
 consequence of posters being optional, not a silent success-shaped fallback.
+
+For an ambiguous attachment response, the implemented copy says the poster **could not be
+confirmed**, because a lost response may follow a successful commit. Reconcile the event and
+retain the uploaded asset for idempotent completion/attachment retry; do not upload a conflicting
+replacement simply because the response was lost.
 
 ## Contracts and Provisional UI
 
@@ -205,12 +212,87 @@ lifecycle/configuration, operator runbook, this plan and the UI register. Promot
 architecture decisions into the native-content ADR without accepting unrelated article/promoter
 proposals. Move this plan to completed only after its accepted journey is verified.
 
-Exact next action: review the proposed limits/HEIC/retention defaults, then finalize contracts and
-module placement before implementing step 1 on a fresh implementation branch. No connector or
-ticket-provider work is required.
+Exact next action: apply the pending operator setup in
+staging, and verify real signed TUS, RLS, cleanup and native journeys before activation. Keep this
+plan active until deployed acceptance is recorded. No connector or ticket-provider work is needed.
 
-Planning checks are recorded in the planning pull request. Runtime and deployed Storage
-acceptance remain untested.
+## Implemented Contracts and Activation
+
+- `GET /v1/events/poster-config`: explicit capability and input limits. Old-backend 404 means no
+  capability; other failures surface. A disabled gate does not disable gig creation or poster reads.
+- `POST /v1/events/{eventId}/poster/uploads`: owner-bound private signed upload intent.
+  Its TUS endpoint is `/storage/v1/upload/resumable/sign`, with `x-signature`, not the
+  ordinary JWT-authenticated `/upload/resumable` endpoint.
+- `POST /v1/events/{eventId}/poster/uploads/{assetId}/complete`: authoritative validation,
+  sealed original and private display preparation; returns ready asset/dimensions.
+- `PUT /v1/events/{eventId}/poster`: managed asset ID and expected revision; never a client URL.
+- `DELETE /v1/events/{eventId}/poster`: expected revision and safe reference removal.
+- Event responses add nullable `posterUrl`, `posterWidth`, `posterHeight` and `posterRevision`;
+  Home/linked-event projections carry display artwork without private original keys.
+- Native creation accepts an optional UUID `Idempotency-Key`; owner/key/payload persistence is
+  transactional. Same-payload replay returns the original gig even after its start time elapsed;
+  a different payload is rejected with 409 without insertion.
+- Per-account local publication journals preserve ambiguous submissions through restart.
+  Invalid local records require explicit confirmed discard after checking venue Home; valid
+  ambiguous records cannot be silently discarded into a duplicate create.
+
+Activation settings (backend only):
+
+| Setting                                | Default / requirement                                                 |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `DISCOVERY_DATABASE_URL`               | Existing platform database; migration must be applied.                |
+| `DISCOVERY_SUPABASE_URL`               | Existing project URL, reachable by backend and mobile upload clients. |
+| `DISCOVERY_SUPABASE_SERVICE_ROLE_KEY`  | Empty by default; deployment secret only, never app configuration.    |
+| `DISCOVERY_GIG_POSTERS_ENABLED`        | `false`; enable only after staging storage/media acceptance.          |
+| `DISCOVERY_GIG_POSTER_CLEANUP_DRY_RUN` | `true`; verify candidates before enabling deletes.                    |
+
+Apply [Alembic 0010](../../../backend/alembic/versions/0010_gig_posters.py) and
+[Storage setup](../../../supabase/migrations/20261008000100_gig_poster_storage.sql) before enabling.
+Restrictive app policies protect the two buckets even if unrelated permissive policies exist.
+Originals cannot be listed/read or generally modified by app accounts; only backend-issued
+path-scoped upload capabilities are provided. Deployed capability behavior still needs proof.
+
+The existing `platform-worker` runs configured poster cleanup hourly, not immediately at startup,
+with one job instance and at most 100 eligible assets per run. Dry-run does not delete objects or
+change records. The mutation gate and cleanup dry-run are separate controls; rollback must not
+accidentally enable cleanup. Use the local operator runbook for exact environment-specific evidence.
+
+Validation so far: focused frontend journey/contract tests, global TypeScript checking, backend
+fake-based tests, real JPEG/PNG processing tests, scoped migration SQL compilation and native iOS/
+Android production bundling. Record final commands/results in the delivery checkpoint; none of
+these prove live Storage isolation, real iOS HEIC conversion or concurrent deployment memory.
+
+## Implementation Validation Checkpoint
+
+On 2026-10-08:
+
+- Frontend focused Jest: 16 suites / 140 tests passed, covering all event/picker/poster/API/Home
+  changes and the unchanged video TUS transport. Global `pnpm typecheck` and affected ESLint passed.
+- Final journal-integrity refinement: four focused suites / 57 tests passed, including the
+  updated 41 composer tests, UTF-8-safe storage chunks and existing auth/onboarding consumers.
+  Strict journal reads reject incomplete records instead of silently losing submission identity.
+  Global TypeScript and affected lint passed again.
+- Backend: `DISCOVERY_DATABASE_URL='' DISCOVERY_REDIS_URL='' .venv/bin/python -m pytest tests/ -q`
+  from the backend directory passed 250 tests. Independent narrow review recheck passed 59
+  poster/repository/idempotency tests.
+- Review found and fixed the signed TUS endpoint and nested-session pool starvation. Real
+  QueuePool regressions with session/row-lock fakes cover one connection and 15 concurrent
+  same-asset attachments; lease persistence remains separate and final asset/event CAS is atomic.
+- Scoped Alembic `upgrade 0009_media_status_default:head --sql` and
+  `downgrade 0010_gig_posters:0009_media_status_default --sql` compiled with a dummy offline URL.
+  They do not execute a migration. Full-history offline compilation encounters the pre-existing
+  `0002_migrate_legacy` reflection incompatibility; it was not changed.
+- `pnpm exec expo export --platform ios` and `--platform android` compiled production Hermes
+  bundles using installed SDK 56 dependencies. No simulator was already booted; earlier boot
+  permission was declined and not retried. No device/real Storage journey is claimed.
+- Targeted Prettier, `pnpm validate:governance` and `git diff --check` passed. Final push-hook
+  full-suite results belong in the pull-request delivery record.
+- The user requested skipping the final pre-push test run for delivery speed. No final full
+  frontend suite or coverage collection is claimed; previously completed checks remain recorded.
+
+Storage provisioning, actual migrations/RLS/TUS, native HEIC behavior, realistic image legibility,
+concurrent resource load, destructive cleanup and production rollout remain operator acceptance
+tasks. The plan stays active until those tasks have evidence.
 
 ## Provider References
 
@@ -220,6 +302,8 @@ acceptance remain untested.
   TUS is recommended above 6 MB and immutable paths avoid overwrite/CDN surprises.
 - [Resumable uploads](https://supabase.com/docs/guides/storage/uploads/resumable-uploads):
   direct Storage hostname, current 6 MiB chunk requirement and signed `x-signature` upload token.
+- [Official signed TUS example](https://github.com/supabase/supabase/blob/master/examples/storage/resumable-upload-signed-uppy/index.html):
+  signed capabilities require the `/upload/resumable/sign` route, not the JWT upload route.
 - [Smart CDN](https://supabase.com/docs/guides/storage/cdn/smart-cdn):
   plan-dependent CDN behavior; invalidation may take up to 60 seconds and client caches persist.
 - [Expo SDK 56](https://docs.expo.dev/versions/v56.0.0/): verify image selection/manipulation APIs

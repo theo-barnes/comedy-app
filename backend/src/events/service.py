@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from math import isfinite
+from hashlib import sha256
+import json
+from uuid import UUID
 from typing import Any, Protocol
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -67,9 +70,24 @@ class EventService:
         local_end_time: str | None = None,
         description: str | None = None,
         ticket_url: str | None = None,
+        idempotency_key: str | None = None,
     ) -> Event:
         if user.role != 'venue':
             raise PermissionDeniedError('only venues can publish native events')
+        payload_hash = ''
+        if idempotency_key is not None:
+            try:
+                idempotency_key = str(UUID(idempotency_key))
+            except (ValueError, AttributeError) as exc:
+                raise ValidationFailedError('Idempotency-Key must be a UUID') from exc
+            payload_hash = sha256(json.dumps({
+                'title': title.strip(), 'description': description,
+                'localStartTime': local_start_time, 'localEndTime': local_end_time,
+                'timeZone': time_zone, 'ticketUrl': ticket_url,
+            }, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+            previous = self._repository.get_submission(user.user_id, idempotency_key, payload_hash)
+            if previous is not None:
+                return previous
         title = title.strip()
         if not 1 <= len(title) <= 200:
             raise ValidationFailedError('title must contain 1 to 200 characters')
@@ -112,6 +130,7 @@ class EventService:
             latitude=venue.latitude,
             longitude=venue.longitude,
             ticket_url=ticket_url,
+            submission=(idempotency_key, payload_hash) if idempotency_key else None,
         )
 
     @staticmethod
@@ -146,6 +165,7 @@ class EventService:
         latitude: float | None = None,
         longitude: float | None = None,
         ticket_url: str | None = None,
+        submission: tuple[str, str] | None = None,
     ) -> Event:
         self._validate_times(start_time, end_time)
         if (latitude is None) != (longitude is None):
@@ -161,21 +181,22 @@ class EventService:
             if place is not None:
                 place_id = place.id
 
-        return self._repository.create(
-            Event(
-                id='',  # assigned by the database
-                venue_id=user.user_id,
-                title=title,
-                start_time=start_time,
-                end_time=end_time,
-                description=description,
-                place_id=place_id,
-                latitude=latitude,
-                longitude=longitude,
-                h3_index=h3_index,
-                ticket_url=ticket_url,
-            )
+        event = Event(
+            id='',  # assigned by the database
+            venue_id=user.user_id,
+            title=title,
+            start_time=start_time,
+            end_time=end_time,
+            description=description,
+            place_id=place_id,
+            latitude=latitude,
+            longitude=longitude,
+            h3_index=h3_index,
+            ticket_url=ticket_url,
         )
+        if submission is not None:
+            return self._repository.create_idempotent(event, *submission)
+        return self._repository.create(event)
 
     def update(
         self,

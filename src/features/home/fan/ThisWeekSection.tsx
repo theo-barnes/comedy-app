@@ -8,6 +8,7 @@ type ThisWeekEvent = {
   id: string;
   title: string;
   subtitle: string;
+  imageUri?: string;
 };
 
 type Props = {
@@ -27,7 +28,12 @@ export function ThisWeekSection({ events, sectionLabel, actionLabel, onAction }:
         contentContainerStyle={styles.horizontalList}
       >
         {events.map((event) => (
-          <EventCard key={event.id} title={event.title} subtitle={event.subtitle} />
+          <EventCard
+            key={event.id}
+            title={event.title}
+            subtitle={event.subtitle}
+            imageUri={event.imageUri}
+          />
         ))}
       </ScrollView>
     </>

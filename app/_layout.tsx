@@ -55,6 +55,7 @@ function RootNavigator() {
         <Stack.Screen name="profile/[userId]" />
         <Stack.Protected guard={!isGuest && profile?.role === 'venue'}>
           <Stack.Screen name="create-event" />
+          <Stack.Screen name="manage-gig-poster" />
         </Stack.Protected>
       </Stack.Protected>
     </Stack>

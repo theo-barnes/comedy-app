@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 
 from shared.auth import AuthenticatedUser, get_current_user, require_role
 from shared.ratelimit import rate_limited
+from images.factory import get_service as get_poster_service
+from images.schemas import (
+    PosterAttachRequest, PosterCompleteSchema, PosterConfigSchema, PosterRemoveRequest,
+    PosterUploadRequest, PosterUploadSchema,
+)
+from images.service import PosterService
 
 from .factory import get_service
 from .schemas import (
@@ -22,6 +29,54 @@ VenueUser = Annotated[AuthenticatedUser, Depends(require_role('venue'))]
 Service = Annotated[EventService, Depends(get_service)]
 
 EventWriteRateLimit = Depends(rate_limited('event-write', limit=20, window_seconds=3600))
+PosterServiceDependency = Annotated[PosterService, Depends(get_poster_service)]
+PosterWriteRateLimit = Depends(rate_limited('event-poster', limit=30, window_seconds=3600))
+
+
+@router.get('/events/poster-config', response_model=PosterConfigSchema)
+def poster_config(user: CurrentUser, posters: PosterServiceDependency) -> PosterConfigSchema:
+    return PosterConfigSchema(enabled=posters.enabled)
+
+
+@router.post('/events/{event_id}/poster/uploads', response_model=PosterUploadSchema)
+def create_poster_upload(
+    event_id: str, body: PosterUploadRequest, user: VenueUser, posters: PosterServiceDependency,
+    _rl: None = PosterWriteRateLimit,
+) -> PosterUploadSchema:
+    intent = posters.initiate(event_id, user, body.contentType, body.fileSize)
+    return PosterUploadSchema(
+        assetId=intent.asset_id, uploadUrl=intent.upload_url, uploadToken=intent.upload_token,
+        bucketName=intent.bucket_name, objectName=intent.object_name,
+    )
+
+
+@router.post(
+    '/events/{event_id}/poster/uploads/{asset_id}/complete', response_model=PosterCompleteSchema,
+)
+def complete_poster_upload(
+    event_id: str, asset_id: UUID, user: VenueUser, posters: PosterServiceDependency,
+    _rl: None = PosterWriteRateLimit,
+) -> PosterCompleteSchema:
+    width, height = posters.complete(event_id, str(asset_id), user)
+    return PosterCompleteSchema(assetId=str(asset_id), width=width, height=height)
+
+
+@router.put('/events/{event_id}/poster', response_model=EventSchema)
+def attach_poster(
+    event_id: str, body: PosterAttachRequest, user: VenueUser,
+    posters: PosterServiceDependency, service: Service, _rl: None = PosterWriteRateLimit,
+) -> EventSchema:
+    posters.attach(event_id, body.assetId, body.expectedRevision, user)
+    return EventSchema.from_domain(service.get(event_id))
+
+
+@router.delete('/events/{event_id}/poster', response_model=EventSchema)
+def remove_poster(
+    event_id: str, body: PosterRemoveRequest, user: VenueUser,
+    posters: PosterServiceDependency, service: Service, _rl: None = PosterWriteRateLimit,
+) -> EventSchema:
+    posters.remove(event_id, body.expectedRevision, user)
+    return EventSchema.from_domain(service.get(event_id))
 
 
 @router.post('/events', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
@@ -44,6 +99,7 @@ def create_event(
 @router.post('/events/native', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
 def create_native_event(
     body: CreateNativeEventRequest, user: VenueUser, service: Service,
+    idempotency_key: Annotated[str | None, Header(alias='Idempotency-Key')] = None,
     _rl: None = EventWriteRateLimit,
 ) -> EventSchema:
     return EventSchema.from_domain(service.create_native(
@@ -54,6 +110,7 @@ def create_native_event(
         local_end_time=body.localEndTime,
         time_zone=body.timeZone,
         ticket_url=body.ticketUrl,
+        idempotency_key=idempotency_key,
     ))
 
 
