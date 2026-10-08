@@ -2,7 +2,10 @@
 
 ## Status and Scope
 
-Status: Planning; no implementation approved or started.
+Status: Broad content design remains proposed. An initial venue-only gig creation slice was
+approved on 2026-10-08 and is tracked in [Venue gig creation](venue-gig-creation.md). Promoter
+support, drafts, managed artwork and articles remain deferred; approval of the first slice
+does not accept those later decisions.
 
 The [proposed ADR](../../decisions/2026-10-07-native-home-content.md) covers in-app creation and
 Home presentation of events, photos/posters/promotional material and articles. Preserve working

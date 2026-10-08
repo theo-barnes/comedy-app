@@ -26,6 +26,7 @@ export function renderWithTheme(ui: React.ReactElement, options: RenderOptions =
       },
       mutations: {
         retry: false,
+        gcTime: 0,
       },
     },
   });

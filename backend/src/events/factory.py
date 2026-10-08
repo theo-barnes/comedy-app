@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 
 from .repository import EventRepository
-from .service import ComedianLookup, EventService
+from .service import ComedianLookup, EventService, NativeVenue
 
 
 class RepositoryComedianLookup:
@@ -16,6 +16,24 @@ class RepositoryComedianLookup:
 
     def comedian_exists(self, comedian_id: str) -> bool:
         return self._creators.get_comedian(comedian_id) is not None
+
+
+class RepositoryVenueLookup:
+    """Adapts stored venue profiles to the native publishing port."""
+
+    def __init__(self, creators_repository) -> None:  # noqa: ANN001
+        self._creators = creators_repository
+
+    def get_venue(self, user_id: str) -> NativeVenue | None:
+        profile = self._creators.get_venue(user_id)
+        if profile is None:
+            return None
+        return NativeVenue(
+            name=profile.venue_name,
+            address=profile.address,
+            latitude=profile.latitude,
+            longitude=profile.longitude,
+        )
 
 
 class UnavailableEventRepository:
@@ -47,10 +65,12 @@ def get_service() -> EventService:
     from location.factory import build_repository as build_place_repository
     from shared.config import settings
 
-    lookup: ComedianLookup = RepositoryComedianLookup(build_creators_repository())
+    creators = build_creators_repository()
+    lookup: ComedianLookup = RepositoryComedianLookup(creators)
     return EventService(
         repository=build_repository(),
         comedians=lookup,
         place_resolver=build_place_repository(),
         h3_resolution=settings.content_h3_resolution,
+        venues=RepositoryVenueLookup(creators),
     )

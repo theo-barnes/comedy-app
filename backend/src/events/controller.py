@@ -10,7 +10,9 @@ from shared.auth import AuthenticatedUser, get_current_user, require_role
 from shared.ratelimit import rate_limited
 
 from .factory import get_service
-from .schemas import CreateEventRequest, EventListResponse, EventSchema, UpdateEventRequest
+from .schemas import (
+    CreateEventRequest, CreateNativeEventRequest, EventListResponse, EventSchema, UpdateEventRequest,
+)
 from .service import EventService
 
 router = APIRouter(tags=['events'])
@@ -37,6 +39,22 @@ def create_event(
         ticket_url=body.ticketUrl,
     )
     return EventSchema.from_domain(event)
+
+
+@router.post('/events/native', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
+def create_native_event(
+    body: CreateNativeEventRequest, user: VenueUser, service: Service,
+    _rl: None = EventWriteRateLimit,
+) -> EventSchema:
+    return EventSchema.from_domain(service.create_native(
+        user,
+        title=body.title,
+        description=body.description,
+        local_start_time=body.localStartTime,
+        local_end_time=body.localEndTime,
+        time_zone=body.timeZone,
+        ticket_url=body.ticketUrl,
+    ))
 
 
 @router.patch('/events/{event_id}', response_model=EventSchema)

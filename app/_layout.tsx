@@ -53,6 +53,9 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="discover-search" options={{ presentation: 'modal' }} />
         <Stack.Screen name="profile/[userId]" />
+        <Stack.Protected guard={!isGuest && profile?.role === 'venue'}>
+          <Stack.Screen name="create-event" />
+        </Stack.Protected>
       </Stack.Protected>
     </Stack>
   );

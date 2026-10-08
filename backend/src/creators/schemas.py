@@ -32,6 +32,8 @@ class CreatorPublicSchema(BaseModel):
     address: str | None = None
     capacity: int | None = None
     verified: bool
+    latitude: float | None = None
+    longitude: float | None = None
 
     @staticmethod
     def from_domain(creator: CreatorPublic) -> 'CreatorPublicSchema':
@@ -44,4 +46,6 @@ class CreatorPublicSchema(BaseModel):
             address=creator.address,
             capacity=creator.capacity,
             verified=creator.verified,
+            latitude=creator.latitude,
+            longitude=creator.longitude,
         )

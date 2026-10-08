@@ -34,13 +34,14 @@ Shared across modules (defined once in [shared/ports.py](../backend/src/shared/p
 Module-local (defined in that module's own `service.py`, implemented via an adapter class in the
 _consuming_ module's `factory.py`):
 
-| Protocol          | Declared in             | Method                  | Implemented by                                                                        |
-| ----------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
-| `ComedianLookup`  | `events/service.py`     | `comedian_exists`       | `creators` (via `events/factory.py:RepositoryComedianLookup`)                         |
-| `CreatorLookup`   | `social/service.py`     | `creator_exists`        | `creators` (via `social/factory.py:RepositoryCreatorLookup`)                          |
-| `ContentLookup`   | `engagement/service.py` | `content_is_engageable` | `content` (via `engagement/factory.py:RepositoryContentLookup`)                       |
-| `EventsLookup`    | `feed/service.py`       | `list_nearby`           | `events` (feed's own `FeedService` is passed `events.factory.get_service()` directly) |
-| `VenueNameLookup` | `feed/service.py`       | `venue_names`           | `feed`'s own repository (self-satisfied)                                              |
+| Protocol          | Declared in             | Method                  | Implemented by                                                                                         |
+| ----------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `ComedianLookup`  | `events/service.py`     | `comedian_exists`       | `creators` (via `events/factory.py:RepositoryComedianLookup`)                                          |
+| `VenueLookup`     | `events/service.py`     | `get_venue`             | `creators` (via `events/factory.py:RepositoryVenueLookup`; stored venue name/address/coordinates only) |
+| `CreatorLookup`   | `social/service.py`     | `creator_exists`        | `creators` (via `social/factory.py:RepositoryCreatorLookup`)                                           |
+| `ContentLookup`   | `engagement/service.py` | `content_is_engageable` | `content` (via `engagement/factory.py:RepositoryContentLookup`)                                        |
+| `EventsLookup`    | `feed/service.py`       | `list_nearby`           | `events` (feed's own `FeedService` is passed `events.factory.get_service()` directly)                  |
+| `VenueNameLookup` | `feed/service.py`       | `venue_names`           | `feed`'s own repository (self-satisfied)                                                               |
 
 ## Module map
 
@@ -50,7 +51,7 @@ _consuming_ module's `factory.py`):
 | [creators](../backend/src/creators)     | Comedian/venue profile CRUD.                                                                                                                                                                                        | none                                                                                                |
 | [social](../backend/src/social)         | Follows, blocks, reports.                                                                                                                                                                                           | `creators` (`CreatorLookup`)                                                                        |
 | [content](../backend/src/content)       | Content posts + video upload lifecycle via `media`.                                                                                                                                                                 | `location` (`PlaceLookup`), `media`                                                                 |
-| [events](../backend/src/events)         | Venue events + comedian lineup.                                                                                                                                                                                     | `creators` (`ComedianLookup`), `location` (`PlaceLookup`)                                           |
+| [events](../backend/src/events)         | Venue events + comedian lineup.                                                                                                                                                                                     | `creators` (`ComedianLookup`, `VenueLookup`), `location` (`PlaceLookup`)                            |
 | [engagement](../backend/src/engagement) | Saves, likes, raw analytics events.                                                                                                                                                                                 | `content` (`ContentLookup`)                                                                         |
 | [feed](../backend/src/feed)             | Ranked video feed + home feed, assembled from `content`/`social`/`events`/`engagement` data via its own repository. Trending section reads `workers`' cached score list (falls back to an on-demand query if cold). | `location` (`PlaceLookup`), `events`, `workers` (cache contract only, via `feed/trending_cache.py`) |
 | [analytics](../backend/src/analytics)   | Creator-facing stats, read from rollup tables written by `workers`.                                                                                                                                                 | `content`, `engagement`, `social`, `location` (read-only joins)                                     |
@@ -73,17 +74,17 @@ cache client) is shared per distinct `(limit, window_seconds)` pair. Add/remove 
 same resource share one bucket (same `key`) so rapid toggling (e.g. follow→unfollow→follow) can't
 bypass the limit.
 
-| Bucket key       | Routes                                                                                     | Limit     |
-| ---------------- | ------------------------------------------------------------------------------------------ | --------- |
-| `follow`         | `POST`/`DELETE /follows/{creator_id}`                                                      | 30 / min  |
-| `block`          | `POST`/`DELETE /blocks/{user_id}`                                                          | 20 / min  |
-| `reports`        | `POST /reports`                                                                            | 10 / hour |
-| `like`           | `POST`/`DELETE /content/{id}/like`                                                         | 60 / min  |
-| `save`           | `POST`/`DELETE /content/{id}/save`                                                         | 60 / min  |
-| `analytics`      | `POST /analytics/events`                                                                   | 60 / min  |
-| `event-write`    | `POST /events`, `PATCH`/`DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{id}` | 20 / hour |
-| `content-create` | `POST /content` (all types)                                                                | 20 / min  |
-| `video-upload`   | `POST /content` (only when `type=video_clip`; additive on top of `content-create`)         | 5 / min   |
+| Bucket key       | Routes                                                                                                            | Limit     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- | --------- |
+| `follow`         | `POST`/`DELETE /follows/{creator_id}`                                                                             | 30 / min  |
+| `block`          | `POST`/`DELETE /blocks/{user_id}`                                                                                 | 20 / min  |
+| `reports`        | `POST /reports`                                                                                                   | 10 / hour |
+| `like`           | `POST`/`DELETE /content/{id}/like`                                                                                | 60 / min  |
+| `save`           | `POST`/`DELETE /content/{id}/save`                                                                                | 60 / min  |
+| `analytics`      | `POST /analytics/events`                                                                                          | 60 / min  |
+| `event-write`    | `POST /events`, `POST /events/native`, `PATCH`/`DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{id}` | 20 / hour |
+| `content-create` | `POST /content` (all types)                                                                                       | 20 / min  |
+| `video-upload`   | `POST /content` (only when `type=video_clip`; additive on top of `content-create`)                                | 5 / min   |
 
 ## What the backend can do today
 
@@ -128,6 +129,16 @@ mounted under `/v1` (see each module's `controller.py` for the full request/resp
 **Venue**
 
 - Set up/update a venue profile (name, address, capacity, location): `PUT /creators/me`.
+- Creator responses include nullable `latitude`/`longitude` from stored venue profiles; comedian
+  responses leave these null. Profile PUT uses replacement fields: resend existing bio/capacity
+  when changing location. Verification is server-managed and preserved by repository updates.
+- Publish a native gig: `POST /events/native` accepts `title`, optional `description`, required
+  `localStartTime` and IANA `timeZone`, optional `localEndTime` and HTTPS `ticketUrl`. Local times
+  must use `YYYY-MM-DDTHH:mm` without an offset or seconds. Start must be future; end must be later
+  (use the following date for overnight gigs). DST gaps and ambiguous wall times are rejected.
+  The venue's stored nonblank name/address and valid paired coordinates are required; venue
+  identity/location cannot be supplied by the client. The existing event response, persistence,
+  place/H3 resolution and write limit are reused. Missing storage is explicitly unavailable.
 - Create, update, and cancel events, and manage the comedian lineup: `POST /events`,
   `PATCH /events/{id}`, `DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{comedian_id}`
   ([events](../backend/src/events)).

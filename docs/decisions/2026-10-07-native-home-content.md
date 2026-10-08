@@ -5,6 +5,14 @@
 - Risk: High for implementation: API/schema, media lifecycle, publishing and authorization.
 - Delivery plan: [Native Home content](../plans/active/native-home-content.md).
 
+## Approved Initial Slice
+
+On 2026-10-08 the user approved native gig creation for venue accounts only, using a simple
+form with immediate publication and the venue's stored location. A provisional themed UI is
+authorized; bespoke design follows separately. The [venue implementation plan](../plans/active/venue-gig-creation.md)
+records this bounded slice. Promoters, drafts, artwork uploads, articles and the broader
+decisions below remain proposed, not accepted by this approval.
+
 ## Context
 
 Events, photos/posters/promotional material and articles should normally be authored and managed

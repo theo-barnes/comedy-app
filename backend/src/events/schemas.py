@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from .models.domain import Event
+from .validation import parse_local_time, validate_ticket_url
 
 
 class CreateEventRequest(BaseModel):
@@ -19,6 +21,31 @@ class CreateEventRequest(BaseModel):
     latitude: float | None = Field(None, ge=-90, le=90)
     longitude: float | None = Field(None, ge=-180, le=180)
     ticketUrl: str | None = Field(None, max_length=1000)
+
+
+class CreateNativeEventRequest(BaseModel):
+    """Venue-owned publishing, with explicit local wall times and no client location."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    description: str | None = Field(None, max_length=2000)
+    localStartTime: str
+    localEndTime: str | None = None
+    timeZone: str = Field(..., min_length=1)
+    ticketUrl: str | None = Field(None, max_length=1000)
+
+    @field_validator('localStartTime', 'localEndTime')
+    @classmethod
+    def validate_local_time(cls, value: str | None) -> str | None:
+        if value is not None:
+            parse_local_time(value)
+        return value
+
+    @field_validator('ticketUrl')
+    @classmethod
+    def validate_ticket(cls, value: str | None) -> str | None:
+        return validate_ticket_url(value) if value is not None else None
 
 
 class UpdateEventRequest(BaseModel):
