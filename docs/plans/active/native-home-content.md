@@ -3,9 +3,11 @@
 ## Status and Scope
 
 Status: Broad content design remains proposed. An initial venue-only gig creation slice was
-approved on 2026-10-08 and is tracked in [Venue gig creation](venue-gig-creation.md). Promoter
-support, drafts, managed artwork and articles remain deferred; approval of the first slice
-does not accept those later decisions.
+approved on 2026-10-08 and is tracked in [Venue gig creation](venue-gig-creation.md); the user
+subsequently reported it working well. [Gig posters](gig-posters.md) is the next planning slice:
+Supabase Storage, private originals, public processed display artwork and provisional UI have
+been selected. No poster runtime work is implemented yet. Promoter support, drafts, standalone
+promotional posts and articles remain deferred; bounded slice approval does not accept them.
 
 The [proposed ADR](../../decisions/2026-10-07-native-home-content.md) covers in-app creation and
 Home presentation of events, photos/posters/promotional material and articles. Preserve working
@@ -120,6 +122,9 @@ Update the owning API/backend/media documentation when accepted behavior is impl
 as if this proposal were already shipped. Keep this plan active across sessions and move it to
 completed only after the approved native journeys and regressions are verified.
 
-Exact next action: review and resolve the ADR's six decision groups, starting with who may
-create/publish each kind and the minimum native promoter-to-venue ownership model. No connector
-research or external-provider approval is required to advance this plan.
+Exact next action: finalize the [gig-poster plan](gig-posters.md)'s input/HEIC/retention defaults
+and additive image/attachment contracts for venue-owned gigs. Maintain the
+[UI view register](../../ui-view-register.md) and complete relevant
+[operator prerequisites](../../OPERATOR-TASKS.md) during implementation. Resolve broader ADR
+decisions when their own slice begins; promoter ownership is not a prerequisite for venue
+posters. No connector research or external-provider approval is required.

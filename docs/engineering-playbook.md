@@ -104,6 +104,13 @@ Documentation is codebase knowledge, not release narration. Update the owning ar
 operator, API, or workflow document when behavior changes. Keep generated or temporary evidence
 out of enduring docs.
 
+The [UI view register](ui-view-register.md) is the persistent inventory of pages, role variants,
+design guidance and UI-specific evidence. Read it for user-visible changes and update affected
+entries in the same change, including backend changes that alter UI states. Keep stable IDs and
+distinguish provisional UI, source inspection, automated checks and actual user/device approval.
+Record shared operational prerequisites in the versioned feature plan; environment-specific setup
+and live verification belong in [Operator Tasks](OPERATOR-TASKS.md), the Git-ignored local runbook.
+
 Treat recurring agent or review failures as a signal that the harness is incomplete. After a few
 changes, promote the most valuable repeated feedback into a test, structural check, concise
 instruction, or this playbook. Do not solve drift by continuously enlarging `AGENTS.md`.
