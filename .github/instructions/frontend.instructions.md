@@ -5,6 +5,10 @@ applyTo: 'app/**/*.tsx,src/**/*.ts,src/**/*.tsx,__tests__/**/*.ts,__tests__/**/*
 
 # Frontend Engineering Rules
 
+- Before user-visible work, read `docs/ui-view-register.md` and the affected view's guidance.
+  Register new views before implementation; update affected IDs, states, design status and actual
+  validation evidence in the same change. Provisional approval is view-scoped, not blanket
+  permission for unrelated UI. Do not treat automated tests as visual/design acceptance.
 - Treat `app/` as route wiring. Put UI behavior, data mapping, and role-specific composition in
   the owning `src/features/<feature>/` module.
 - Reuse `src/components`, theme tokens, feature layouts, query-key conventions, and existing

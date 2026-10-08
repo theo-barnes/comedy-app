@@ -13,6 +13,16 @@ authorized; bespoke design follows separately. The [venue implementation plan](.
 records this bounded slice. Promoters, drafts, artwork uploads, articles and the broader
 decisions below remain proposed, not accepted by this approval.
 
+## Selected Gig-Poster Planning Decisions
+
+On 2026-10-08, after reporting venue gig creation worked well, the user selected Supabase
+Storage with private originals and public processed display posters for published gigs, and
+authorized provisional gig-poster UI. The [gig-poster plan](../plans/active/gig-posters.md)
+records the next bounded slice and unresolved processing/retention defaults; the
+[UI view register](../ui-view-register.md) preserves UI guidance across changes.
+This is planning, not delivered poster functionality or acceptance of the broader draft,
+promoter, promotional-post and article decisions below. External portability remains independent.
+
 ## Context
 
 Events, photos/posters/promotional material and articles should normally be authored and managed
