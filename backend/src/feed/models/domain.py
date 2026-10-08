@@ -34,6 +34,9 @@ class LinkedEvent:
     start_time: datetime
     venue_id: str
     ticket_url: str | None = None
+    poster_url: str | None = None
+    poster_width: int | None = None
+    poster_height: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +99,9 @@ class NearbyEvent:
     ticket_url: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    poster_url: str | None = None
+    poster_width: int | None = None
+    poster_height: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

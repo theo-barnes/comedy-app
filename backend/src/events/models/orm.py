@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from geoalchemy2 import Geometry
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Index, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,6 +39,11 @@ class EventRow(Base):
     h3_index: Mapped[str | None] = mapped_column(String(20))
     center = mapped_column(Geometry('POINT', srid=4326), nullable=True)
     ticket_url: Mapped[str | None] = mapped_column(Text)
+    poster_asset_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    poster_url: Mapped[str | None] = mapped_column(Text)
+    poster_revision: Mapped[int] = mapped_column(Integer, nullable=False, server_default='0')
+    poster_width: Mapped[int | None] = mapped_column(Integer)
+    poster_height: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="'scheduled'")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -47,6 +52,8 @@ class EventRow(Base):
 
     __table_args__ = (
         CheckConstraint(f"status in {EVENT_STATUSES!r}", name='events_status_check'),
+        CheckConstraint('poster_revision >= 0', name='events_poster_revision_check'),
+        Index('events_poster_asset_idx', 'poster_asset_id'),
         CheckConstraint('end_time is null or end_time > start_time',
                         name='events_time_order_check'),
         Index('events_venue_start_idx', 'venue_id', 'start_time'),
@@ -73,3 +80,16 @@ class EventComedianRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (Index('event_comedians_comedian_idx', 'comedian_id'),)
+
+
+class NativeEventSubmissionRow(Base):
+    """Owner-scoped, durable idempotency; event and key commit together."""
+
+    __tablename__ = 'native_event_submissions'
+
+    owner_id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    key: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    event_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), ForeignKey('events.id', ondelete='CASCADE'), nullable=False
+    )

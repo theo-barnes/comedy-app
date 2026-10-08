@@ -23,6 +23,7 @@ dependencies = [
   "structlog>=24,<26",
   "sentry-sdk>=2,<3",
   "apscheduler>=3.10,<4",
+  "Pillow>=12.0,<13",
 ]
 
 [project.optional-dependencies]
@@ -34,7 +35,7 @@ platform-worker = "workers.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["location*", "shared*", "profiles*", "creators*", "social*", "content*", "media*", "events*", "engagement*", "feed*", "analytics*", "workers*"]
+include = ["location*", "shared*", "profiles*", "creators*", "social*", "content*", "media*", "images*", "events*", "engagement*", "feed*", "analytics*", "workers*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "src"]

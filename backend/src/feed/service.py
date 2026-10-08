@@ -148,6 +148,9 @@ class FeedService:
                     ticket_url=e.ticket_url,
                     latitude=e.latitude,
                     longitude=e.longitude,
+                    poster_url=e.poster_url,
+                    poster_width=e.poster_width,
+                    poster_height=e.poster_height,
                 )
                 for e in events
             )

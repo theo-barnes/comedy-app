@@ -15,6 +15,8 @@ export const queryKeys = {
   saved: ['saved'] as const,
   creatorProfile: (userId: string) => ['creator-profile', userId] as const,
   venueEvents: (userId: string) => ['venue-events', userId] as const,
+  event: (eventId: string) => ['event', eventId] as const,
+  posterConfig: ['poster-config'] as const,
   homeFeedRoot: ['home-feed'] as const,
   homeFeed: (latitude: number | null, longitude: number | null) =>
     [

@@ -21,6 +21,7 @@ from content.models import orm as _content_orm  # noqa: F401
 from events.models import orm as _events_orm  # noqa: F401
 from engagement.models import orm as _engagement_orm  # noqa: F401
 from analytics.models import orm as _analytics_orm  # noqa: F401
+from images.models import orm as _images_orm  # noqa: F401
 
 config = context.config
 

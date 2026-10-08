@@ -22,6 +22,9 @@ export const feedItemSchema = z.object({
       startTime: z.string(),
       venueId: z.string(),
       ticketUrl: z.string().nullish(),
+      posterUrl: z.string().url().nullish(),
+      posterWidth: z.number().int().positive().nullish(),
+      posterHeight: z.number().int().positive().nullish(),
     })
     .nullish(),
   likeCount: z.number(),
@@ -39,6 +42,9 @@ const nearbyEventSchema = z.object({
   ticketUrl: z.string().nullish(),
   latitude: z.number().nullish(),
   longitude: z.number().nullish(),
+  posterUrl: z.string().url().nullish(),
+  posterWidth: z.number().int().positive().nullish(),
+  posterHeight: z.number().int().positive().nullish(),
 });
 
 const comedianSummarySchema = z.object({

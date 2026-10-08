@@ -6,7 +6,8 @@ Status: Broad content design remains proposed. An initial venue-only gig creatio
 approved on 2026-10-08 and is tracked in [Venue gig creation](venue-gig-creation.md); the user
 subsequently reported it working well. [Gig posters](gig-posters.md) is the next planning slice:
 Supabase Storage, private originals, public processed display artwork and provisional UI have
-been selected. No poster runtime work is implemented yet. Promoter support, drafts, standalone
+been selected. Poster backend/client implementation is delivered behind a default-off gate;
+live Storage setup and acceptance remain pending. Promoter support, drafts, standalone
 promotional posts and articles remain deferred; bounded slice approval does not accept them.
 
 The [proposed ADR](../../decisions/2026-10-07-native-home-content.md) covers in-app creation and
@@ -102,7 +103,8 @@ After each substantive edit, run the smallest relevant existing check:
 - Documentation: `pnpm validate:governance` and targeted existing Prettier checks.
 
 Read applicable path instructions and exact Expo SDK 56 documentation before implementation.
-Record actual commands/results per slice; none of the proposed behavior has been tested yet.
+Record actual commands/results per slice. Bounded venue-gig and poster evidence belongs in
+their own plans; broader promoter, promotional-post and article proposals remain untested.
 
 Planning-document checks on 2026-10-07:
 
@@ -122,8 +124,8 @@ Update the owning API/backend/media documentation when accepted behavior is impl
 as if this proposal were already shipped. Keep this plan active across sessions and move it to
 completed only after the approved native journeys and regressions are verified.
 
-Exact next action: finalize the [gig-poster plan](gig-posters.md)'s input/HEIC/retention defaults
-and additive image/attachment contracts for venue-owned gigs. Maintain the
+Exact next action: complete the [gig-poster implementation](gig-posters.md)'s pending staging
+Storage/native acceptance before activation. Maintain the
 [UI view register](../../ui-view-register.md) and complete relevant
 [operator prerequisites](../../OPERATOR-TASKS.md) during implementation. Resolve broader ADR
 decisions when their own slice begins; promoter ownership is not a prerequisite for venue

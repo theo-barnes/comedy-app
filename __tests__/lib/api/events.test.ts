@@ -58,6 +58,21 @@ describe('native events API', () => {
     });
   });
 
+  it('keeps the logical submission key out of the strict native-event body', async () => {
+    const body = {
+      title: 'Friday comedy',
+      localStartTime: '2027-02-12T20:00',
+      timeZone: 'Europe/London',
+    };
+    await createNativeEvent({ ...body, idempotencyKey: 'submission-1' });
+    expect(mutationMock).toHaveBeenCalledWith('/events/native', {
+      method: 'POST',
+      body,
+      schema: eventSchema,
+      idempotencyKey: 'submission-1',
+    });
+  });
+
   it('parses existing creator responses without newly added coordinates', () => {
     expect(
       creatorProfileSchema.safeParse({
@@ -81,5 +96,15 @@ describe('native events API', () => {
     };
     expect(eventSchema.safeParse(event).success).toBe(true);
     expect(eventSchema.safeParse({ ...event, startTime: 'Friday' }).success).toBe(false);
+    expect(
+      eventSchema.safeParse({
+        ...event,
+        posterUrl: 'https://storage.example.com/poster.jpg',
+        posterRevision: 2,
+        posterWidth: 1200,
+        posterHeight: 1800,
+      }).success,
+    ).toBe(true);
+    expect(eventSchema.safeParse({ ...event, posterRevision: -1 }).success).toBe(false);
   });
 });

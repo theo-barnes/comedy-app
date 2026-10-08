@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { homeCardTypography } from '@/features/home/cardTypography';
+import { GigPosterImage } from '@/features/events/GigPosterImage';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { radii, spacing } from '@/theme/tokens';
 import { PlaceholderImage } from './PlaceholderImage';
@@ -21,7 +22,11 @@ export function EventCard({ title, subtitle, imageUri, onPress }: Props) {
 
   return (
     <Card style={styles.card} onPress={onPress ?? (() => {})}>
-      <PlaceholderImage uri={imageUri} style={styles.image} />
+      {imageUri ? (
+        <GigPosterImage uri={imageUri} label={title} style={styles.image} />
+      ) : (
+        <PlaceholderImage style={styles.image} />
+      )}
       <View style={styles.info}>
         <AppText
           variant={homeCardTypography.eventCardTitle.variant}

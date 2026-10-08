@@ -24,7 +24,19 @@ export class ApiError extends Error {
 }
 
 function formatErrorDetail(body: unknown): string | undefined {
-  if (body === null || typeof body !== 'object' || !('detail' in body)) return undefined;
+  if (body === null || typeof body !== 'object') return undefined;
+  if ('error' in body) {
+    const error = body.error;
+    if (
+      error !== null &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string'
+    ) {
+      return error.message;
+    }
+  }
+  if (!('detail' in body)) return undefined;
 
   const detail = body.detail;
   if (typeof detail === 'string') return detail;
@@ -44,6 +56,8 @@ type ApiFetchOptions<T> = {
   schema: z.ZodType<T>;
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
+  idempotencyKey?: string;
+  signal?: AbortSignal;
   searchParams?: Record<string, string | number | undefined>;
 };
 
@@ -52,6 +66,8 @@ async function request(
   options: {
     method?: string;
     body?: unknown;
+    idempotencyKey?: string;
+    signal?: AbortSignal;
     searchParams?: Record<string, string | number | undefined>;
   },
 ): Promise<Response> {
@@ -81,11 +97,15 @@ async function request(
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }
+  if (options.idempotencyKey !== undefined) {
+    headers['Idempotency-Key'] = options.idempotencyKey;
+  }
 
   const response = await fetch(url.toString(), {
     method: options.method ?? 'GET',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
   });
 
   if (!response.ok) {
