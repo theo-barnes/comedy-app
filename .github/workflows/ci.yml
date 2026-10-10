@@ -89,3 +89,58 @@ jobs:
         working-directory: backend
         # Empty DB URL forces the fake repositories; no database needed.
         run: DISCOVERY_DATABASE_URL='' python -m pytest tests/ -q
+
+  backend-migrations:
+    name: Backend migration contract
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: platform
+          POSTGRES_PASSWORD: platform
+          POSTGRES_DB: platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -e '.[dev]'
+
+      - name: Apply all backend migrations
+        working-directory: backend
+        env:
+          DISCOVERY_DATABASE_URL: postgresql://platform:platform@localhost:5432/platform
+        run: |
+          alembic upgrade head
+          alembic current
+
+      - name: Execute event ORM projection against migrated schema
+        working-directory: backend
+        env:
+          DISCOVERY_DATABASE_URL: postgresql://platform:platform@localhost:5432/platform
+        run: |
+          python - <<'PY'
+          from sqlalchemy import select
+          from events.models.orm import EventRow
+          from shared.database import get_sessionmaker
+
+          with get_sessionmaker()() as session:
+              session.execute(select(EventRow).limit(1))
+          print("event_orm_projection_ok")
+          PY
