@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from content.controller import router as content_router
@@ -19,6 +21,7 @@ from shared.errors import register_error_handlers
 from shared.logging import configure_logging
 from shared.middleware import RequestContextMiddleware
 from shared.observability import init_sentry
+from shared.schema_readiness import SchemaReadiness, get_schema_readiness_checker
 from social.controller import router as social_router
 
 
@@ -42,6 +45,17 @@ def create_app() -> FastAPI:
 
     register_error_handlers(app)
 
+    @app.middleware('http')
+    async def reject_schema_mismatch(request, call_next):  # noqa: ANN001
+        if request.url.path not in {'/health', '/ready'}:
+            readiness = await run_in_threadpool(get_schema_readiness_checker().check)
+            if not readiness.ready:
+                return JSONResponse(
+                    status_code=503,
+                    content={'status': readiness.status, 'code': readiness.code},
+                )
+        return await call_next(request)
+
     # Versioned API surface. The unversioned discovery route is kept for
     # backwards compatibility with existing app builds.
     app.include_router(discovery_router, prefix='/v1')
@@ -59,6 +73,19 @@ def create_app() -> FastAPI:
     @app.get('/health', include_in_schema=False)
     def health() -> dict[str, str]:
         return {'status': 'ok'}
+
+    @app.get('/ready', include_in_schema=False)
+    def ready(
+        checker=Depends(get_schema_readiness_checker),
+    ) -> JSONResponse:
+        readiness: SchemaReadiness = checker.check()
+        return JSONResponse(
+            status_code=200 if readiness.ready else 503,
+            content={
+                'status': readiness.status,
+                **({'code': readiness.code} if readiness.code else {}),
+            },
+        )
 
     return app
 

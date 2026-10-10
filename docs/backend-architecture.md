@@ -79,6 +79,27 @@ revokes public/anon/authenticated access. Storage bucket/policy configuration be
 versioned Supabase migration. See the [poster plan](plans/active/gig-posters.md) for contracts,
 activation settings, resource limits, migration order and pending live acceptance.
 
+## Database Migration and Readiness Invariant
+
+Every deployable backend artifact has a required Alembic head derived from its bundled migration
+directory. A configured database behind that head must not receive normal traffic: `/health`
+remains a liveness endpoint for diagnostics, while `/ready` and request admission compare only
+`alembic_version` to the bundled heads. A mismatch or unavailable configured database returns a
+credential-free 503 code instead of allowing later ORM queries to fail as route-specific 500s.
+
+Run migrations as a serialized **release job**, never in every API/worker startup:
+
+```sh
+cd /app
+python scripts/migrate.py
+```
+
+The command requires `DISCOVERY_DATABASE_URL`, takes a PostgreSQL advisory lock, runs
+`alembic upgrade head`, and logs only revision identifiers before/after. The deployment platform
+must run this exact-image command before API/worker rollout and use `/ready` as its traffic
+readiness check. API rollback preserves additive schema/data; do not use Alembic downgrade as an
+application rollback. See [Operator Tasks](OPERATOR-TASKS.md) for production evidence.
+
 ## Known naming exception
 
 `location/models/orm.py`'s ORM class is `Place`, not `PlaceRow` like every other module's ORM

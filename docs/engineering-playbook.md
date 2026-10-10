@@ -52,6 +52,11 @@ dependencies. Supabase migrations own auth/RLS concerns; Alembic owns backend pl
   them. Do not hide a new failure mode behind fixture data.
 - Treat API schemas, database/RLS changes, authentication, authorization, media lifecycle, and
   rate limiting as explicit contracts.
+- For every backend schema change, deliver the Alembic revision in the same change and prove it
+  against disposable PostGIS in CI. Deployment runs the immutable-image migration job before
+  traffic; API readiness must fail closed when a configured database is behind its bundled
+  Alembic head. Keep liveness available for diagnosis and never use destructive downgrade as the
+  default application rollback.
 
 ## Reuse and Abstractions
 
