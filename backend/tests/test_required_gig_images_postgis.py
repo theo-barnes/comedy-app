@@ -155,7 +155,7 @@ def postgis():
                                 upload_key, original_key, prepared_key, display_key,
                                 output_type, width, height, created_at, touched_at, expires_at
                             ) VALUES (
-                                :asset_id, :asset_owner, :asset_event, 'gig-poster', :status,
+                                CAST(:asset_id AS uuid), :asset_owner, :asset_event, 'gig-poster', :status,
                                 'image/png', 100, 'uploads/' || :asset_id,
                                 'sealed/' || :asset_id, 'prepared/' || :asset_id,
                                 'posters/' || :asset_id, 'image/png', 24, 32,
