@@ -1,6 +1,14 @@
 import { z } from 'zod/v3';
 
-import { ApiError, apiFetch, apiSend, getApiBaseUrl, isApiConfigured } from '@/lib/api/client';
+import {
+  ApiError,
+  apiFetch,
+  apiSend,
+  getApiBaseUrl,
+  getApiErrorMessage,
+  isApiConfigured,
+} from '@/lib/api/client';
+import { createInstance, t } from 'i18next';
 
 const mockGetSession = jest.fn();
 
@@ -158,6 +166,80 @@ describe('apiFetch', () => {
     await expect(apiFetch('/content', { schema, method: 'POST' })).rejects.toThrow(
       'Request to /content failed (422): body.file.durationMs: Input should be greater than 0',
     );
+  });
+
+  it.each(['schema_revision_behind', 'schema_revision_unknown', 'database_unreachable'])(
+    'retains readiness code %s and presents a localized unavailable message',
+    async (code) => {
+      mockFetch.mockResolvedValue(
+        jsonResponse({ status: 'unavailable', code }, { ok: false, status: 503 }),
+      );
+      const error = await apiFetch('/creators/me', { schema }).catch((failure: unknown) => failure);
+      expect(error).toBeInstanceOf(ApiError);
+      expect(error).toMatchObject({ status: 503, code });
+      const translator = createInstance();
+      await translator.init({
+        lng: 'en',
+        resources: {
+          en: { translation: { common: { serviceUnavailable: 'Please retry shortly.' } } },
+        },
+      });
+      if (!(error instanceof ApiError)) throw new Error('Expected ApiError');
+      expect(getApiErrorMessage(error, translator.t)).toBe('Please retry shortly.');
+    },
+  );
+
+  it.each([
+    { status: 'unavailable', code: { secret: 'must not render' } },
+    { status: 'unavailable', code: 'unknown_code' },
+    { code: 'schema_revision_behind' },
+    null,
+  ])('keeps generic errors for unrecognized readiness bodies: %j', async (body) => {
+    mockFetch.mockResolvedValue(jsonResponse(body, { ok: false, status: 503 }));
+    const error = await apiFetch('/creators/me', { schema }).catch((failure: unknown) => failure);
+    if (!(error instanceof ApiError)) throw new Error('Expected ApiError');
+    expect(getApiErrorMessage(error, t)).toBe('Request to /creators/me failed (503)');
+  });
+
+  it('preserves non-JSON proxy failures as generic ApiErrors', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => {
+        throw new SyntaxError('Not JSON');
+      },
+    });
+    await expect(apiFetch('/creators/me', { schema })).rejects.toMatchObject({
+      message: 'Request to /creators/me failed (503)',
+      status: 503,
+      code: undefined,
+    });
+  });
+
+  it('retains domain codes without replacing their specific unavailable message', async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(
+        { error: { code: 'poster_unavailable', message: 'Image uploads are unavailable.' } },
+        { ok: false, status: 503 },
+      ),
+    );
+    const error = await apiFetch('/events/poster-config', { schema }).catch(
+      (failure: unknown) => failure,
+    );
+    if (!(error instanceof ApiError)) throw new Error('Expected ApiError');
+    expect(error.code).toBe('poster_unavailable');
+    expect(getApiErrorMessage(error, t)).toBe(
+      'Request to /events/poster-config failed (503): Image uploads are unavailable.',
+    );
+  });
+
+  it('preserves ordinary errors and non-503 errors even with a readiness code', () => {
+    expect(getApiErrorMessage(new Error('Local validation failed'), t)).toBe(
+      'Local validation failed',
+    );
+    expect(
+      getApiErrorMessage(new ApiError('Permission denied', 403, 'database_unreachable'), t),
+    ).toBe('Permission denied');
   });
 
   it('throws ApiError when no API URL is configured', async () => {

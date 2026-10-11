@@ -2,6 +2,7 @@
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong",
+    "serviceUnavailable": "The service is temporarily unavailable. Please try again shortly.",
     "retry": "Try again",
     "errorRestart": "Please restart the app. If the problem persists, reinstall it.",
     "cancel": "Cancel",

@@ -3,13 +3,17 @@ import { router } from 'expo-router';
 import { renderWithTheme } from '../../../utils/renderWithTheme';
 
 import { VenueHome } from '@/features/home/venue/VenueHome';
+import { ApiError } from '@/lib/api/client';
 
 const mockEvents = jest.fn();
 jest.mock('@/features/auth/useAuth', () => ({
   useAuth: () => ({ profile: { id: 'venue-1', role: 'venue' }, isGuest: false }),
 }));
 jest.mock('@/lib/api/events', () => ({ useVenueEvents: () => mockEvents() }));
-jest.mock('@/lib/api/client', () => ({ isApiConfigured: () => true }));
+jest.mock('@/lib/api/client', () => ({
+  ...jest.requireActual('@/lib/api/client'),
+  isApiConfigured: () => true,
+}));
 const event = {
   id: 'event-1',
   venueId: 'venue-1',
@@ -34,6 +38,24 @@ describe('VenueHome', () => {
   it('renders the shared brand header', () => {
     renderWithTheme(<VenueHome />);
     expect(screen.getByText('Cues')).toBeTruthy();
+  });
+
+  it('explains service unavailability and retries without showing an empty list', () => {
+    const refetch = jest.fn();
+    mockEvents.mockReturnValue({
+      isError: true,
+      error: new ApiError('Request failed (503)', 503, 'schema_revision_behind'),
+      refetch,
+    });
+    const view = renderWithTheme(<VenueHome />);
+    expect(screen.getByText('common.serviceUnavailable')).toBeTruthy();
+    expect(screen.queryByText('venues.noEvents')).toBeNull();
+    fireEvent.press(screen.getByText('common.retry'));
+    expect(refetch).toHaveBeenCalledTimes(1);
+    mockEvents.mockReturnValue({ data: { items: [event] } });
+    view.rerender(<VenueHome />);
+    expect(screen.queryByText('common.serviceUnavailable')).toBeNull();
+    expect(screen.getByText('Friday comedy')).toBeTruthy();
   });
 
   it('does not render fixture-driven sections', () => {

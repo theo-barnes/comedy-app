@@ -16,7 +16,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { FormField } from '@/components/FormField';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/useAuth';
-import { isApiConfigured } from '@/lib/api/client';
+import { getApiErrorMessage, isApiConfigured } from '@/lib/api/client';
 import { useMyCreatorProfile, type NativeEventInput } from '@/lib/api/events';
 import { fetchEvent, usePosterConfig } from '@/lib/api/gig-posters';
 import { spacing } from '@/theme/tokens';
@@ -89,7 +89,9 @@ function AccountCreateEventScreen({
   function publicationError(failure: Error | null) {
     return failure?.message.startsWith('events.')
       ? t(failure.message, { defaultValue: t('events.create.publishFailed') })
-      : (failure?.message ?? null);
+      : failure
+        ? getApiErrorMessage(failure, t)
+        : null;
   }
   useEffect(() => {
     alive.current = true;
@@ -141,7 +143,9 @@ function AccountCreateEventScreen({
     } catch (failure) {
       if (alive.current) {
         setReconcileError(
-          failure instanceof Error ? failure.message : t('events.poster.refreshFailed'),
+          failure instanceof Error
+            ? getApiErrorMessage(failure, t)
+            : t('events.poster.refreshFailed'),
         );
       }
     } finally {
@@ -168,7 +172,11 @@ function AccountCreateEventScreen({
       }
     } catch (failure) {
       if (alive.current) {
-        setError(failure instanceof Error ? failure.message : t('events.poster.uploadFailed'));
+        setError(
+          failure instanceof Error
+            ? getApiErrorMessage(failure, t)
+            : t('events.poster.uploadFailed'),
+        );
         await refreshCreated(event);
       }
     }
@@ -351,7 +359,7 @@ function AccountCreateEventScreen({
         )}
         {posterConfig.isError && (
           <>
-            <ErrorBanner message={posterConfig.error.message} />
+            <ErrorBanner message={getApiErrorMessage(posterConfig.error, t)} />
             <Button variant="secondary" onPress={() => void posterConfig.refetch()}>
               {t('events.poster.retryConfig')}
             </Button>
@@ -366,7 +374,9 @@ function AccountCreateEventScreen({
                 .cancel()
                 .catch((failure: unknown) =>
                   setError(
-                    failure instanceof Error ? failure.message : t('events.poster.uploadFailed'),
+                    failure instanceof Error
+                      ? getApiErrorMessage(failure, t)
+                      : t('events.poster.uploadFailed'),
                   ),
                 )
             }
@@ -405,7 +415,7 @@ function AccountCreateEventScreen({
         />
         {posterConfig.isError && (
           <>
-            <ErrorBanner message={posterConfig.error.message} />
+            <ErrorBanner message={getApiErrorMessage(posterConfig.error, t)} />
             <Button onPress={() => void posterConfig.refetch()}>
               {t('events.poster.retryConfig')}
             </Button>
@@ -425,7 +435,7 @@ function AccountCreateEventScreen({
   } else if (venueQuery.isError) {
     body = (
       <>
-        <ErrorBanner message={venueQuery.error.message} />
+        <ErrorBanner message={getApiErrorMessage(venueQuery.error, t)} />
         <Button onPress={() => void venueQuery.refetch()}>{t('common.retry')}</Button>
       </>
     );
@@ -515,7 +525,7 @@ function AccountCreateEventScreen({
         </View>
         {posterConfig.isError && (
           <>
-            <ErrorBanner message={posterConfig.error.message} />
+            <ErrorBanner message={getApiErrorMessage(posterConfig.error, t)} />
             <Button variant="secondary" onPress={() => void posterConfig.refetch()}>
               {t('events.poster.retryConfig')}
             </Button>
@@ -538,7 +548,9 @@ function AccountCreateEventScreen({
                 .cancel()
                 .catch((failure: unknown) =>
                   setError(
-                    failure instanceof Error ? failure.message : t('events.poster.uploadFailed'),
+                    failure instanceof Error
+                      ? getApiErrorMessage(failure, t)
+                      : t('events.poster.uploadFailed'),
                   ),
                 )
             }

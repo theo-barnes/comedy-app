@@ -188,6 +188,62 @@ describe('CreateEventScreen', () => {
     expect(mutationMock).toHaveBeenCalledTimes(2);
   });
 
+  it('explains creator-read readiness failures and retries before allowing publication', async () => {
+    fetchMock.mockRejectedValue(
+      new ApiError('Request failed (503)', 503, 'schema_revision_behind'),
+    );
+    renderWithTheme(<CreateEventScreen />);
+    await screen.findByText('common.serviceUnavailable', {}, { timeout: 5000 });
+    expect(screen.queryByLabelText('events.create.gigTitle')).toBeNull();
+    expect(mutationMock).not.toHaveBeenCalled();
+    fetchMock.mockResolvedValue(venue);
+    fireEvent.press(screen.getByText('common.retry'));
+    await screen.findByLabelText('events.create.gigTitle');
+    expect(screen.queryByText('common.serviceUnavailable')).toBeNull();
+  });
+
+  it('keeps entered values when publication encounters schema unavailability', async () => {
+    mutationMock.mockRejectedValueOnce(
+      new ApiError('Request failed (503)', 503, 'schema_revision_behind'),
+    );
+    await showForm();
+    fillGig();
+    await choosePhoto();
+    fireEvent.press(screen.getByText('events.create.publish'));
+    await screen.findByText('common.serviceUnavailable');
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    expect(mutationMock).toHaveBeenCalledTimes(1);
+    expect(mockUpload).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('events.poster.retryPublication'));
+    await screen.findByText('events.create.successTitle');
+    expect(mutationMock).toHaveBeenLastCalledWith(
+      '/events/native/drafts',
+      expect.objectContaining({ body: expect.objectContaining({ title: 'Friday comedy' }) }),
+    );
+  });
+
+  it('explains poster-config readiness failure without losing form values', async () => {
+    await showForm();
+    fillGig();
+    await choosePhoto();
+    mockConfig.mockReturnValue({
+      isError: true,
+      error: new ApiError('Request failed (503)', 503, 'database_unreachable'),
+      refetch: jest.fn(),
+    });
+    fireEvent.changeText(
+      screen.getByLabelText('events.create.description'),
+      'Keep this description',
+    );
+    expect(screen.getByText('common.serviceUnavailable')).toBeTruthy();
+    expect(screen.getByLabelText('events.create.gigTitle').props.value).toBe('Friday comedy');
+    fireEvent.press(screen.getByText('events.create.publish'));
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('events.poster.retryConfig'));
+    expect(mockConfig().refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects an incomplete end date/time pair without submitting', async () => {
     await showForm();
     fillGig();

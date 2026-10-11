@@ -128,3 +128,15 @@ explicit disposable-database migration/constraint/finalization suite.
 No live Storage journey, new screenshot approval, or device acceptance is claimed. The older
 optional-view inventory above is historical; for current implementation use these corrected states
 and the required-image execution plan.
+
+### Service-unavailable recovery, 2026-10-11
+
+`home-venue` and `gig-create` now explain recognized schema/database readiness failures with localized
+service-unavailable copy instead of only the raw request/503 message. Existing retry actions, required
+images, preparation recovery and provisional layouts are unchanged. English copy follows existing
+fallback for all supported locales. Focused automated checks cover retry, form/journal retention and
+no false publication success; they are not visual approval.
+
+Public probes confirmed the deployed development schema gate blocks both routes. Recovery, Railway
+release settings and authorized retrieval/image-upload acceptance remain pending in the
+[recovery plan](plans/active/gig-schema-readiness-recovery.md). No live device journey is claimed.

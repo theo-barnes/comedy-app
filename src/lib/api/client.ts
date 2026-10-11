@@ -1,4 +1,5 @@
 import type { z } from 'zod/v3';
+import type { TFunction } from 'i18next';
 
 /**
  * Base URL for the platform API (FastAPI backend). Falls back to the
@@ -17,10 +18,38 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    public readonly code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+export function getApiErrorMessage(error: Error, t: TFunction): string {
+  if (
+    error instanceof ApiError &&
+    error.status === 503 &&
+    ['schema_revision_behind', 'schema_revision_unknown', 'database_unreachable'].includes(
+      error.code ?? '',
+    )
+  ) {
+    return t('common.serviceUnavailable');
+  }
+  return error.message;
+}
+
+function errorCode(body: unknown): string | undefined {
+  if (body === null || typeof body !== 'object') return undefined;
+  if ('error' in body) {
+    const error = body.error;
+    if (error !== null && typeof error === 'object' && 'code' in error) {
+      return typeof error.code === 'string' ? error.code : undefined;
+    }
+  }
+  if ('status' in body && body.status === 'unavailable' && 'code' in body) {
+    return typeof body.code === 'string' ? body.code : undefined;
+  }
+  return undefined;
 }
 
 function formatErrorDetail(body: unknown): string | undefined {
@@ -109,9 +138,14 @@ async function request(
   });
 
   if (!response.ok) {
-    const detail = formatErrorDetail(await response.json().catch(() => undefined));
+    const body: unknown = await response.json().catch(() => undefined);
+    const detail = formatErrorDetail(body);
     const message = `Request to ${path} failed (${response.status})`;
-    throw new ApiError(detail ? `${message}: ${detail}` : message, response.status);
+    throw new ApiError(
+      detail ? `${message}: ${detail}` : message,
+      response.status,
+      errorCode(body),
+    );
   }
 
   return response;

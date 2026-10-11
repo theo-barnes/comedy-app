@@ -54,4 +54,13 @@ describe('i18n language detection', () => {
     expect(message.length).toBeGreaterThan(0);
     expect(message).not.toBe('common.error');
   });
+
+  it.each(['en', 'en-US', 'fr', 'de'])(
+    'resolves the service-unavailable message for %s, including English fallback',
+    (languageTag) => {
+      mockGetLocales.mockReturnValue([{ languageTag, languageCode: languageTag.split('-')[0] }]);
+      const message = loadI18n().t('common.serviceUnavailable');
+      expect(message).toBe('The service is temporarily unavailable. Please try again shortly.');
+    },
+  );
 });
