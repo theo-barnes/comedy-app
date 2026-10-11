@@ -9,7 +9,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { useAuth } from '@/features/auth/useAuth';
 import { GigPosterImage } from '@/features/events/GigPosterImage';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
-import { isApiConfigured } from '@/lib/api/client';
+import { getApiErrorMessage, isApiConfigured } from '@/lib/api/client';
 import { useVenueEvents } from '@/lib/api/events';
 import { spacing } from '@/theme/tokens';
 
@@ -31,7 +31,7 @@ export function VenueHome() {
           <AppText muted>{t('common.loading')}</AppText>
         ) : events.isError ? (
           <>
-            <ErrorBanner message={events.error.message} />
+            <ErrorBanner message={getApiErrorMessage(events.error, t)} />
             <Button variant="secondary" onPress={() => void events.refetch()}>
               {t('common.retry')}
             </Button>

@@ -4,6 +4,12 @@
 
 Status: prevention controls implemented; production diagnosis/recovery evidence pending.
 
+On 2026-10-11, development's public `/ready`, `/v1/venues/me/events` and `/v1/creators/me`
+returned `503 schema_revision_behind`, while `/health` returned 200. This confirms the shared
+schema-admission failure for the new incident; exact deployed/current revisions still need operator
+evidence. Follow the [recovery plan](gig-schema-readiness-recovery.md) and the superseding
+[required-image rollout](required-gig-images.md), not the earlier poster-free smoke scenario below.
+
 After PR #25 introduced managed gig-poster schema, users reported:
 
 - venue gig listing: `GET /v1/venues/{venueId}/events` returns 500;
