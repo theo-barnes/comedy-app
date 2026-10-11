@@ -7,8 +7,10 @@ approved on 2026-10-08 and is tracked in [Venue gig creation](venue-gig-creation
 subsequently reported it working well. [Gig posters](gig-posters.md) is the next planning slice:
 Supabase Storage, private originals, public processed display artwork and provisional UI have
 been selected. Poster backend/client implementation is delivered behind a default-off gate;
-live Storage setup and acceptance remain pending. Promoter support, drafts, standalone
-promotional posts and articles remain deferred; bounded slice approval does not accept them.
+live Storage setup and acceptance remain pending. On 2026-10-11 the
+[required gig image correction](required-gig-images.md) superseded optional posters: venue gigs
+require one photo before public publication, with private preparation/recovery. Promoter support,
+general draft editors, standalone promotional posts and articles remain deferred.
 
 The [proposed ADR](../../decisions/2026-10-07-native-home-content.md) covers in-app creation and
 Home presentation of events, photos/posters/promotional material and articles. Preserve working
@@ -117,6 +119,9 @@ Planning-document checks on 2026-10-07:
 Use additive migrations and deploy compatible backend readers before exposing new composers or
 Home sections. Gate each new kind independently. Preserve stored user records/assets when
 disabling a surface; keep read support for published data and existing event/video clients.
+For venue gigs, the accepted required-image contract is not an optional media capability:
+unavailable image infrastructure blocks publication, and rollback cannot re-expose private
+preparations or restore image-less publishing. Follow the bounded correction's coordinated rollout.
 
 ## Documentation and Next Action
 
@@ -124,8 +129,9 @@ Update the owning API/backend/media documentation when accepted behavior is impl
 as if this proposal were already shipped. Keep this plan active across sessions and move it to
 completed only after the approved native journeys and regressions are verified.
 
-Exact next action: complete the [gig-poster implementation](gig-posters.md)'s pending staging
-Storage/native acceptance before activation. Maintain the
+Exact next action: deliver and validate the [required gig image correction](required-gig-images.md)
+before staging Storage/native acceptance and coordinated rollout. Activation of the old optional
+flow is not sufficient. Maintain the
 [UI view register](../../ui-view-register.md) and complete relevant
 [operator prerequisites](../../OPERATOR-TASKS.md) during implementation. Resolve broader ADR
 decisions when their own slice begins; promoter ownership is not a prerequisite for venue

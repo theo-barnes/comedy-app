@@ -59,7 +59,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your videos so you can upload comedy clips.",
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos and videos so you can upload gig artwork and comedy clips.",
           "cameraPermission": false,
           "microphonePermission": false
         }

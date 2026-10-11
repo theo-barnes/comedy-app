@@ -69,7 +69,7 @@ export function PosterPicker({
 
   return (
     <View style={styles.section}>
-      <AppText variant="subheading">{t('events.poster.optional')}</AppText>
+      <AppText variant="subheading">{t('events.poster.required')}</AppText>
       <AppText variant="caption" muted>
         {t('events.poster.limits')}
       </AppText>

@@ -26,7 +26,7 @@ class FakeIdempotentEvents(FakeEventRepository):
             previous_hash, event = previous
             if previous_hash != payload_hash:
                 raise ConflictError('different submission')
-            return event
+            return self.get(event.id)
 
     def create_idempotent(self, event, key, payload_hash):
         with self.lock:
@@ -46,7 +46,7 @@ def setup():
 
 
 def publish(service, key, **overrides):
-    return service.create_native(
+    return service.create_native_draft(
         USER, title=overrides.get('title', 'Comedy'), local_start_time='2099-01-01T20:00',
         time_zone='UTC', idempotency_key=key,
     )
@@ -99,7 +99,7 @@ def test_keys_are_uuid_and_owner_scoped():
         publish(service, 'not-a-uuid')
     key = str(uuid4())
     first = publish(service, key)
-    other = service.create_native(
+    other = service.create_native_draft(
         replace(USER, user_id='other-venue'), title='Comedy',
         local_start_time='2099-01-01T20:00', time_zone='UTC', idempotency_key=key,
     )

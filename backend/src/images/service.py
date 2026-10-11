@@ -26,17 +26,19 @@ class UploadIntent:
 class PosterService:
     def __init__(
         self, repository: ImageRepository | None, storage: PosterStorage | None,
-        events: PosterEvents, *, enabled: bool = False,
+        events: PosterEvents,
     ) -> None:
         self._repository = repository
         self._storage = storage
         self._events = events
-        self.enabled = enabled and repository is not None and storage is not None
 
     def _configured(self) -> tuple[ImageRepository, PosterStorage]:
-        if not self.enabled or self._repository is None or self._storage is None:
-            raise PosterUnavailableError('gig poster changes are disabled or Storage is unconfigured')
+        if self._repository is None or self._storage is None:
+            raise PosterUnavailableError('gig images require configured database and Storage')
         return self._repository, self._storage
+
+    def require_configured(self) -> None:
+        self._configured()
 
     def _owned(
         self, event_id: str, user: AuthenticatedUser, events: PosterEvents | None = None,
@@ -127,6 +129,17 @@ class PosterService:
     def attach(
         self, event_id: str, asset_id: str, expected_revision: int, user: AuthenticatedUser,
     ) -> None:
+        self._store_reference(event_id, asset_id, expected_revision, user, publish=False)
+
+    def publish(
+        self, event_id: str, asset_id: str, expected_revision: int, user: AuthenticatedUser,
+    ) -> None:
+        self._store_reference(event_id, asset_id, expected_revision, user, publish=True)
+
+    def _store_reference(
+        self, event_id: str, asset_id: str, expected_revision: int, user: AuthenticatedUser,
+        *, publish: bool,
+    ) -> None:
         repository, storage = self._configured()
         self._owned(event_id, user)
         # Persist the publication lease BEFORE Storage, including crashes/ambiguous
@@ -134,13 +147,17 @@ class PosterService:
         # a stale CAS, and cleanup cannot claim this asset during its fresh grace.
         with repository.locked(asset_id) as transaction:
             asset = self._asset(transaction.asset, event_id, user)
-            if not self._attachable(asset, event_id, expected_revision, user, transaction.events):
+            if not self._attachable(
+                asset, event_id, expected_revision, user, transaction.events, publish=publish,
+            ):
                 return
             asset.touched_at = datetime.now(timezone.utc)
         failure: ConflictError | PosterUnavailableError | None = None
         with repository.locked(asset_id) as transaction:
             asset = self._asset(transaction.asset, event_id, user)
-            if not self._attachable(asset, event_id, expected_revision, user, transaction.events):
+            if not self._attachable(
+                asset, event_id, expected_revision, user, transaction.events, publish=publish,
+            ):
                 return
             prepared = storage.read(ORIGINALS_BUCKET, asset.prepared_key, limit=MAX_BYTES * 2)
             if prepared is None or asset.output_type is None:
@@ -151,6 +168,7 @@ class PosterService:
                 # Public orphan keys are durable and reconciled after a fresh grace period.
                 transaction.events.swap(
                     event_id, user.user_id, expected_revision, asset, storage.public_url(asset.display_key),
+                    publish=publish,
                 )
                 asset.status = 'attached'
             except (ConflictError, PosterUnavailableError) as exc:
@@ -162,23 +180,38 @@ class PosterService:
     def _attachable(
         self, asset: ImageAsset, event_id: str, expected_revision: int, user: AuthenticatedUser,
         events: PosterEvents,
+        *, publish: bool,
     ) -> bool:
         event = self._owned(event_id, user, events)
-        if event.asset_id == asset.id and event.revision in (expected_revision, expected_revision + 1):
+        if (
+            event.publication_status == 'published' and event.asset_id == asset.id
+            and event.revision in (expected_revision, expected_revision + 1)
+        ):
             return False
         if event.revision != expected_revision:
             raise ConflictError('poster changed; refresh the gig before retrying')
         if asset.status != 'ready':
             raise ConflictError('poster must be ready and not previously superseded')
+        if (
+            asset.width is None or asset.height is None or asset.width <= 0 or asset.height <= 0
+            or asset.output_type not in CONTENT_TYPES
+        ):
+            raise ConflictError('poster requires validated dimensions and output type')
+        if publish:
+            events.validate_publication(event_id)
+        elif event.publication_status != 'published':
+            raise ConflictError('use publication to attach a draft image')
         return True
 
     def remove(self, event_id: str, expected_revision: int, user: AuthenticatedUser) -> None:
         self._configured()
-        self._owned(event_id, user)
+        event = self._owned(event_id, user)
+        if event.publication_status == 'published':
+            raise ConflictError('published gigs require an image; replace the existing poster')
         self._events.swap(event_id, user.user_id, expected_revision, None, None)
 
     def cleanup(self, *, dry_run: bool = True, limit: int = 100) -> tuple[int, int]:
-        # Cleanup is independently usable while the mutation/UI gate is rolled back.
+        # Destructive cleanup remains separately controlled from publication.
         if self._repository is None or self._storage is None:
             raise PosterUnavailableError('poster cleanup requires database and Storage')
         now = datetime.now(timezone.utc)

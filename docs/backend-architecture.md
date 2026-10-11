@@ -34,14 +34,15 @@ Shared across modules (defined once in [shared/ports.py](../backend/src/shared/p
 Module-local (defined in that module's own `service.py` or focused ports module, implemented via an adapter class in the
 _consuming_ module's `factory.py`):
 
-| Protocol          | Declared in             | Method                  | Implemented by                                                                                         |
-| ----------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `ComedianLookup`  | `events/service.py`     | `comedian_exists`       | `creators` (via `events/factory.py:RepositoryComedianLookup`)                                          |
-| `VenueLookup`     | `events/service.py`     | `get_venue`             | `creators` (via `events/factory.py:RepositoryVenueLookup`; stored venue name/address/coordinates only) |
-| `CreatorLookup`   | `social/service.py`     | `creator_exists`        | `creators` (via `social/factory.py:RepositoryCreatorLookup`)                                           |
-| `ContentLookup`   | `engagement/service.py` | `content_is_engageable` | `content` (via `engagement/factory.py:RepositoryContentLookup`)                                        |
-| `EventsLookup`    | `feed/service.py`       | `list_nearby`           | `events` (feed's own `FeedService` is passed `events.factory.get_service()` directly)                  |
-| `VenueNameLookup` | `feed/service.py`       | `venue_names`           | `feed`'s own repository (self-satisfied)                                                               |
+| Protocol                | Declared in             | Method                  | Implemented by                                                                                         |
+| ----------------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `ComedianLookup`        | `events/service.py`     | `comedian_exists`       | `creators` (via `events/factory.py:RepositoryComedianLookup`)                                          |
+| `VenueLookup`           | `events/service.py`     | `get_venue`             | `creators` (via `events/factory.py:RepositoryVenueLookup`; stored venue name/address/coordinates only) |
+| `CreatorLookup`         | `social/service.py`     | `creator_exists`        | `creators` (via `social/factory.py:RepositoryCreatorLookup`)                                           |
+| `ContentLookup`         | `engagement/service.py` | `content_is_engageable` | `content` (via `engagement/factory.py:RepositoryContentLookup`)                                        |
+| `EventVisibilityLookup` | `content/service.py`    | `is_public`             | `events` (wired in `content/factory.py`; draft links rejected before content persistence)              |
+| `EventsLookup`          | `feed/service.py`       | `list_nearby`           | `events` (feed's own `FeedService` is passed `events.factory.get_service()` directly)                  |
+| `VenueNameLookup`       | `feed/service.py`       | `venue_names`           | `feed`'s own repository (self-satisfied)                                                               |
 
 ## Module map
 
@@ -69,15 +70,52 @@ adapter over event-repository operations. `ImageTransaction` binds the event por
 Session as the locked asset: ownership/reference reads and CAS must not open nested connections.
 This prevents connection-pool starvation when multiple requests wait on one asset lock.
 
-Publication first commits a lease, then writes a new immutable public object. Event reference
-CAS and attached-asset state commit together in the second database transaction; failed/replaced
-objects remain tracked for reconciliation. Database/Storage are not an atomic transaction.
+Each public gig requires one primary managed image. `EventPublicationStatus` (`draft`/`published`)
+is separate from scheduled/cancelled status. Migration `0011_required_gig_images` preserves all
+IDs and event data, publishing only existing valid, attached, owner/event-bound managed references.
+Other records remain owner-only drafts; the database rejects incomplete published-image projections.
+
+Publication first commits a lease, then writes a new immutable public object. Events owns the
+time, schedule and location eligibility policy; images validates the ready owned/event-bound asset
+and manages Storage. The transaction-bound port checks eligibility again under the final event row
+lock. Publication state, event reference CAS and attached-asset state commit together in the second
+database transaction; failed/replaced objects remain tracked for reconciliation.
+Database/Storage are not an atomic transaction.
+Draft completion also advances `posterRevision`, preventing stale publication after edits.
+Same-image successful publication can replay at the original or next revision even after the
+start time has elapsed. Public poster replacement retains the previous reference until commit;
+sole-image removal is rejected by both service/repository policy and the database CHECK.
 Do not substitute an ordinary JWT TUS endpoint for the signed `/upload/resumable/sign` endpoint.
+
+Public details hide drafts from nonowners. Venue lists and nearby/Home queries exclude drafts
+before limits; linked-event hydration omits drafts. `GET /venues/me/events` includes owned drafts,
+cancelled events and past dates, newest-created first (ID descending breaks ties), before applying
+its bounded limit. Historical dates therefore cannot crowd out recent preparations.
+Media configuration is required for writes and the compatibility
+`GET /events/poster-config` limit adapter (`enabled: true`, never an optional product gate);
+unconfigured media returns explicit 503. Public event reads do not depend on Storage availability.
 
 `image_assets` and `native_event_submissions` are backend-only tables: Alembic enables RLS and
 revokes public/anon/authenticated access. Storage bucket/policy configuration belongs to the
 versioned Supabase migration. See the [poster plan](plans/active/gig-posters.md) for contracts,
-activation settings, resource limits, migration order and pending live acceptance.
+resource limits and pending live acceptance. The
+[required-image decision](decisions/2026-10-11-required-gig-images.md) supersedes optional artwork
+and describes the coordinated migration rollout; do not restore incompatible readers on rollback.
+
+### Disposable PostGIS publication contracts
+
+`backend/tests/test_required_gig_images_postgis.py` is opt-in. CI must provision a **new empty**
+local database named `comedy_required_images_test` (or that prefix followed by `_suffix`), then
+run `python -m pytest tests/test_required_gig_images_postgis.py -q` from `backend/` with:
+
+- `REQUIRED_GIG_IMAGES_TEST_DATABASE_URL`: explicit disposable PostgreSQL URL.
+- `REQUIRED_GIG_IMAGES_DISPOSABLE_DATABASE=1`: confirmation of that disposable target.
+
+The suite refuses remote hosts, runtime-database names, URL options and nonempty databases.
+It applies `0010`, seeds preserved legacy events/assets, migrates to head, and checks real SQL
+constraints plus publication commit/fault/replay visibility with fake Storage. It does not drop
+databases or tables and never falls back to `DISCOVERY_DATABASE_URL` or `.env`; reruns require
+a newly provisioned database. Normal fake-suite runs skip the PostGIS cases without both opt-ins.
 
 ## Database Migration and Readiness Invariant
 
@@ -115,18 +153,18 @@ cache client) is shared per distinct `(limit, window_seconds)` pair. Add/remove 
 same resource share one bucket (same `key`) so rapid toggling (e.g. follow→unfollow→follow) can't
 bypass the limit.
 
-| Bucket key       | Routes                                                                                                            | Limit     |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------- | --------- |
-| `follow`         | `POST`/`DELETE /follows/{creator_id}`                                                                             | 30 / min  |
-| `block`          | `POST`/`DELETE /blocks/{user_id}`                                                                                 | 20 / min  |
-| `reports`        | `POST /reports`                                                                                                   | 10 / hour |
-| `like`           | `POST`/`DELETE /content/{id}/like`                                                                                | 60 / min  |
-| `save`           | `POST`/`DELETE /content/{id}/save`                                                                                | 60 / min  |
-| `analytics`      | `POST /analytics/events`                                                                                          | 60 / min  |
-| `event-write`    | `POST /events`, `POST /events/native`, `PATCH`/`DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{id}` | 20 / hour |
-| `event-poster`   | Poster upload intent/completion and `PUT`/`DELETE /events/{id}/poster`                                            | 30 / hour |
-| `content-create` | `POST /content` (all types)                                                                                       | 20 / min  |
-| `video-upload`   | `POST /content` (only when `type=video_clip`; additive on top of `content-create`)                                | 5 / min   |
+| Bucket key       | Routes                                                                                              | Limit     |
+| ---------------- | --------------------------------------------------------------------------------------------------- | --------- |
+| `follow`         | `POST`/`DELETE /follows/{creator_id}`                                                               | 30 / min  |
+| `block`          | `POST`/`DELETE /blocks/{user_id}`                                                                   | 20 / min  |
+| `reports`        | `POST /reports`                                                                                     | 10 / hour |
+| `like`           | `POST`/`DELETE /content/{id}/like`                                                                  | 60 / min  |
+| `save`           | `POST`/`DELETE /content/{id}/save`                                                                  | 60 / min  |
+| `analytics`      | `POST /analytics/events`                                                                            | 60 / min  |
+| `event-write`    | Native draft create/completion, legacy create adapters, event update/cancellation and lineup writes | 20 / hour |
+| `event-poster`   | Poster upload intent/completion, `POST /events/{id}/publish`, and poster replacement/removal        | 30 / hour |
+| `content-create` | `POST /content` (all types)                                                                         | 20 / min  |
+| `video-upload`   | `POST /content` (only when `type=video_clip`; additive on top of `content-create`)                  | 5 / min   |
 
 ## What the backend can do today
 
@@ -174,22 +212,32 @@ mounted under `/v1` (see each module's `controller.py` for the full request/resp
 - Creator responses include nullable `latitude`/`longitude` from stored venue profiles; comedian
   responses leave these null. Profile PUT uses replacement fields: resend existing bio/capacity
   when changing location. Verification is server-managed and preserved by repository updates.
-- Publish a native gig: `POST /events/native` accepts `title`, optional `description`, required
+- Prepare a native gig: `POST /events/native/drafts` accepts `title`, optional `description`, required
   `localStartTime` and IANA `timeZone`, optional `localEndTime` and HTTPS `ticketUrl`. Local times
   must use `YYYY-MM-DDTHH:mm` without an offset or seconds. Start must be future; end must be later
   (use the following date for overnight gigs). DST gaps and ambiguous wall times are rejected.
   The venue's stored nonblank name/address and valid paired coordinates are required; venue
   identity/location cannot be supplied by the client. The existing event response, persistence,
-  place/H3 resolution and write limit are reused. Missing storage is explicitly unavailable.
-- Native publishing additionally accepts optional UUID `Idempotency-Key`: same-owner/payload
-  replay returns the original gig even after its start; mismatched payload returns 409 without
-  inserting another event. Definitive input/service validation returns 422 before persistence.
-- When the poster capability is enabled, venue owners can create a private signed upload intent,
-  complete processing and attach/replace/remove one poster through `/events/{id}/poster` routes.
-  Existing event/Home responses include nullable public display URL/dimensions and event poster
-  revision; no original keys or signed original URLs are exposed. The
-  [poster plan](plans/active/gig-posters.md) records the exact request/response surfaces.
-- Create, update, and cancel events, and manage the comedian lineup: `POST /events`,
+  place/H3 resolution and write limit are reused. Missing Storage explicitly prevents image
+  uploads/publication; a private preparation is never a public fallback.
+- Native preparation accepts optional UUID `Idempotency-Key`: same-owner/payload replay returns
+  the original event even after its start; mismatched payload returns 409 without inserting
+  another event. The hash/key format is unchanged, so old native submissions reconcile through
+  the draft endpoint. Definitive input/service validation returns 422 before persistence.
+- Complete an owned draft using `PATCH /events/{id}/draft`: the same native fields plus required
+  integer `expectedRevision` (the response's `posterRevision`). Fetch all owned preparations and
+  events, including past/cancelled records, with `GET /venues/me/events`.
+- Create a private signed image upload intent and complete processing through
+  `/events/{id}/poster/uploads` and `/events/{id}/poster/uploads/{assetId}/complete`. Publish with
+  `POST /events/{id}/publish`, body `{assetId, expectedRevision}`. Only a successful finalization
+  exposes the event publicly. `PUT /events/{id}/poster` replaces artwork on published gigs;
+  `DELETE /events/{id}/poster` cannot remove their sole image. Event responses include
+  `publicationStatus`, display URL/dimensions and revision; no original keys or signed original
+  URLs are exposed.
+- Legacy `POST /events` and new attempts at `POST /events/native` return explicit update-required 409. Legacy native replays succeed only for an already-published event with the same
+  owner/key/hash; a stored private draft returns update-required rather than false public success.
+  The corrected draft endpoint recovers that private record using its original key.
+- Update and cancel events, and manage the comedian lineup:
   `PATCH /events/{id}`, `DELETE /events/{id}`, `POST`/`DELETE /events/{id}/comedians/{comedian_id}`
   ([events](../backend/src/events)).
 - Post event-promotion content linked to one of their events: `POST /content` with

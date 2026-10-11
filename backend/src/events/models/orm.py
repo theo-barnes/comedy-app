@@ -45,6 +45,9 @@ class EventRow(Base):
     poster_width: Mapped[int | None] = mapped_column(Integer)
     poster_height: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="'scheduled'")
+    publication_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="'draft'",
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -52,6 +55,17 @@ class EventRow(Base):
 
     __table_args__ = (
         CheckConstraint(f"status in {EVENT_STATUSES!r}", name='events_status_check'),
+        CheckConstraint(
+            "publication_status IN ('draft', 'published')",
+            name='events_publication_status_check',
+        ),
+        CheckConstraint(
+            "publication_status <> 'published' OR (poster_asset_id IS NOT NULL "
+            "AND poster_url IS NOT NULL AND length(btrim(poster_url)) > 0 "
+            "AND poster_width IS NOT NULL AND poster_width > 0 "
+            "AND poster_height IS NOT NULL AND poster_height > 0)",
+            name='events_published_image_check',
+        ),
         CheckConstraint('poster_revision >= 0', name='events_poster_revision_check'),
         Index('events_poster_asset_idx', 'poster_asset_id'),
         CheckConstraint('end_time is null or end_time > start_time',

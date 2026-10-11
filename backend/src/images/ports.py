@@ -12,14 +12,17 @@ class PosterEvent:
     owner_id: str
     asset_id: str | None
     revision: int
+    publication_status: str = 'draft'
 
 
 class PosterEvents(Protocol):
     def get(self, event_id: str) -> PosterEvent | None: ...
     def referenced(self, asset_id: str) -> bool: ...
+    def validate_publication(self, event_id: str) -> None: ...
     def swap(
         self, event_id: str, owner_id: str, expected_revision: int,
         asset: ImageAsset | None, url: str | None,
+        *, publish: bool = False,
     ) -> None: ...
 
 

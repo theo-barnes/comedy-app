@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Protocol
 
 import h3
 
@@ -32,6 +32,10 @@ from .repository import ContentRepository
 logger = get_logger(__name__)
 
 
+class EventVisibilityLookup(Protocol):
+    def is_public(self, event_id: str) -> bool: ...
+
+
 class ContentService:
     """Business logic for creating, publishing, and reconciling content."""
 
@@ -45,6 +49,7 @@ class ContentService:
         max_video_duration_seconds: int = 300,
         max_video_size_bytes: int = 500 * 1024 * 1024,
         max_active_uploads_per_creator: int = 2,
+        events: EventVisibilityLookup | None = None,
     ) -> None:
         self._repository = repository
         self._media = media_provider
@@ -53,6 +58,7 @@ class ContentService:
         self._max_video_duration = max_video_duration_seconds
         self._max_video_size = max_video_size_bytes
         self._max_active_uploads = max_active_uploads_per_creator
+        self._events = events
 
     def create(
         self,
@@ -76,6 +82,8 @@ class ContentService:
             raise ValidationFailedError('image content requires imageUrl')
         if type is ContentType.EVENT_PROMOTION and not event_id:
             raise ValidationFailedError('event promotion requires eventId')
+        if event_id is not None and (self._events is None or not self._events.is_public(event_id)):
+            raise ValidationFailedError('linked event must be published')
         if (latitude is None) != (longitude is None):
             raise ValidationFailedError('latitude and longitude must be provided together')
         if image_url is not None and not image_url.startswith('https://'):

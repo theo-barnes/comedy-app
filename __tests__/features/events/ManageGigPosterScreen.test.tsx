@@ -8,7 +8,6 @@ import { renderWithTheme } from '../../utils/renderWithTheme';
 const mockAuth = jest.fn();
 const mockEventQuery = jest.fn();
 const mockConfig = jest.fn();
-const mockRemove = jest.fn();
 const mockUpload = jest.fn();
 const mockRefetch = jest.fn();
 const mockPickPoster = jest.fn();
@@ -25,7 +24,6 @@ jest.mock('@/lib/api/client', () => ({
 jest.mock('@/lib/api/gig-posters', () => ({
   useEvent: (...args: unknown[]) => mockEventQuery(...args),
   usePosterConfig: () => mockConfig(),
-  useRemoveGigPoster: () => ({ mutateAsync: mockRemove, isPending: false }),
 }));
 jest.mock('@/features/events/poster-picker', () => ({ pickPoster: () => mockPickPoster() }));
 jest.mock('@/features/events/poster-upload', () => ({
@@ -42,8 +40,11 @@ const event = {
   id: 'gig-1',
   venueId: 'venue-1',
   title: 'Friday show',
+  publicationStatus: 'published',
   posterUrl: 'https://posters.test/old.jpg',
   posterRevision: 3,
+  posterWidth: 20,
+  posterHeight: 20,
 };
 
 beforeEach(() => {
@@ -58,7 +59,6 @@ beforeEach(() => {
   mockRefetch.mockResolvedValue({ data: event, isError: false });
   mockConfig.mockReturnValue({
     data: {
-      enabled: true,
       maxBytes: 10_485_760,
       maxPixels: 25_000_000,
       supportedContentTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -87,33 +87,40 @@ it('guards missing gig, roles and ownership without showing private write contro
   expect(screen.queryByLabelText('events.poster.currentPreview')).toBeNull();
 });
 
-it('keeps current artwork visible when writes are disabled', () => {
-  mockConfig.mockReturnValue({ data: { enabled: false }, isPending: false });
+it('keeps current artwork visible when image configuration is unavailable', () => {
+  mockConfig.mockReturnValue({
+    data: undefined,
+    isPending: false,
+    isError: true,
+    error: new ApiError('Media unavailable', 503),
+    refetch: jest.fn(),
+  });
   renderWithTheme(<ManageGigPosterScreen eventId="gig-1" />);
   expect(screen.getByLabelText('events.poster.currentPreview').props.source.uri).toBe(
     event.posterUrl,
   );
-  expect(screen.getByText('events.poster.disabled')).toBeTruthy();
+  expect(screen.getByText('Media unavailable')).toBeTruthy();
   expect(screen.queryByText('events.poster.remove')).toBeNull();
 });
 
-it('confirms removal and retains the previous image on failure', async () => {
-  mockRemove.mockRejectedValueOnce(new Error('Removal failed'));
+it('offers replacement but never sole-image removal for a published gig', () => {
   renderWithTheme(<ManageGigPosterScreen eventId="gig-1" />);
-  fireEvent.press(screen.getByText('events.poster.remove'));
-  expect(mockRemove).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByText('events.poster.confirmRemove'));
-  await screen.findByText('Removal failed');
+  expect(screen.queryByText('events.poster.remove')).toBeNull();
+  expect(screen.queryByText('events.poster.confirmRemove')).toBeNull();
+  expect(screen.getByText('events.poster.choose')).toBeTruthy();
   expect(screen.getByLabelText('events.poster.currentPreview').props.source.uri).toBe(
     event.posterUrl,
   );
-  expect(mockRemove).toHaveBeenCalledWith({ eventId: 'gig-1', expectedRevision: 3 });
 });
 
 it('refreshes a conflict and uses the fresh revision only on an explicit retry', async () => {
-  mockRemove
+  mockUpload
     .mockRejectedValueOnce(new ApiError('Poster changed elsewhere', 409))
-    .mockResolvedValueOnce({ ...event, posterUrl: null, posterRevision: 5 });
+    .mockResolvedValueOnce({
+      ...event,
+      posterUrl: 'https://posters.test/new.jpg',
+      posterRevision: 5,
+    });
   mockRefetch.mockImplementation(async () => {
     mockEventQuery.mockReturnValue({
       data: { ...event, posterRevision: 4 },
@@ -124,16 +131,35 @@ it('refreshes a conflict and uses the fresh revision only on an explicit retry',
     return { data: { ...event, posterRevision: 4 }, isError: false };
   });
   renderWithTheme(<ManageGigPosterScreen eventId="gig-1" />);
-  fireEvent.press(screen.getByText('events.poster.remove'));
-  fireEvent.press(screen.getByText('events.poster.confirmRemove'));
+  fireEvent.press(screen.getByText('events.poster.choose'));
+  await screen.findByLabelText('events.poster.selectedPreview');
+  fireEvent.press(screen.getByText('events.poster.replace'));
   await screen.findByText('Poster changed elsewhere');
   await waitFor(() => expect(mockRefetch).toHaveBeenCalledTimes(1));
-  expect(mockRemove).toHaveBeenCalledTimes(1);
+  expect(mockUpload).toHaveBeenCalledTimes(1);
   await act(async () => {});
-  fireEvent.press(screen.getByText('events.poster.confirmRemove'));
+  fireEvent.press(screen.getByText('events.poster.replace'));
   await waitFor(() =>
-    expect(mockRemove).toHaveBeenLastCalledWith({ eventId: 'gig-1', expectedRevision: 4 }),
+    expect(mockUpload).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'gig-1', posterRevision: 4 }),
+      expect.objectContaining({ uri: 'file:///new.jpg' }),
+    ),
   );
+});
+
+it('sends an owner draft to completion rather than exposing replacement or removal', () => {
+  mockEventQuery.mockReturnValue({
+    data: { ...event, publicationStatus: 'draft', posterUrl: null },
+    isPending: false,
+    isError: false,
+    refetch: mockRefetch,
+  });
+  renderWithTheme(<ManageGigPosterScreen eventId="gig-1" />);
+  expect(screen.getByText('events.poster.privatePreparation')).toBeTruthy();
+  expect(screen.getByText('events.poster.completeGig')).toBeTruthy();
+  expect(screen.queryByText('events.poster.choose')).toBeNull();
+  expect(screen.queryByText('events.poster.remove')).toBeNull();
+  expect(mockUpload).not.toHaveBeenCalled();
 });
 
 it('keeps old poster visible through replacement preview and upload failure', async () => {

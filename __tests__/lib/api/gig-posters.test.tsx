@@ -1,17 +1,12 @@
-import { act, renderHook } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { PropsWithChildren } from 'react';
-
 import { ApiError, apiFetch, apiMutation } from '@/lib/api/client';
-import { eventSchema } from '@/lib/api/events';
 import {
   attachGigPoster,
   completePosterUpload,
   createPosterUpload,
   fetchPosterConfig,
-  useRemoveGigPoster,
+  publishGig,
 } from '@/lib/api/gig-posters';
-import { queryKeys } from '@/lib/api/keys';
+import * as gigPosters from '@/lib/api/gig-posters';
 
 jest.mock('@/lib/api/client', () => ({
   ...jest.requireActual('@/lib/api/client'),
@@ -19,14 +14,30 @@ jest.mock('@/lib/api/client', () => ({
   apiMutation: jest.fn(),
 }));
 
-describe('gig poster contracts', () => {
+describe('required gig image contracts', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('only recognizes old-backend 404 as an unavailable capability', async () => {
-    jest.mocked(apiFetch).mockRejectedValueOnce(new ApiError('Missing route', 404));
-    await expect(fetchPosterConfig()).resolves.toBeNull();
-    jest.mocked(apiFetch).mockRejectedValueOnce(new ApiError('Unavailable', 503));
-    await expect(fetchPosterConfig()).rejects.toMatchObject({ status: 503 });
+  it.each([404, 503])(
+    'propagates configuration HTTP %s instead of optional-image fallback',
+    async (status) => {
+      jest.mocked(apiFetch).mockRejectedValueOnce(new ApiError('Media unavailable', status));
+      await expect(fetchPosterConfig()).rejects.toMatchObject({ status });
+    },
+  );
+
+  it('accepts configuration without enabled and strips the obsolete product switch', async () => {
+    const config = {
+      maxBytes: 1000,
+      maxPixels: 10000,
+      supportedContentTypes: ['image/jpeg'],
+    };
+    jest
+      .mocked(apiFetch)
+      .mockImplementationOnce(async (_path, options) =>
+        options!.schema!.parse({ ...config, enabled: false }),
+      );
+    await expect(fetchPosterConfig()).resolves.toEqual(config);
+    expect(apiFetch).toHaveBeenCalledWith('/events/poster-config', { schema: expect.anything() });
   });
 
   it('binds upload and completion to the event without sending an original URL', async () => {
@@ -41,73 +52,73 @@ describe('gig poster contracts', () => {
     await completePosterUpload('event-1', 'asset-1', abort.signal);
     expect(apiMutation).toHaveBeenLastCalledWith(
       '/events/event-1/poster/uploads/asset-1/complete',
-      {
-        method: 'POST',
-        body: {},
-        schema: expect.anything(),
-        signal: abort.signal,
-      },
+      { method: 'POST', body: {}, schema: expect.anything(), signal: abort.signal },
     );
   });
 
-  it('attaches an asset with the expected revision, not a client image URL', async () => {
+  it('publishes a prepared asset atomically with the expected draft revision', async () => {
+    const abort = new AbortController();
+    await publishGig({ eventId: 'event/1', assetId: 'asset-1', expectedRevision: 3 }, abort.signal);
+    expect(apiMutation).toHaveBeenLastCalledWith('/events/event%2F1/publish', {
+      method: 'POST',
+      body: { assetId: 'asset-1', expectedRevision: 3 },
+      schema: expect.anything(),
+      signal: abort.signal,
+    });
+  });
+
+  it('replaces a published image with an asset and revision, not a client URL', async () => {
     await attachGigPoster({ eventId: 'event-1', assetId: 'asset-1', expectedRevision: 3 });
     expect(apiMutation).toHaveBeenLastCalledWith('/events/event-1/poster', {
       method: 'PUT',
       body: { assetId: 'asset-1', expectedRevision: 3 },
-      schema: eventSchema,
+      schema: expect.anything(),
       signal: undefined,
     });
   });
 
-  it('updates the current event and refreshes all affected read projections on removal', async () => {
-    const client = new QueryClient({ defaultOptions: { mutations: { gcTime: 0 } } });
-    const invalidate = jest.spyOn(client, 'invalidateQueries');
-    const wrapper = ({ children }: PropsWithChildren) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    );
-    const event = { id: 'event-1', posterUrl: null, posterRevision: 4 };
-    jest.mocked(apiMutation).mockResolvedValueOnce(event);
-    const { result, unmount } = renderHook(() => useRemoveGigPoster('venue-1'), { wrapper });
-    await act(async () => {
-      await result.current.mutateAsync({ eventId: 'event-1', expectedRevision: 3 });
-    });
-    expect(client.getQueryData(queryKeys.event('event-1'))).toEqual(event);
-    for (const queryKey of [
-      queryKeys.event('event-1'),
-      queryKeys.venueEvents('venue-1'),
-      queryKeys.homeFeedRoot,
-      queryKeys.videoFeedRoot,
-    ]) {
-      expect(invalidate).toHaveBeenCalledWith({ queryKey });
-    }
-    expect(apiMutation).toHaveBeenLastCalledWith('/events/event-1/poster', {
-      method: 'DELETE',
-      body: { expectedRevision: 3 },
-      schema: eventSchema,
-    });
-    unmount();
-    client.clear();
-  });
-
-  it('reconciles a failed removal without discarding the previous cached poster', async () => {
-    const client = new QueryClient({ defaultOptions: { mutations: { gcTime: 0 } } });
-    const previous = { id: 'event-1', posterUrl: 'https://storage.example.com/old.jpg' };
-    client.setQueryData(queryKeys.event('event-1'), previous);
-    const invalidate = jest.spyOn(client, 'invalidateQueries');
-    const wrapper = ({ children }: PropsWithChildren) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    );
-    jest.mocked(apiMutation).mockRejectedValueOnce(new ApiError('Revision conflict', 409));
-    const { result, unmount } = renderHook(() => useRemoveGigPoster('venue-1'), { wrapper });
-    await act(async () => {
+  it.each([publishGig, attachGigPoster])(
+    'rejects private or image-less success responses at finalization: %p',
+    async (finalize) => {
+      const event = {
+        id: 'event-1',
+        venueId: 'venue-1',
+        title: 'Comedy',
+        startTime: '2027-02-12T20:00:00Z',
+        status: 'scheduled',
+        comedianIds: [],
+        publicationStatus: 'published',
+        posterUrl: 'https://posters.test/ready.jpg',
+        posterWidth: 600,
+        posterHeight: 900,
+      };
+      jest
+        .mocked(apiMutation)
+        .mockImplementation(async (_path, options) => options.schema!.parse(event));
       await expect(
-        result.current.mutateAsync({ eventId: 'event-1', expectedRevision: 2 }),
-      ).rejects.toMatchObject({ status: 409 });
-    });
-    expect(client.getQueryData(queryKeys.event('event-1'))).toEqual(previous);
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.event('event-1') });
-    unmount();
-    client.clear();
+        finalize({ eventId: event.id, assetId: 'asset-1', expectedRevision: 0 }),
+      ).resolves.toEqual(event);
+      jest
+        .mocked(apiMutation)
+        .mockImplementationOnce(async (_path, options) =>
+          options.schema!.parse({ ...event, publicationStatus: 'draft' }),
+        );
+      await expect(
+        finalize({ eventId: event.id, assetId: 'asset-1', expectedRevision: 0 }),
+      ).rejects.toThrow();
+      jest
+        .mocked(apiMutation)
+        .mockImplementationOnce(async (_path, options) =>
+          options.schema!.parse({ ...event, posterUrl: null }),
+        );
+      await expect(
+        finalize({ eventId: event.id, assetId: 'asset-1', expectedRevision: 0 }),
+      ).rejects.toThrow();
+    },
+  );
+
+  it('does not expose a client operation to remove a published gig sole image', () => {
+    expect(gigPosters).not.toHaveProperty('removeGigPoster');
+    expect(gigPosters).not.toHaveProperty('useRemoveGigPoster');
   });
 });

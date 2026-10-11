@@ -36,6 +36,7 @@ def get_service() -> ContentService:
     from location.factory import build_repository as build_place_repository
     from media.factory import get_media_provider
     from shared.config import settings
+    from events.factory import get_service as get_events_service
 
     return ContentService(
         repository=build_repository(),
@@ -45,4 +46,5 @@ def get_service() -> ContentService:
         max_video_duration_seconds=settings.max_video_duration_seconds,
         max_video_size_bytes=settings.max_video_size_bytes,
         max_active_uploads_per_creator=settings.max_active_uploads_per_creator,
+        events=get_events_service(),
     )

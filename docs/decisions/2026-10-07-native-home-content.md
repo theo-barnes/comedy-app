@@ -28,6 +28,15 @@ default-off implementation uses a separate managed image lifecycle, additive eve
 projections and failure-safe two-step gig publication, with Supabase setup and live acceptance
 still required. This does not accept the unrelated proposals below or expand venue ownership.
 
+### Required-image correction, 2026-10-11
+
+The optional-image and immediate-publication contract above is superseded by
+[Required image for gig publication](2026-10-11-required-gig-images.md). Every public venue gig
+requires one primary photo. Owner-only preparation is allowed; publication waits for validated
+artwork and commits its reference atomically. Image-less existing gigs remain private for owner
+completion. The optional poster product flag is removed, not merely enabled. This approval is
+bounded to venue gigs and the existing provisional UI, not galleries or other content kinds.
+
 ## Context
 
 Events, photos/posters/promotional material and articles should normally be authored and managed

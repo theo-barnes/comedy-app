@@ -2,6 +2,13 @@
 
 ## Status, Scope and Risk
 
+**Superseded publication scope, 2026-10-11:** the optional-image/default-off publication behavior
+below describes the previous implementation, not the current product requirement. The
+[required-image correction](required-gig-images.md) requires one managed image before public
+publication, private preparations, owner completion of old image-less gigs, and removal of the
+optional poster switch. Do not enable the old flow as a substitute for that correction. Its
+storage, validation, immutable delivery and cleanup implementation is reused.
+
 Status: implemented with activation pending, 2026-10-08. Backend contracts, migrations, image
 processing, cleanup and provisional client journeys are implemented and reviewed.
 Storage resources have not been provisioned; live activation and acceptance remain pending.

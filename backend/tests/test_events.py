@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from itertools import count
 from typing import Any
 
 import pytest
 
-from events.models.domain import Event, EventStatus
+from events.models.domain import Event, EventPublicationStatus, EventStatus
 from events.service import EventService
 from shared.auth.models import AuthenticatedUser
-from shared.errors import NotFoundError, PermissionDeniedError, ValidationFailedError
+from shared.errors import ConflictError, NotFoundError, PermissionDeniedError, ValidationFailedError
 
 
 class FakeEventRepository:
@@ -35,6 +36,16 @@ class FakeEventRepository:
     def update_fields(self, event_id: str, fields: dict) -> None:
         self.events[event_id] = self._with(self.events[event_id], **fields)
 
+    def update_draft(self, event_id, owner_id, expected_revision, fields):
+        event = self.events[event_id]
+        if (
+            event.venue_id != owner_id or event.publication_status is not EventPublicationStatus.DRAFT
+            or event.poster_revision != expected_revision
+        ):
+            raise ConflictError('draft changed')
+        self.events[event_id] = replace(event, **fields, poster_revision=expected_revision + 1)
+        return self.get(event_id)
+
     def set_status(self, event_id: str, status: EventStatus) -> None:
         self.events[event_id] = self._with(self.events[event_id], status=status)
 
@@ -50,11 +61,16 @@ class FakeEventRepository:
         except KeyError:
             return False
 
-    def list_by_venue(self, venue_id: str, *, limit: int, from_time) -> list[Event]:  # noqa: ANN001
+    def list_by_venue(
+        self, venue_id: str, *, limit: int, from_time, include_drafts=False,
+    ) -> list[Event]:
         events = [
             e for e in self.events.values()
             if e.venue_id == venue_id and (from_time is None or e.start_time >= from_time)
+            and (include_drafts or e.publication_status is EventPublicationStatus.PUBLISHED)
         ]
+        if include_drafts:
+            return sorted(events, key=lambda e: (e.created_at, e.id), reverse=True)[:limit]
         return sorted(events, key=lambda e: e.start_time)[:limit]
 
     def list_nearby(
@@ -68,6 +84,7 @@ class FakeEventRepository:
         events = [
             e for e in self.events.values()
             if e.status is EventStatus.SCHEDULED
+            and e.publication_status is EventPublicationStatus.PUBLISHED
             and e.start_time >= from_time
             and distance_m(e) <= radius_meters
         ]
@@ -75,26 +92,15 @@ class FakeEventRepository:
 
     @staticmethod
     def _with(event: Event, **overrides: Any) -> Event:
-        values = {
-            'id': event.id,
-            'venue_id': event.venue_id,
-            'title': event.title,
-            'start_time': event.start_time,
-            'status': event.status,
-            'description': event.description,
-            'end_time': event.end_time,
-            'place_id': event.place_id,
-            'latitude': event.latitude,
-            'longitude': event.longitude,
-            'h3_index': event.h3_index,
-            'ticket_url': event.ticket_url,
-            'comedian_ids': event.comedian_ids,
-            'created_at': event.created_at,
-        }
-        values.update(overrides)
-        if isinstance(values['status'], str):
-            values['status'] = EventStatus(values['status'])
-        return Event(**values)
+        if isinstance(overrides.get('status'), str):
+            overrides['status'] = EventStatus(overrides['status'])
+        return replace(event, **overrides)
+
+    def publish_fixture(self, event_id):
+        self.events[event_id] = replace(
+            self.events[event_id], publication_status=EventPublicationStatus.PUBLISHED,
+            poster_asset_id='asset', poster_url='https://public/poster', poster_width=24, poster_height=32,
+        )
 
 
 class FakeComedianLookup:
@@ -159,8 +165,9 @@ def test_create_rejects_http_ticket_url(service: EventService) -> None:
         )
 
 
-def test_update_owner_only(service: EventService) -> None:
+def test_update_owner_only(service: EventService, repo: FakeEventRepository) -> None:
     event = service.create(_venue(), title='x', start_time=_soon())
+    repo.publish_fixture(event.id)
     with pytest.raises(PermissionDeniedError):
         service.update(event.id, _venue('other-venue'), {'title': 'hijacked'})
     updated = service.update(event.id, _venue(), {'title': 'renamed'})
@@ -178,17 +185,17 @@ def test_add_comedian_validates_existence(service: EventService) -> None:
     service.add_comedian(event.id, 'comedian-1', _venue())
     with pytest.raises(NotFoundError):
         service.add_comedian(event.id, 'ghost', _venue())
-    assert service.get(event.id).comedian_ids == ('comedian-1',)
+    assert service.get(event.id, _venue()).comedian_ids == ('comedian-1',)
 
 
 def test_remove_comedian(service: EventService) -> None:
     event = service.create(_venue(), title='x', start_time=_soon())
     service.add_comedian(event.id, 'comedian-1', _venue())
     service.remove_comedian(event.id, 'comedian-1', _venue())
-    assert service.get(event.id).comedian_ids == ()
+    assert service.get(event.id, _venue()).comedian_ids == ()
 
 
-def test_nearby_excludes_cancelled_and_far(service: EventService) -> None:
+def test_nearby_excludes_cancelled_and_far(service: EventService, repo: FakeEventRepository) -> None:
     near = service.create(
         _venue(), title='near', start_time=_soon(), latitude=51.5, longitude=-0.1
     )
@@ -199,6 +206,8 @@ def test_nearby_excludes_cancelled_and_far(service: EventService) -> None:
         _venue(), title='cancelled', start_time=_soon(), latitude=51.5, longitude=-0.1
     )
     service.cancel(cancelled.id, _venue())
+    for event_id in repo.events:
+        repo.publish_fixture(event_id)
     results = service.list_nearby(51.5, -0.1, radius_meters=25_000)
     assert [e.title for e in results] == ['near']
     assert results[0].id == near.id
@@ -210,6 +219,8 @@ def test_list_by_venue_upcoming_only(service: EventService, repo: FakeEventRepos
         repo.events[past.id], start_time=datetime.now(timezone.utc) - timedelta(days=1)
     )
     service.create(_venue(), title='future', start_time=_soon())
+    for event_id in repo.events:
+        repo.publish_fixture(event_id)
     upcoming = service.list_by_venue('venue-1')
     everything = service.list_by_venue('venue-1', upcoming_only=False)
     assert [e.title for e in upcoming] == ['future']

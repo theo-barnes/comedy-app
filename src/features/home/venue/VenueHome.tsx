@@ -11,7 +11,6 @@ import { GigPosterImage } from '@/features/events/GigPosterImage';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
 import { isApiConfigured } from '@/lib/api/client';
 import { useVenueEvents } from '@/lib/api/events';
-import { usePosterConfig } from '@/lib/api/gig-posters';
 import { spacing } from '@/theme/tokens';
 
 export function VenueHome() {
@@ -19,7 +18,6 @@ export function VenueHome() {
   const { profile, isGuest } = useAuth();
   const allowed = !isGuest && profile?.role === 'venue';
   const events = useVenueEvents(profile?.id, allowed);
-  const posterConfig = usePosterConfig(allowed);
   return (
     <HomeScreenLayout>
       <View style={styles.content}>
@@ -27,14 +25,6 @@ export function VenueHome() {
           <Button onPress={() => router.push('/create-event')}>{t('events.create.heading')}</Button>
         )}
         <AppText variant="subheading">{t('venues.eventsHere')}</AppText>
-        {posterConfig.isError && (
-          <>
-            <ErrorBanner message={posterConfig.error.message} />
-            <Button variant="ghost" onPress={() => void posterConfig.refetch()}>
-              {t('common.retry')}
-            </Button>
-          </>
-        )}
         {!isApiConfigured() ? (
           <AppText muted>{t('events.create.unconfigured')}</AppText>
         ) : events.isPending ? (
@@ -52,6 +42,9 @@ export function VenueHome() {
           events.data?.items.map((event) => (
             <Card key={event.id}>
               <AppText variant="subheading">{event.title}</AppText>
+              {event.publicationStatus === 'draft' && (
+                <AppText>{t('events.poster.needsImage')}</AppText>
+              )}
               {event.posterUrl && (
                 <GigPosterImage
                   uri={event.posterUrl}
@@ -69,14 +62,23 @@ export function VenueHome() {
                 UTC
               </AppText>
               {event.description ? <AppText>{event.description}</AppText> : null}
-              {allowed && event.venueId === profile.id && posterConfig.data?.enabled && (
+              {allowed && event.venueId === profile.id && (
                 <Button
                   variant="secondary"
                   onPress={() =>
-                    router.push({ pathname: '/manage-gig-poster', params: { eventId: event.id } })
+                    event.publicationStatus === 'draft'
+                      ? router.push({ pathname: '/create-event', params: { draftId: event.id } })
+                      : router.push({
+                          pathname: '/manage-gig-poster',
+                          params: { eventId: event.id },
+                        })
                   }
                 >
-                  {t('events.poster.manage')}
+                  {t(
+                    event.publicationStatus === 'draft'
+                      ? 'events.poster.completeGig'
+                      : 'events.poster.manage',
+                  )}
                 </Button>
               )}
             </Card>

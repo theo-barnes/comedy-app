@@ -17,24 +17,32 @@ export const creatorProfileSchema = z.object({
   longitude: z.number().min(-180).max(180).nullish(),
 });
 
-export const eventSchema = z.object({
-  id: z.string(),
-  venueId: z.string(),
-  title: z.string(),
-  description: z.string().nullish(),
-  startTime: z.string().datetime({ offset: true }),
-  endTime: z.string().datetime({ offset: true }).nullish(),
-  placeId: z.string().nullish(),
-  latitude: z.number().nullish(),
-  longitude: z.number().nullish(),
-  ticketUrl: z.string().nullish(),
-  status: z.enum(['scheduled', 'cancelled']),
-  comedianIds: z.array(z.string()),
-  posterUrl: z.string().url().nullish(),
-  posterRevision: z.number().int().nonnegative().optional(),
-  posterWidth: z.number().int().positive().nullish(),
-  posterHeight: z.number().int().positive().nullish(),
-});
+export const eventSchema = z
+  .object({
+    id: z.string(),
+    venueId: z.string(),
+    title: z.string(),
+    description: z.string().nullish(),
+    startTime: z.string().datetime({ offset: true }),
+    endTime: z.string().datetime({ offset: true }).nullish(),
+    placeId: z.string().nullish(),
+    latitude: z.number().nullish(),
+    longitude: z.number().nullish(),
+    ticketUrl: z.string().nullish(),
+    status: z.enum(['scheduled', 'cancelled']),
+    publicationStatus: z.enum(['draft', 'published']),
+    comedianIds: z.array(z.string()),
+    posterUrl: z.string().url().nullish(),
+    posterRevision: z.number().int().nonnegative().optional(),
+    posterWidth: z.number().int().positive().nullish(),
+    posterHeight: z.number().int().positive().nullish(),
+  })
+  .refine(
+    (event) =>
+      event.publicationStatus !== 'published' ||
+      (!!event.posterUrl && event.posterWidth != null && event.posterHeight != null),
+    'Published gigs require a complete photo.',
+  );
 
 export type CreatorProfile = z.infer<typeof creatorProfileSchema>;
 export type VenueEvent = z.infer<typeof eventSchema>;
@@ -77,11 +85,23 @@ export function createNativeEvent(
   input: NativeEventInput & { idempotencyKey?: string },
 ): Promise<VenueEvent> {
   const { idempotencyKey, ...body } = input;
-  return apiMutation('/events/native', {
+  return apiMutation('/events/native/drafts', {
     method: 'POST',
     body,
     schema: eventSchema,
     ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
+  });
+}
+
+export function updateEventDraft(
+  eventId: string,
+  input: NativeEventInput,
+  expectedRevision: number,
+): Promise<VenueEvent> {
+  return apiMutation(`/events/${encodeURIComponent(eventId)}/draft`, {
+    method: 'PATCH',
+    body: { ...input, expectedRevision },
+    schema: eventSchema,
   });
 }
 
@@ -115,7 +135,6 @@ export function useCreateNativeEvent(userId: string) {
     retry: false,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.venueEvents(userId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.homeFeedRoot });
     },
   });
 }
@@ -124,7 +143,7 @@ export function useVenueEvents(userId: string | undefined, enabled = true) {
   return useQuery({
     queryKey: queryKeys.venueEvents(userId ?? 'anonymous'),
     queryFn: () =>
-      apiFetch(`/venues/${userId}/events`, {
+      apiFetch('/venues/me/events', {
         schema: z.object({ items: z.array(eventSchema) }),
       }),
     enabled: !!userId && enabled && isApiConfigured(),
