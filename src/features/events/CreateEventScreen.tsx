@@ -25,31 +25,54 @@ import { nativeEventInputSchema } from './event-form';
 import { InvalidPublicationJournalError, useEventPublication } from './event-publication';
 import { PosterPicker, PosterProgress } from './PosterPicker';
 import { useGigPosterUpload, type PosterSelection } from './poster-upload';
+import { posterLimits } from './poster-picker';
 import { VenueSetupForm } from './VenueSetupForm';
 
-export function CreateEventScreen() {
+export function CreateEventScreen({
+  draftId,
+  invalidDraftId = false,
+}: {
+  draftId?: string;
+  invalidDraftId?: boolean;
+}) {
   const { profile } = useAuth();
-  return <AccountCreateEventScreen key={profile?.id ?? 'anonymous'} />;
+  return (
+    <AccountCreateEventScreen
+      key={`${profile?.id ?? 'anonymous'}:${draftId ?? 'new'}`}
+      draftId={draftId}
+      invalidDraftId={invalidDraftId}
+    />
+  );
 }
 
-function AccountCreateEventScreen() {
+function AccountCreateEventScreen({
+  draftId,
+  invalidDraftId,
+}: {
+  draftId?: string;
+  invalidDraftId: boolean;
+}) {
   const { t } = useTranslation();
   const { profile, isLoading, isGuest } = useAuth();
-  const allowed = !isGuest && profile?.role === 'venue';
+  const allowed = !invalidDraftId && !isGuest && profile?.role === 'venue';
   const venueQuery = useMyCreatorProfile(profile?.id, allowed);
-  const publish = useEventPublication(profile?.id ?? 'anonymous', allowed && isApiConfigured());
+  const publish = useEventPublication(
+    profile?.id ?? 'anonymous',
+    allowed && isApiConfigured(),
+    draftId,
+  );
   const posterConfig = usePosterConfig(allowed && isApiConfigured());
   const posterUpload = useGigPosterUpload(profile?.id ?? 'anonymous');
   const publishing = useRef(false);
   const alive = useRef(true);
   const [editingVenue, setEditingVenue] = useState(false);
   const [selection, setSelection] = useState<PosterSelection | null>(null);
-  const [posterFailed, setPosterFailed] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
   const [reconciling, setReconciling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDiscardRecovery, setConfirmDiscardRecovery] = useState(false);
   const [restoredInput, setRestoredInput] = useState<NativeEventInput | null>(null);
+  const [restoredEventId, setRestoredEventId] = useState<string | null>(null);
   const [fields, setFields] = useState({
     title: '',
     date: '',
@@ -61,6 +84,7 @@ function AccountCreateEventScreen() {
     timeZone: 'Europe/London',
   });
   const created = publish.created;
+  const published = created?.publicationStatus === 'published';
   const busy = publish.isPending || posterUpload.isPending || reconciling;
   function publicationError(failure: Error | null) {
     return failure?.message.startsWith('events.')
@@ -87,6 +111,21 @@ function AccountCreateEventScreen() {
       ticketUrl: input.ticketUrl ?? '',
     });
   }
+  if (created && !publish.pending && restoredEventId !== created.id) {
+    setRestoredEventId(created.id);
+    const start = new Date(created.startTime).toISOString();
+    const end = created.endTime ? new Date(created.endTime).toISOString() : null;
+    setFields({
+      title: created.title,
+      date: start.slice(0, 10),
+      start: start.slice(11, 16),
+      endDate: end?.slice(0, 10) ?? '',
+      end: end?.slice(11, 16) ?? '',
+      description: created.description ?? '',
+      ticketUrl: created.ticketUrl ?? '',
+      timeZone: 'UTC',
+    });
+  }
 
   async function refreshCreated(event = created) {
     if (!event || reconciling) return;
@@ -95,7 +134,10 @@ function AccountCreateEventScreen() {
     try {
       const current = await fetchEvent(event.id);
       if (current.venueId !== profile?.id) throw new Error(t('events.poster.notOwner'));
-      if (alive.current) publish.setCreated(current);
+      if (alive.current) {
+        publish.setCreated(current);
+        if (current.publicationStatus === 'published') setError(null);
+      }
     } catch (failure) {
       if (alive.current) {
         setReconcileError(
@@ -111,12 +153,12 @@ function AccountCreateEventScreen() {
     if (
       !event ||
       !selection ||
-      !posterConfig.data?.enabled ||
+      !posterConfig.data ||
+      posterConfig.isError ||
       posterUpload.isPending ||
       reconcileError
     )
       return;
-    setPosterFailed(false);
     setError(null);
     try {
       const updated = await posterUpload.upload(event, selection);
@@ -126,7 +168,6 @@ function AccountCreateEventScreen() {
       }
     } catch (failure) {
       if (alive.current) {
-        setPosterFailed(true);
         setError(failure instanceof Error ? failure.message : t('events.poster.uploadFailed'));
         await refreshCreated(event);
       }
@@ -139,11 +180,15 @@ function AccountCreateEventScreen() {
 
   async function createAnother() {
     if (busy || !(await publish.clear())) return;
+    if (draftId) {
+      router.replace('/create-event');
+      return;
+    }
     setSelection(null);
-    setPosterFailed(false);
     setReconcileError(null);
     setError(null);
     setRestoredInput(null);
+    setRestoredEventId(null);
     setFields({
       title: '',
       date: '',
@@ -158,10 +203,20 @@ function AccountCreateEventScreen() {
 
   async function retryPublication() {
     if (publishing.current) return;
+    if (!selection) {
+      setError(t('events.poster.imageRequired'));
+      return;
+    }
+    if (!posterConfig.data || posterConfig.isError) {
+      setError(t('events.poster.unavailable'));
+      return;
+    }
     publishing.current = true;
     try {
       const event = await publish.submit();
-      if (event && alive.current && selection) await attachPoster(event);
+      if (event?.publicationStatus === 'draft' && alive.current && selection) {
+        await attachPoster(event);
+      }
     } finally {
       publishing.current = false;
     }
@@ -172,7 +227,15 @@ function AccountCreateEventScreen() {
   }
 
   async function publishEvent() {
-    if (publishing.current || created) return;
+    if (publishing.current || published) return;
+    if (!selection) {
+      setError(t('events.poster.imageRequired'));
+      return;
+    }
+    if (!posterConfig.data || posterConfig.isError) {
+      setError(t('events.poster.unavailable'));
+      return;
+    }
     if (!!fields.endDate.trim() !== !!fields.end.trim()) {
       setError(t('events.create.validation.endPair'));
       return;
@@ -193,8 +256,12 @@ function AccountCreateEventScreen() {
     publishing.current = true;
     setError(null);
     try {
-      const event = await publish.submit(parsed.data, !!selection);
-      if (event && alive.current && selection) await attachPoster(event);
+      const event = await publish.submit(parsed.data);
+      if (event?.publicationStatus === 'draft' && alive.current && selection) {
+        await attachPoster(event);
+      } else if (!event && created && alive.current) {
+        await refreshCreated(created);
+      }
     } finally {
       publishing.current = false;
     }
@@ -211,6 +278,8 @@ function AccountCreateEventScreen() {
   let body;
   if (isLoading) {
     body = <ActivityIndicator accessibilityLabel={t('common.loading')} />;
+  } else if (invalidDraftId) {
+    body = <AppText>{t('events.poster.missingEvent')}</AppText>;
   } else if (!allowed) {
     body = <AppText>{t('events.create.permissionDenied')}</AppText>;
   } else if (!isApiConfigured()) {
@@ -225,6 +294,11 @@ function AccountCreateEventScreen() {
         <Button disabled={busy} onPress={publish.retryRecovery}>
           {t('common.retry')}
         </Button>
+        {publish.recoveryError.message === 'events.poster.otherPreparation' && (
+          <Button variant="secondary" onPress={() => router.replace('/create-event')}>
+            {t('events.poster.resumePreparation')}
+          </Button>
+        )}
         {publish.recoveryError instanceof InvalidPublicationJournalError && (
           <>
             <AppText>{t('events.poster.invalidRecoveryHelp')}</AppText>
@@ -258,21 +332,12 @@ function AccountCreateEventScreen() {
         )}
       </View>
     );
-  } else if (created) {
+  } else if (created && published) {
     body = (
       <View style={styles.form} accessibilityLiveRegion="polite">
         <AppText variant="heading">{t('events.create.successTitle')}</AppText>
         <AppText>{created.title}</AppText>
         <AppText>{t('events.create.successBody')}</AppText>
-        {!created.posterUrl &&
-          !posterUpload.isPending &&
-          (posterFailed || publish.pending?.posterWanted) && (
-            <AppText>{t('events.poster.partialSuccess')}</AppText>
-          )}
-        {publish.journalRecovered &&
-          publish.pending?.posterWanted &&
-          !created.posterUrl &&
-          !selection && <AppText>{t('events.poster.reselectAfterRestart')}</AppText>}
         <ErrorBanner message={error ?? publicationError(publish.error)} />
         {reconciling && <ActivityIndicator accessibilityLabel={t('events.poster.refreshing')} />}
         {reconcileError && (
@@ -306,20 +371,6 @@ function AccountCreateEventScreen() {
                 )
             }
           />
-        ) : posterConfig.data?.enabled && !created.posterUrl ? (
-          <>
-            <PosterPicker
-              selection={selection}
-              onChange={setSelection}
-              limits={posterConfig.data}
-              disabled={busy}
-            />
-            {selection && (
-              <Button onPress={() => void attachPoster()} disabled={busy || !!reconcileError}>
-                {t('events.poster.retryUpload')}
-              </Button>
-            )}
-          </>
         ) : null}
         <Button
           variant="secondary"
@@ -338,14 +389,33 @@ function AccountCreateEventScreen() {
         </Button>
       </View>
     );
-  } else if (publish.pending) {
+  } else if (publish.pending && !created) {
     body = (
       <View style={styles.form} accessibilityLiveRegion="polite">
         <AppText variant="subheading">{t('events.poster.pendingTitle')}</AppText>
         <AppText>{publish.pending.input.title}</AppText>
         <AppText>{t('events.poster.pendingBody')}</AppText>
+        <ErrorBanner message={error} />
         <ErrorBanner message={publicationError(publish.error)} />
-        <Button loading={busy} onPress={() => void retryPublication()}>
+        <PosterPicker
+          selection={selection}
+          onChange={setSelection}
+          limits={posterConfig.data ?? posterLimits}
+          disabled={busy}
+        />
+        {posterConfig.isError && (
+          <>
+            <ErrorBanner message={posterConfig.error.message} />
+            <Button onPress={() => void posterConfig.refetch()}>
+              {t('events.poster.retryConfig')}
+            </Button>
+          </>
+        )}
+        <Button
+          loading={busy}
+          disabled={!posterConfig.data || posterConfig.isError}
+          onPress={() => void retryPublication()}
+        >
           {t('events.poster.retryPublication')}
         </Button>
       </View>
@@ -374,8 +444,13 @@ function AccountCreateEventScreen() {
     body = (
       <View style={styles.form}>
         <AppText variant="subheading">{venue.name}</AppText>
+        {created && (
+          <AppText accessibilityLiveRegion="polite">
+            {t('events.poster.privatePreparation')}
+          </AppText>
+        )}
         <AppText muted>{venue.address}</AppText>
-        <Button variant="ghost" disabled={publish.isPending} onPress={() => setEditingVenue(true)}>
+        <Button variant="ghost" disabled={busy} onPress={() => setEditingVenue(true)}>
           {t('events.create.changeVenue')}
         </Button>
         <AppText variant="caption" muted>
@@ -387,7 +462,7 @@ function AccountCreateEventScreen() {
           value={fields.title}
           onChangeText={(value) => change('title', value)}
           maxLength={200}
-          editable={!publish.isPending}
+          editable={!busy}
         />
         {(['date', 'start', 'timeZone', 'endDate', 'end'] as const).map((field) => (
           <FormField
@@ -405,7 +480,7 @@ function AccountCreateEventScreen() {
             }
             autoCapitalize="none"
             autoCorrect={false}
-            editable={!publish.isPending}
+            editable={!busy}
           />
         ))}
         <AppText variant="caption" muted>
@@ -419,7 +494,7 @@ function AccountCreateEventScreen() {
           multiline
           maxLength={2000}
           style={styles.description}
-          editable={!publish.isPending}
+          editable={!busy}
         />
         <FormField
           label={t('events.create.ticketUrl')}
@@ -430,7 +505,7 @@ function AccountCreateEventScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           maxLength={1000}
-          editable={!publish.isPending}
+          editable={!busy}
         />
         <AppText variant="caption" muted>
           {t('events.create.publishHelp')}
@@ -446,15 +521,44 @@ function AccountCreateEventScreen() {
             </Button>
           </>
         )}
-        {posterConfig.data?.enabled && (
+        {reconcileError && (
+          <>
+            <ErrorBanner message={reconcileError} />
+            <Button disabled={busy} onPress={() => void refreshCreated()}>
+              {t('events.poster.refreshConflict')}
+            </Button>
+          </>
+        )}
+        {posterUpload.isPending ? (
+          <PosterProgress
+            status={posterUpload.status}
+            progress={posterUpload.progress}
+            onCancel={() =>
+              void posterUpload
+                .cancel()
+                .catch((failure: unknown) =>
+                  setError(
+                    failure instanceof Error ? failure.message : t('events.poster.uploadFailed'),
+                  ),
+                )
+            }
+          />
+        ) : (
           <PosterPicker
             selection={selection}
             onChange={setSelection}
-            limits={posterConfig.data}
+            limits={posterConfig.data ?? posterLimits}
             disabled={busy}
           />
         )}
-        <Button loading={publish.isPending} onPress={publishEvent}>
+        {!posterConfig.data && !posterConfig.isError && (
+          <AppText>{t('events.poster.checkingAvailability')}</AppText>
+        )}
+        <Button
+          loading={busy}
+          disabled={!posterConfig.data || posterConfig.isError || !!reconcileError}
+          onPress={publishEvent}
+        >
           {t('events.create.publish')}
         </Button>
       </View>
@@ -471,7 +575,7 @@ function AccountCreateEventScreen() {
           <Button
             variant="ghost"
             disabled={busy || publish.recovering}
-            onPress={() => (created ? void finish() : router.back())}
+            onPress={() => (published ? void finish() : router.back())}
           >
             {t('common.back')}
           </Button>

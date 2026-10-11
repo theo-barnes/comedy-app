@@ -14,6 +14,11 @@ class EventStatus(str, Enum):
     CANCELLED = 'cancelled'
 
 
+class EventPublicationStatus(str, Enum):
+    DRAFT = 'draft'
+    PUBLISHED = 'published'
+
+
 @dataclass(frozen=True, slots=True)
 class Event:
     """A venue's scheduled (or cancelled) event, with its lineup of comedians."""
@@ -37,3 +42,4 @@ class Event:
     poster_revision: int = 0
     poster_width: int | None = None
     poster_height: int | None = None
+    publication_status: EventPublicationStatus = EventPublicationStatus.DRAFT

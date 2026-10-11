@@ -23,7 +23,22 @@ class RepositoryPosterEvents:
         )
         if event is None:
             return None
-        return PosterEvent(event.id, event.venue_id, event.poster_asset_id, event.poster_revision)
+        return PosterEvent(
+            event.id, event.venue_id, event.poster_asset_id, event.poster_revision,
+            event.publication_status.value,
+        )
+
+    def validate_publication(self, event_id: str) -> None:
+        from events.publication import validate_publication
+        from shared.errors import NotFoundError
+
+        event = (
+            self._repository.get(event_id) if self._session is None
+            else self._repository.get_in_session(self._session, event_id)
+        )
+        if event is None:
+            raise NotFoundError('event not found')
+        validate_publication(event)
 
     def referenced(self, asset_id: str) -> bool:
         if self._session is None:
@@ -33,6 +48,7 @@ class RepositoryPosterEvents:
     def swap(
         self, event_id: str, owner_id: str, expected_revision: int,
         asset: ImageAsset | None, url: str | None,
+        *, publish: bool = False,
     ) -> None:
         try:
             arguments = (
@@ -40,9 +56,9 @@ class RepositoryPosterEvents:
                 url, asset.width if asset else None, asset.height if asset else None,
             )
             if self._session is None:
-                self._repository.swap_poster(*arguments)
+                self._repository.swap_poster(*arguments, publish=publish)
             else:
-                self._repository.swap_poster_in_session(self._session, *arguments)
+                self._repository.swap_poster_in_session(self._session, *arguments, publish=publish)
         except SQLAlchemyError as exc:
             raise PosterUnavailableError('poster reference update failed; refresh and retry') from exc
 
@@ -64,5 +80,4 @@ def get_service() -> PosterService:
     ) if settings.supabase_url and settings.supabase_service_role_key else None
     return PosterService(
         repository, storage, RepositoryPosterEvents(events),
-        enabled=settings.gig_posters_enabled,
     )

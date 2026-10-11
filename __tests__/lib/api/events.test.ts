@@ -5,6 +5,7 @@ import {
   eventSchema,
   fetchMyCreatorProfile,
   saveVenueProfile,
+  updateEventDraft,
 } from '@/lib/api/events';
 
 jest.mock('@/lib/api/client', () => ({
@@ -33,7 +34,7 @@ describe('native events API', () => {
       timeZone: 'Europe/London',
     };
     await createNativeEvent(body);
-    expect(mutationMock).toHaveBeenCalledWith('/events/native', {
+    expect(mutationMock).toHaveBeenCalledWith('/events/native/drafts', {
       method: 'POST',
       body,
       schema: eventSchema,
@@ -65,7 +66,7 @@ describe('native events API', () => {
       timeZone: 'Europe/London',
     };
     await createNativeEvent({ ...body, idempotencyKey: 'submission-1' });
-    expect(mutationMock).toHaveBeenCalledWith('/events/native', {
+    expect(mutationMock).toHaveBeenCalledWith('/events/native/drafts', {
       method: 'POST',
       body,
       schema: eventSchema,
@@ -92,9 +93,30 @@ describe('native events API', () => {
       title: 'Friday comedy',
       startTime: '2027-02-12T20:00:00+00:00',
       status: 'scheduled',
+      publicationStatus: 'published',
       comedianIds: [],
+      posterUrl: 'https://storage.example.com/poster.jpg',
+      posterWidth: 1200,
+      posterHeight: 1800,
     };
     expect(eventSchema.safeParse(event).success).toBe(true);
+    expect(eventSchema.safeParse({ ...event, posterRevision: undefined }).success).toBe(true);
+    expect(eventSchema.safeParse({ ...event, publicationStatus: 'draft' }).success).toBe(true);
+    expect(eventSchema.safeParse({ ...event, publicationStatus: undefined }).success).toBe(false);
+    expect(eventSchema.safeParse({ ...event, publicationStatus: 'scheduled' }).success).toBe(false);
+    expect(eventSchema.safeParse({ ...event, posterUrl: null }).success).toBe(false);
+    expect(eventSchema.safeParse({ ...event, posterWidth: null }).success).toBe(false);
+    expect(eventSchema.safeParse({ ...event, posterWidth: 0 }).success).toBe(false);
+    expect(eventSchema.safeParse({ ...event, posterHeight: -1 }).success).toBe(false);
+    expect(
+      eventSchema.safeParse({
+        ...event,
+        publicationStatus: 'draft',
+        posterUrl: null,
+        posterWidth: null,
+        posterHeight: null,
+      }).success,
+    ).toBe(true);
     expect(eventSchema.safeParse({ ...event, startTime: 'Friday' }).success).toBe(false);
     expect(
       eventSchema.safeParse({
@@ -106,5 +128,19 @@ describe('native events API', () => {
       }).success,
     ).toBe(true);
     expect(eventSchema.safeParse({ ...event, posterRevision: -1 }).success).toBe(false);
+  });
+
+  it('updates the same private draft with an explicit revision and native fields', async () => {
+    const input = {
+      title: 'Corrected gig',
+      localStartTime: '2027-02-12T20:00',
+      timeZone: 'Europe/London',
+    };
+    await updateEventDraft('event/1', input, 4);
+    expect(mutationMock).toHaveBeenCalledWith('/events/event%2F1/draft', {
+      method: 'PATCH',
+      body: { ...input, expectedRevision: 4 },
+      schema: eventSchema,
+    });
   });
 });

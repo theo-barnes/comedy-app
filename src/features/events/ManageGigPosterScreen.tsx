@@ -9,7 +9,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/useAuth';
 import { ApiError, isApiConfigured } from '@/lib/api/client';
-import { useEvent, usePosterConfig, useRemoveGigPoster } from '@/lib/api/gig-posters';
+import { useEvent, usePosterConfig } from '@/lib/api/gig-posters';
 import { spacing } from '@/theme/tokens';
 
 import { PosterPicker, PosterPreview, PosterProgress } from './PosterPicker';
@@ -27,15 +27,13 @@ function AccountManageGigPosterScreen({ eventId }: { eventId: string | undefined
   const eventQuery = useEvent(eventId, allowed && isApiConfigured());
   const config = usePosterConfig(allowed && isApiConfigured());
   const upload = useGigPosterUpload(profile?.id ?? 'anonymous');
-  const remove = useRemoveGigPoster(profile?.id ?? 'anonymous');
   const [selection, setSelection] = useState<PosterSelection | null>(null);
-  const [confirmRemove, setConfirmRemove] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [working, setWorking] = useState(false);
   const busyRef = useRef(false);
   const alive = useRef(true);
-  const busy = working || upload.isPending || remove.isPending;
+  const busy = working || upload.isPending;
   const event = eventQuery.data;
   const owned = event?.venueId === profile?.id;
 
@@ -51,24 +49,25 @@ function AccountManageGigPosterScreen({ eventId }: { eventId: string | undefined
     if (alive.current && !result.isError) setRefreshRequired(false);
   }
 
-  async function changePoster(removing: boolean) {
-    if (!event || !owned || !config.data?.enabled || busyRef.current || refreshRequired) return;
-    if (!removing && !selection) return;
+  async function changePoster() {
+    if (
+      !event ||
+      !owned ||
+      !config.data ||
+      config.isError ||
+      event.publicationStatus !== 'published' ||
+      busyRef.current ||
+      refreshRequired ||
+      !selection
+    )
+      return;
     busyRef.current = true;
     setWorking(true);
     setError(null);
     try {
-      if (removing) {
-        await remove.mutateAsync({
-          eventId: event.id,
-          expectedRevision: event.posterRevision ?? 0,
-        });
-      } else if (selection) {
-        await upload.upload(event, selection);
-      }
+      await upload.upload(event, selection);
       if (alive.current) {
         setSelection(null);
-        setConfirmRemove(false);
       }
     } catch (failure) {
       if (alive.current) {
@@ -104,6 +103,19 @@ function AccountManageGigPosterScreen({ eventId }: { eventId: string | undefined
     );
   } else if (!owned) {
     body = <AppText>{t('events.poster.notOwner')}</AppText>;
+  } else if (event.publicationStatus === 'draft') {
+    body = (
+      <>
+        <AppText>{t('events.poster.privatePreparation')}</AppText>
+        <Button
+          onPress={() =>
+            router.replace({ pathname: '/create-event', params: { draftId: event.id } })
+          }
+        >
+          {t('events.poster.completeGig')}
+        </Button>
+      </>
+    );
   } else {
     body = (
       <View style={styles.section}>
@@ -135,7 +147,7 @@ function AccountManageGigPosterScreen({ eventId }: { eventId: string | undefined
             {t('events.poster.refreshConflict')}
           </Button>
         )}
-        {config.data?.enabled ? (
+        {config.data && !config.isError ? (
           upload.isPending ? (
             <PosterProgress
               status={upload.status}
@@ -159,38 +171,15 @@ function AccountManageGigPosterScreen({ eventId }: { eventId: string | undefined
                 disabled={busy || refreshRequired}
               />
               {selection && (
-                <Button disabled={busy || refreshRequired} onPress={() => void changePoster(false)}>
-                  {t(event.posterUrl ? 'events.poster.replace' : 'events.poster.attach')}
+                <Button disabled={busy || refreshRequired} onPress={() => void changePoster()}>
+                  {t('events.poster.replace')}
                 </Button>
               )}
-              {event.posterUrl &&
-                (confirmRemove ? (
-                  <>
-                    <AppText>{t('events.poster.removeConfirmation')}</AppText>
-                    <Button
-                      loading={remove.isPending}
-                      disabled={busy || refreshRequired}
-                      onPress={() => void changePoster(true)}
-                    >
-                      {t('events.poster.confirmRemove')}
-                    </Button>
-                    <Button variant="ghost" disabled={busy} onPress={() => setConfirmRemove(false)}>
-                      {t('common.cancel')}
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    disabled={busy || refreshRequired}
-                    onPress={() => setConfirmRemove(true)}
-                  >
-                    {t('events.poster.remove')}
-                  </Button>
-                ))}
+              <AppText>{t('events.poster.replacementHelp')}</AppText>
             </>
           )
         ) : !config.isPending && !config.isError ? (
-          <AppText>{t('events.poster.disabled')}</AppText>
+          <AppText>{t('events.poster.unavailable')}</AppText>
         ) : null}
       </View>
     );

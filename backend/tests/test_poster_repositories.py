@@ -75,8 +75,10 @@ class Session:
 
 def event_row(**overrides):
     return EventRow(
-        id='event', venue_id='owner', title='Comedy', start_time=NOW,
-        status='scheduled', poster_revision=0, **overrides,
+        **({
+            'id': 'event', 'venue_id': 'owner', 'title': 'Comedy', 'start_time': NOW,
+            'status': 'scheduled', 'poster_revision': 0, 'publication_status': 'published',
+        } | overrides),
     )
 
 
@@ -196,7 +198,7 @@ def test_bound_cas_refreshes_event_already_read_before_storage_publication():
 
 def test_event_adapter_translates_known_persistence_failure():
     class FailingRepository:
-        def swap_poster(self, *args):
+        def swap_poster(self, *args, **kwargs):
             raise OperationalError('update', None, RuntimeError('connection failed'))
 
     with pytest.raises(PosterUnavailableError):
@@ -272,11 +274,75 @@ def test_owned_event_read_mapping_keeps_poster_projection():
     )
 
 
-def test_linked_feed_hydration_projects_event_poster(monkeypatch):
+def test_sql_read_visibility_filters_before_limit_and_owner_list_preserves_all_dates():
+    class EmptyResult:
+        def scalars(self):
+            return self
+
+        def all(self):
+            return []
+
+        def __iter__(self):
+            return iter(())
+
+    class ReadSession(Session):
+        def execute(self, statement, parameters=None):
+            self.commands.append((statement, parameters))
+            return EmptyResult()
+
+    session = ReadSession()
+    repository = SqlEventRepository(lambda: session)
+    repository.list_by_venue('owner', limit=1, from_time=NOW)
+    public = sql(session.commands[-1][0])
+    assert public.index('events.publication_status =') < public.index('LIMIT')
+    repository.list_by_venue('owner', limit=1, from_time=None, include_drafts=True)
+    owner = sql(session.commands[-1][0])
+    assert 'events.publication_status =' not in owner
+    assert 'events.start_time >=' not in owner
+    assert 'ORDER BY events.created_at DESC, events.id DESC' in owner
+    assert 'ORDER BY events.start_time ASC' in public
+    repository.list_nearby(51.5, -0.1, radius_meters=25_000, from_time=NOW, limit=1)
+    nearby = str(session.commands[-1][0])
+    assert nearby.index("publication_status = 'published'") < nearby.index('LIMIT')
+
+
+def test_direct_repository_removal_rejects_published_and_draft_attachment_is_not_publication():
+    session = Session()
+    row = event_row(poster_asset_id='old', poster_url='https://public/old', poster_width=24, poster_height=32)
+    session.selected = row
+    repository = SqlEventRepository(lambda: session)
+    with pytest.raises(ConflictError, match='require an image'):
+        repository.swap_poster('event', 'owner', 0, None, None, None, None)
+    assert row.poster_asset_id == 'old' and session.commit_count == 0
+    row.publication_status = 'draft'
+    with pytest.raises(ConflictError, match='publication'):
+        repository.swap_poster('event', 'owner', 0, 'new', 'https://public/new', 24, 32)
+    assert row.publication_status == 'draft' and row.poster_asset_id == 'old'
+
+
+def test_publication_final_row_lock_rechecks_time_after_storage_write():
+    session = Session()
+    row = event_row(publication_status='draft', latitude=51.5, longitude=-0.1)
+    session.selected = row
+    from shared.errors import ValidationFailedError
+
+    with pytest.raises(ValidationFailedError, match='future'):
+        SqlEventRepository(lambda: session).swap_poster_in_session(
+            session, 'event', 'owner', 0, 'new', 'https://public/new', 24, 32, publish=True,
+        )
+    assert row.publication_status == 'draft' and row.poster_asset_id is None
+    assert session.commit_count == 0
+
+
+@pytest.mark.parametrize('publication_status', ['draft', 'published'])
+def test_linked_feed_hydration_omits_drafts_and_projects_public_poster(monkeypatch, publication_status):
     from content.models.orm import ContentRow
     from feed import repository as feed_repository
 
-    row = event_row(poster_url='https://public/poster', poster_width=24, poster_height=32)
+    row = event_row(
+        publication_status=publication_status,
+        poster_url='https://public/poster', poster_width=24, poster_height=32,
+    )
     content = ContentRow(
         id='content', creator_id='owner', type='event_promotion', title='Comedy',
         event_id='event', published_at=NOW, created_at=NOW,
@@ -295,7 +361,8 @@ def test_linked_feed_hydration_projects_event_poster(monkeypatch):
     class FeedSession(Session):
         def execute(self, statement, parameters=None):
             if 'FROM events' in sql(statement):
-                return FeedResult([row])
+                assert 'events.publication_status =' in sql(statement)
+                return FeedResult([row] if publication_status == 'published' else [])
             return FeedResult([(content, None)])
 
     monkeypatch.setattr(feed_repository, '_creator_names', lambda *args: {'owner': 'Venue'})
@@ -304,6 +371,9 @@ def test_linked_feed_hydration_projects_event_poster(monkeypatch):
     projected = feed_repository.SqlFeedRepository(lambda: FeedSession()).hydrate(
         ['content'], 'viewer',
     )[0].linked_event
+    if publication_status == 'draft':
+        assert projected is None
+        return
     assert projected is not None
     assert (projected.poster_url, projected.poster_width, projected.poster_height) == (
         'https://public/poster', 24, 32,
@@ -335,7 +405,9 @@ def test_attachment_does_not_request_nested_pool_connection_under_asset_lock(mon
     poster.status, poster.width, poster.height, poster.output_type = 'ready', 24, 32, 'image/jpeg'
     poster.touched_at = NOW - timedelta(hours=25)
     image = ImageAssetRow(**asdict(poster))
-    event = event_row()
+    event = event_row(
+        publication_status='draft', start_time=NOW + timedelta(days=1), latitude=51.5, longitude=-0.1,
+    )
     asset_lock, counts_lock = RLock(), Lock()
     all_asset_queries = Signal()
     start = Barrier(workers)
@@ -390,18 +462,19 @@ def test_attachment_does_not_request_nested_pool_connection_under_asset_lock(mon
     monkeypatch.setattr(factory, 'SupabasePosterStorage', lambda *args: storage)
     monkeypatch.setattr('shared.config.settings', SimpleNamespace(
         database_url='configured', supabase_url='https://project.supabase.co',
-        supabase_service_role_key='fake-test-key', gig_posters_enabled=True,
+        supabase_service_role_key='fake-test-key',
     ))
     service = factory.get_service.__wrapped__()
     user = AuthenticatedUser(user_id='owner', email=None, role='venue')
 
     def attach(_):
         start.wait()
-        service.attach('event', 'asset', 0, user)
+        service.publish('event', 'asset', 0, user)
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         list(executor.map(attach, range(workers)))
     assert (event.poster_asset_id, event.poster_revision, image.status) == ('asset', 1, 'attached')
+    assert event.publication_status == 'published'
     assert pool.checkedout() == 0
     assert any(
         touched > NOW - timedelta(minutes=1) and reference is None

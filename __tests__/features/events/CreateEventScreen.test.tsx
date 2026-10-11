@@ -3,6 +3,7 @@ import { geocodeAsync } from 'expo-location';
 import { router } from 'expo-router';
 
 import { CreateEventScreen } from '@/features/events/CreateEventScreen';
+import CreateEventRoute from '../../../app/create-event';
 import { VenueHome } from '@/features/home/venue/VenueHome';
 import { ApiError, apiFetch, apiMutation, isApiConfigured } from '@/lib/api/client';
 import type { CreatorProfile } from '@/lib/api/events';
@@ -17,6 +18,12 @@ const mockPickPoster = jest.fn();
 const mockConfig = jest.fn();
 const mockRecoveryEvent = jest.fn();
 const mockFetchEvent = jest.fn();
+const mockParams = jest.fn();
+jest.mock('expo-router', () => ({
+  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn() },
+  useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
+  useLocalSearchParams: () => mockParams(),
+}));
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => '33a98d45-d21a-42ad-8cf2-bf7382e923f8'),
 }));
@@ -80,7 +87,20 @@ const published = {
   title: 'Friday comedy',
   startTime: '2027-02-12T20:00:00Z',
   status: 'scheduled',
+  publicationStatus: 'published',
+  posterUrl: 'https://posters.test/ready.jpg',
+  posterRevision: 1,
+  posterWidth: 100,
+  posterHeight: 200,
   comedianIds: [],
+};
+const draft = {
+  ...published,
+  publicationStatus: 'draft',
+  posterUrl: null,
+  posterRevision: 0,
+  posterWidth: null,
+  posterHeight: null,
 };
 const fetchMock = jest.mocked(apiFetch);
 const mutationMock = jest.mocked(apiMutation);
@@ -97,6 +117,11 @@ async function showForm() {
   await screen.findByLabelText('events.create.gigTitle');
 }
 
+async function choosePhoto() {
+  fireEvent.press(screen.getByText('events.poster.choose'));
+  await screen.findByLabelText('events.poster.selectedPreview');
+}
+
 function fillGig() {
   fireEvent.changeText(screen.getByLabelText('events.create.gigTitle'), 'Friday comedy');
   fireEvent.changeText(screen.getByLabelText('events.create.date'), '2027-02-12');
@@ -109,11 +134,12 @@ describe('CreateEventScreen', () => {
     fetchMock.mockReset();
     mutationMock.mockReset();
     mockJournal.clear();
-    mockConfig.mockReturnValue({ data: { enabled: false }, isError: false });
+    mockParams.mockReturnValue({});
+    enablePosters();
     mockRecoveryEvent.mockReturnValue({ data: undefined, isPending: false, error: null });
-    mockUpload.mockReset();
-    mockFetchEvent.mockReset().mockResolvedValue(published);
-    mockPickPoster.mockReset();
+    mockUpload.mockReset().mockResolvedValue(published);
+    mockFetchEvent.mockReset().mockResolvedValue(draft);
+    mockPickPoster.mockReset().mockResolvedValue(selection);
     jest.mocked(isApiConfigured).mockReturnValue(true);
     mockAuth.mockReturnValue({
       profile: { id: 'venue-1', role: 'venue', display_name: 'Venue account' },
@@ -121,12 +147,13 @@ describe('CreateEventScreen', () => {
       isGuest: false,
     });
     fetchMock.mockResolvedValue(venue);
-    mutationMock.mockResolvedValue(published);
+    mutationMock.mockResolvedValue(draft);
   });
 
   it('publishes once with the explicit venue timezone and no client ownership/location', async () => {
     await showForm();
     fillGig();
+    await choosePhoto();
     const button = screen.getByText('events.create.publish');
     act(() => {
       fireEvent.press(button);
@@ -135,7 +162,7 @@ describe('CreateEventScreen', () => {
     await screen.findByText('events.create.successTitle');
     expect(mutationMock).toHaveBeenCalledTimes(1);
     expect(mutationMock).toHaveBeenCalledWith(
-      '/events/native',
+      '/events/native/drafts',
       expect.objectContaining({
         body: {
           title: 'Friday comedy',
@@ -144,6 +171,7 @@ describe('CreateEventScreen', () => {
         },
       }),
     );
+    expect(mockUpload).toHaveBeenCalledWith(draft, selection);
     expect(screen.queryByText('events.create.publish')).toBeNull();
   });
 
@@ -151,6 +179,7 @@ describe('CreateEventScreen', () => {
     mutationMock.mockRejectedValueOnce(new ApiError('Start must be in the future', 422));
     await showForm();
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('Start must be in the future');
     expect(screen.getByLabelText('events.create.gigTitle').props.value).toBe('Friday comedy');
@@ -162,10 +191,56 @@ describe('CreateEventScreen', () => {
   it('rejects an incomplete end date/time pair without submitting', async () => {
     await showForm();
     fillGig();
+    await choosePhoto();
     fireEvent.changeText(screen.getByLabelText('events.create.end'), '23:00');
     fireEvent.press(screen.getByText('events.create.publish'));
     expect(screen.getByText('events.create.validation.endPair')).toBeTruthy();
     expect(mutationMock).not.toHaveBeenCalled();
+  });
+
+  it('requires a selected image before issuing any preparation or upload request', async () => {
+    await showForm();
+    fillGig();
+    expect(screen.getByText('events.poster.choose')).toBeTruthy();
+    fireEvent.press(screen.getByText('events.create.publish'));
+    await screen.findByText('events.poster.imageRequired');
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+    expect(LargeSecureStore.setItem).not.toHaveBeenCalled();
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+  });
+
+  it.each([
+    { draftId: [] },
+    { draftId: ['draft-1', 'draft-2'] },
+    { draftId: '' },
+    { draftId: '  ' },
+  ])(
+    'rejects an invalid draft route without creating or overwriting a preparation: %j',
+    async (params) => {
+      mockParams.mockReturnValue(params);
+      renderWithTheme(<CreateEventRoute />);
+      await screen.findByText('events.poster.missingEvent');
+      expect(screen.queryByLabelText('events.create.gigTitle')).toBeNull();
+      expect(mutationMock).not.toHaveBeenCalled();
+      expect(mockUpload).not.toHaveBeenCalled();
+      expect(LargeSecureStore.setItem).not.toHaveBeenCalled();
+      expect(LargeSecureStore.removeItem).not.toHaveBeenCalled();
+    },
+  );
+
+  it('passes a single draft ID from the route to owner preparation recovery', async () => {
+    mockParams.mockReturnValue({ draftId: draft.id });
+    mockRecoveryEvent.mockImplementation((id) => ({
+      data: id ? draft : undefined,
+      isPending: false,
+      error: null,
+    }));
+    renderWithTheme(<CreateEventRoute />);
+    await screen.findByText('events.poster.privatePreparation');
+    expect(mockRecoveryEvent).toHaveBeenCalledWith(draft.id, true);
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it('requires setup for a missing venue profile and then opens the gig form', async () => {
@@ -290,14 +365,14 @@ describe('CreateEventScreen', () => {
     expect(mutationMock).not.toHaveBeenCalled();
   });
 
-  it('refreshes the real venue Home query after publishing from the form', async () => {
+  it('refreshes the real owner Home query when the form creates a private preparation', async () => {
     let saved = false;
     fetchMock.mockImplementation(async (path) =>
-      path === '/creators/me' ? venue : { items: saved ? [published] : [] },
+      path === '/creators/me' ? venue : { items: saved ? [draft] : [] },
     );
     mutationMock.mockImplementation(async () => {
       saved = true;
-      return published;
+      return draft;
     });
     renderWithTheme(
       <>
@@ -308,16 +383,31 @@ describe('CreateEventScreen', () => {
     await screen.findByLabelText('events.create.gigTitle');
     await screen.findByText('venues.noEvents');
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('events.create.successTitle');
     await waitFor(() => expect(screen.getAllByText('Friday comedy')).toHaveLength(2));
     expect(screen.queryByText('venues.noEvents')).toBeNull();
+    expect(screen.getByText('events.poster.needsImage')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith('/venues/me/events', { schema: expect.anything() });
+  });
+
+  it('offers private owner drafts a needs-image completion action for the same ID', async () => {
+    fetchMock.mockResolvedValue({ items: [draft] });
+    renderWithTheme(<VenueHome />);
+    await screen.findByText('events.poster.needsImage');
+    fireEvent.press(screen.getByText('events.poster.completeGig'));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/create-event',
+      params: { draftId: draft.id },
+    });
+    expect(screen.queryByText('events.poster.manage')).toBeNull();
+    expect(mutationMock).not.toHaveBeenCalled();
   });
 
   function enablePosters() {
     mockConfig.mockReturnValue({
       data: {
-        enabled: true,
         maxBytes: 10 * 1024 * 1024,
         maxPixels: 25_000_000,
         supportedContentTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -327,21 +417,35 @@ describe('CreateEventScreen', () => {
     mockPickPoster.mockResolvedValue(selection);
   }
 
-  it('publishes then attaches a selected poster without another create request', async () => {
+  it('prepares privately and reports public success only after selected image finalization', async () => {
     enablePosters();
-    mockUpload.mockResolvedValue({ ...published, posterUrl: 'https://posters.test/ready.jpg' });
+    let finalize!: (value: typeof published) => void;
+    mockUpload.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finalize = resolve;
+        }),
+    );
     await showForm();
     fillGig();
     fireEvent.press(screen.getByText('events.poster.choose'));
     await screen.findByLabelText('events.poster.selectedPreview');
     fireEvent.press(screen.getByText('events.create.publish'));
-    await waitFor(() => expect(mockUpload).toHaveBeenCalledWith(published, selection));
+    await waitFor(() => expect(mockUpload).toHaveBeenCalledWith(draft, selection));
     expect(mutationMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    expect(screen.getByText('events.poster.privatePreparation')).toBeTruthy();
+    await act(async () => finalize(published));
+    await screen.findByText('events.create.successTitle');
     await waitFor(() => expect(screen.queryByText('events.poster.retryUpload')).toBeNull());
     expect(JSON.parse(mockJournal.get(publicationJournalKey('venue-1'))!).eventId).toBe('event-1');
+    expect(JSON.parse(mockJournal.get(publicationJournalKey('venue-1'))!).version).toBe(2);
+    expect(JSON.parse(mockJournal.get(publicationJournalKey('venue-1'))!).creationInput).toEqual(
+      mutationMock.mock.calls[0]?.[1]?.body,
+    );
   });
 
-  it('makes partial success explicit and retries only poster attachment', async () => {
+  it('retains a private draft after interrupted upload and retries without duplicate creation', async () => {
     enablePosters();
     mockUpload
       .mockRejectedValueOnce(new Error('Upload interrupted'))
@@ -351,11 +455,23 @@ describe('CreateEventScreen', () => {
     fireEvent.press(screen.getByText('events.poster.choose'));
     await screen.findByLabelText('events.poster.selectedPreview');
     fireEvent.press(screen.getByText('events.create.publish'));
-    await screen.findByText('events.poster.partialSuccess');
+    await screen.findByText('events.poster.privatePreparation');
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    expect(screen.queryByText('events.poster.partialSuccess')).toBeNull();
     expect(screen.getByText('Upload interrupted')).toBeTruthy();
-    fireEvent.press(screen.getByText('events.poster.retryUpload'));
+    fireEvent.press(screen.getByText('events.create.publish'));
     await waitFor(() => expect(mockUpload).toHaveBeenCalledTimes(2));
-    expect(mutationMock).toHaveBeenCalledTimes(1);
+    await screen.findByText('events.create.successTitle');
+    expect(
+      mutationMock.mock.calls.filter(([path]) => path === '/events/native/drafts'),
+    ).toHaveLength(1);
+    expect(mutationMock).toHaveBeenLastCalledWith(
+      '/events/event-1/draft',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: expect.objectContaining({ expectedRevision: 0 }),
+      }),
+    );
   });
 
   it('refreshes the created event after a conflict and explicitly retries with its fresh revision', async () => {
@@ -367,7 +483,10 @@ describe('CreateEventScreen', () => {
         posterUrl: 'https://posters.test/new.jpg',
         posterRevision: 5,
       });
-    mockFetchEvent.mockResolvedValueOnce({ ...published, posterRevision: 4 });
+    mockFetchEvent.mockResolvedValueOnce({ ...draft, posterRevision: 4 });
+    mutationMock
+      .mockResolvedValueOnce(draft)
+      .mockResolvedValueOnce({ ...draft, posterRevision: 5 });
     await showForm();
     fillGig();
     fireEvent.press(screen.getByText('events.poster.choose'));
@@ -377,14 +496,23 @@ describe('CreateEventScreen', () => {
     await waitFor(() => expect(mockFetchEvent).toHaveBeenCalledWith('event-1'));
     await act(async () => {});
     expect(mockUpload).toHaveBeenCalledTimes(1);
-    fireEvent.press(screen.getByText('events.poster.retryUpload'));
+    fireEvent.press(screen.getByText('events.create.publish'));
     await waitFor(() =>
       expect(mockUpload).toHaveBeenLastCalledWith(
-        expect.objectContaining({ id: 'event-1', posterRevision: 4 }),
+        expect.objectContaining({ id: 'event-1', posterRevision: 5 }),
         selection,
       ),
     );
-    expect(mutationMock).toHaveBeenCalledTimes(1);
+    expect(mutationMock).toHaveBeenLastCalledWith(
+      '/events/event-1/draft',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: expect.objectContaining({ expectedRevision: 4 }),
+      }),
+    );
+    expect(
+      mutationMock.mock.calls.filter(([path]) => path === '/events/native/drafts'),
+    ).toHaveLength(1);
   });
 
   it('surfaces reconciliation failure separately and refreshes before permitting an attachment retry', async () => {
@@ -392,7 +520,7 @@ describe('CreateEventScreen', () => {
     mockUpload.mockRejectedValueOnce(new Error('Attachment response lost'));
     mockFetchEvent
       .mockRejectedValueOnce(new Error('Refresh offline'))
-      .mockResolvedValueOnce({ ...published, posterRevision: 4 });
+      .mockResolvedValueOnce({ ...draft, posterRevision: 4 });
     await showForm();
     fillGig();
     fireEvent.press(screen.getByText('events.poster.choose'));
@@ -400,8 +528,8 @@ describe('CreateEventScreen', () => {
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('Refresh offline');
     expect(screen.getByText('Attachment response lost')).toBeTruthy();
-    expect(screen.getByText('events.poster.refreshFailed')).toBeTruthy();
-    fireEvent.press(screen.getByText('events.poster.retryUpload'));
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    fireEvent.press(screen.getByText('events.create.publish'));
     expect(mockUpload).toHaveBeenCalledTimes(1);
     fireEvent.press(screen.getByText('events.poster.refreshConflict'));
     await waitFor(() => expect(screen.queryByText('Refresh offline')).toBeNull());
@@ -425,6 +553,7 @@ describe('CreateEventScreen', () => {
     await waitFor(() => expect(mockFetchEvent).toHaveBeenCalledWith('event-1'));
     await waitFor(() => expect(screen.queryByText('events.poster.retryUpload')).toBeNull());
     expect(screen.getByText('events.create.successTitle')).toBeTruthy();
+    expect(screen.queryByText('Attachment response lost')).toBeNull();
     expect(screen.queryByText('events.poster.partialSuccess')).toBeNull();
     expect(mutationMock).toHaveBeenCalledTimes(1);
   });
@@ -437,6 +566,7 @@ describe('CreateEventScreen', () => {
     mutationMock.mockRejectedValueOnce(failure);
     await showForm();
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText(failure.message);
     expect(screen.queryByLabelText('events.create.gigTitle')).toBeNull();
@@ -448,7 +578,7 @@ describe('CreateEventScreen', () => {
     expect(mutationMock.mock.calls[0]?.[1]).toEqual(mutationMock.mock.calls[1]?.[1]);
   });
 
-  it('recovers a created journal before showing a blank form and asks to reselect', async () => {
+  it('recovers a legacy private draft without automatically creating or publishing', async () => {
     mockJournal.set(
       publicationJournalKey('venue-1'),
       JSON.stringify({
@@ -464,21 +594,227 @@ describe('CreateEventScreen', () => {
       }),
     );
     mockRecoveryEvent.mockImplementation((id) => ({
-      data: id ? published : undefined,
+      data: id ? draft : undefined,
       isPending: false,
       error: null,
     }));
     renderWithTheme(<CreateEventScreen />);
-    await screen.findByText('events.create.successTitle');
-    expect(screen.getByText('events.poster.reselectAfterRestart')).toBeTruthy();
-    expect(screen.queryByLabelText('events.create.gigTitle')).toBeNull();
+    await screen.findByText('events.poster.privatePreparation');
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    expect(screen.getByText('events.poster.choose')).toBeTruthy();
+    expect(screen.getByLabelText('events.create.gigTitle').props.value).toBe(published.title);
     expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+  });
+
+  it('completes a routed draft using the same ID and fresh CAS revision, not another create', async () => {
+    const recovered = { ...draft, posterRevision: 4 };
+    mockRecoveryEvent.mockImplementation((id) => ({
+      data: id ? recovered : undefined,
+      isPending: false,
+      error: null,
+    }));
+    mutationMock.mockResolvedValue({ ...recovered, posterRevision: 5 });
+    mockUpload.mockResolvedValue({ ...published, posterRevision: 6 });
+    renderWithTheme(<CreateEventScreen draftId={draft.id} />);
+    await screen.findByText('events.poster.privatePreparation');
+    expect(screen.getByLabelText('events.create.gigTitle').props.value).toBe(draft.title);
+    fillGig();
+    await choosePhoto();
+    fireEvent.press(screen.getByText('events.create.publish'));
+    await screen.findByText('events.create.successTitle');
+    expect(mutationMock).toHaveBeenCalledTimes(1);
+    expect(mutationMock).toHaveBeenCalledWith(
+      '/events/event-1/draft',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: {
+          title: 'Friday comedy',
+          localStartTime: '2027-02-12T20:00',
+          timeZone: 'UTC',
+          expectedRevision: 4,
+        },
+      }),
+    );
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({ id: draft.id, publicationStatus: 'draft', posterRevision: 5 }),
+      selection,
+    );
+  });
+
+  it('retries the route-only draft fetch after initial failure without replaying preparation', async () => {
+    const refetch = jest.fn(async () => {
+      mockRecoveryEvent.mockReturnValue({
+        data: draft,
+        isPending: false,
+        error: null,
+        refetch,
+      });
+      return { data: draft, isError: false };
+    });
+    mockRecoveryEvent.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      error: new Error('Draft fetch offline'),
+      refetch,
+    });
+    const view = renderWithTheme(<CreateEventScreen draftId={draft.id} />);
+    await screen.findByText('Draft fetch offline');
+    fireEvent.press(screen.getByText('common.retry'));
+    await waitFor(() => expect(refetch).toHaveBeenCalledTimes(1));
+    view.rerender(<CreateEventScreen draftId={draft.id} />);
+    await screen.findByText('events.poster.privatePreparation');
+    expect(screen.getByLabelText('events.create.gigTitle').props.value).toBe(draft.title);
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+    expect(LargeSecureStore.setItem).not.toHaveBeenCalled();
+  });
+
+  it('removes the routed draft ID after successful completion before creating another gig', async () => {
+    mockRecoveryEvent.mockImplementation((id) => ({
+      data: id ? draft : undefined,
+      isPending: false,
+      error: null,
+    }));
+    renderWithTheme(<CreateEventScreen draftId={draft.id} />);
+    await screen.findByText('events.poster.privatePreparation');
+    await choosePhoto();
+    fireEvent.press(screen.getByText('events.create.publish'));
+    await screen.findByText('events.create.successTitle');
+    expect(mockJournal.has(publicationJournalKey('venue-1'))).toBe(true);
+    fireEvent.press(screen.getByText('events.poster.createAnother'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/create-event'));
+    expect(LargeSecureStore.removeItem).toHaveBeenCalledWith(publicationJournalKey('venue-1'));
+    expect(mockJournal.has(publicationJournalKey('venue-1'))).toBe(false);
+    expect(mutationMock).toHaveBeenCalledTimes(1);
+    expect(mutationMock).toHaveBeenCalledWith('/events/event-1/draft', expect.anything());
+    expect(mockUpload).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([undefined, 'different-draft'])(
+    'does not overwrite a valid pending journal when another draft route is opened: %s',
+    async (eventId) => {
+      const input = {
+        title: 'Saved preparation',
+        localStartTime: '2027-02-12T20:00',
+        timeZone: 'Europe/London',
+      };
+      const value = JSON.stringify({
+        version: 2,
+        key: 'ee9964bd-2d10-4f1a-a009-598a4a055a39',
+        input,
+        creationInput: input,
+        ...(eventId ? { eventId } : {}),
+      });
+      mockJournal.set(publicationJournalKey('venue-1'), value);
+      mockRecoveryEvent.mockImplementation((id) => ({
+        data: id ? { ...draft, id } : undefined,
+        isPending: false,
+        error: null,
+      }));
+      renderWithTheme(<CreateEventScreen draftId="routed-draft" />);
+      await screen.findByText('events.poster.otherPreparation');
+      if (!eventId) expect(mockRecoveryEvent).toHaveBeenLastCalledWith(undefined, false);
+      expect(screen.queryByText('events.create.publish')).toBeNull();
+      expect(screen.queryByText('events.poster.discardRecovery')).toBeNull();
+      fireEvent.press(screen.getByText('events.poster.resumePreparation'));
+      expect(router.replace).toHaveBeenCalledWith('/create-event');
+      expect(mockJournal.get(publicationJournalKey('venue-1'))).toBe(value);
+      expect(LargeSecureStore.setItem).not.toHaveBeenCalled();
+      expect(LargeSecureStore.removeItem).not.toHaveBeenCalled();
+      expect(mutationMock).not.toHaveBeenCalled();
+      expect(mockUpload).not.toHaveBeenCalled();
+      expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    },
+  );
+
+  it('keeps the original legacy creation payload and key immutable when correcting a recovered draft', async () => {
+    const key = 'ee9964bd-2d10-4f1a-a009-598a4a055a39';
+    const original = {
+      title: 'Original gig',
+      localStartTime: '2027-02-12T20:00',
+      timeZone: 'Europe/London',
+    };
+    mockJournal.set(
+      publicationJournalKey('venue-1'),
+      JSON.stringify({
+        version: 1,
+        key,
+        input: original,
+        eventId: draft.id,
+        posterWanted: false,
+      }),
+    );
+    mockRecoveryEvent.mockImplementation((id) => ({
+      data: id ? draft : undefined,
+      isPending: false,
+      error: null,
+    }));
+    mockUpload.mockRejectedValueOnce(new Error('Upload interrupted'));
+    renderWithTheme(<CreateEventScreen />);
+    await screen.findByText('events.poster.privatePreparation');
+    fireEvent.changeText(screen.getByLabelText('events.create.gigTitle'), 'Corrected gig');
+    await choosePhoto();
+    fireEvent.press(screen.getByText('events.create.publish'));
+    await screen.findByText('Upload interrupted');
+    const record = JSON.parse(mockJournal.get(publicationJournalKey('venue-1'))!);
+    expect(record).toMatchObject({
+      version: 2,
+      key,
+      creationInput: original,
+      eventId: draft.id,
+      input: { ...original, title: 'Corrected gig' },
+    });
+    expect(mutationMock).toHaveBeenCalledWith(
+      '/events/event-1/draft',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: { ...original, title: 'Corrected gig', expectedRevision: 0 },
+      }),
+    );
+    expect(mutationMock).not.toHaveBeenCalledWith('/events/native/drafts', expect.anything());
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+  });
+
+  it('recovers a v2 ambiguous preparation by replaying creationInput rather than edited input', async () => {
+    const key = 'ee9964bd-2d10-4f1a-a009-598a4a055a39';
+    const creationInput = {
+      title: 'Original gig',
+      localStartTime: '2027-02-12T20:00',
+      timeZone: 'Europe/London',
+    };
+    mockJournal.set(
+      publicationJournalKey('venue-1'),
+      JSON.stringify({
+        version: 2,
+        key,
+        creationInput,
+        input: { ...creationInput, title: 'Edited later' },
+      }),
+    );
+    renderWithTheme(<CreateEventScreen />);
+    await screen.findByText('events.poster.pendingTitle');
+    expect(mutationMock).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByText('events.poster.retryPublication'));
+    await screen.findByText('events.poster.imageRequired');
+    expect(mutationMock).not.toHaveBeenCalled();
+    await choosePhoto();
+    fireEvent.press(screen.getByText('events.poster.retryPublication'));
+    await screen.findByText('events.create.successTitle');
+    expect(mutationMock).toHaveBeenCalledWith(
+      '/events/native/drafts',
+      expect.objectContaining({
+        body: creationInput,
+        idempotencyKey: key,
+      }),
+    );
   });
 
   it('does not clear another account journal or expose its publication after switching', async () => {
     const view = renderWithTheme(<CreateEventScreen />);
     await screen.findByLabelText('events.create.gigTitle');
     fillGig();
+    await choosePhoto();
     let resolveCreate!: (event: typeof published) => void;
     mutationMock.mockImplementationOnce(
       () =>
@@ -502,6 +838,7 @@ describe('CreateEventScreen', () => {
     LargeSecureStore.removeItem.mockRejectedValueOnce(new Error('Secure storage unavailable'));
     await showForm();
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('events.create.successTitle');
     fireEvent.press(screen.getByText('events.create.returnHome'));
@@ -515,6 +852,7 @@ describe('CreateEventScreen', () => {
       .mockRejectedValueOnce(new Error('Cannot save recovery key'));
     await showForm();
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('Cannot save recovery key');
     expect(mutationMock).not.toHaveBeenCalled();
@@ -541,10 +879,11 @@ describe('CreateEventScreen', () => {
     await screen.findByText('events.poster.pendingTitle');
     expect(screen.queryByLabelText('events.create.gigTitle')).toBeNull();
     expect(mutationMock).not.toHaveBeenCalled();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.poster.retryPublication'));
     await screen.findByText('events.create.successTitle');
     expect(mutationMock).toHaveBeenCalledWith(
-      '/events/native',
+      '/events/native/drafts',
       expect.objectContaining({
         body: input,
         idempotencyKey: key,
@@ -560,6 +899,7 @@ describe('CreateEventScreen', () => {
     mutationMock.mockRejectedValueOnce(new ApiError('Invalid title', 422));
     await showForm();
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('Invalid title');
     expect(mockJournal.has(publicationJournalKey('venue-1'))).toBe(false);
@@ -567,7 +907,7 @@ describe('CreateEventScreen', () => {
     fireEvent.press(screen.getByText('events.create.publish'));
     await screen.findByText('events.create.successTitle');
     expect(mutationMock).toHaveBeenLastCalledWith(
-      '/events/native',
+      '/events/native/drafts',
       expect.objectContaining({
         body: expect.objectContaining({ title: 'Corrected gig' }),
       }),
@@ -590,7 +930,7 @@ describe('CreateEventScreen', () => {
     [
       'unsupported version',
       JSON.stringify({
-        version: 2,
+        version: 3,
         key: '33a98d45-d21a-42ad-8cf2-bf7382e923f8',
         input: {
           title: 'Saved gig',
@@ -619,6 +959,7 @@ describe('CreateEventScreen', () => {
       expect(LargeSecureStore.removeItem).toHaveBeenCalledWith(publicationJournalKey('venue-1'));
       expect(mutationMock).not.toHaveBeenCalled();
       fillGig();
+      await choosePhoto();
       fireEvent.press(screen.getByText('events.create.publish'));
       await screen.findByText('events.create.successTitle');
       expect(mutationMock).toHaveBeenCalledTimes(1);
@@ -717,7 +1058,7 @@ describe('CreateEventScreen', () => {
     expect(mutationMock).not.toHaveBeenCalled();
   });
 
-  it('surfaces capability errors but still allows poster-free gig creation', async () => {
+  it('surfaces config errors with the required picker visible and blocks publication even with a selection', async () => {
     mockConfig.mockReturnValue({
       isError: true,
       error: new Error('Poster configuration unavailable'),
@@ -727,7 +1068,27 @@ describe('CreateEventScreen', () => {
     expect(screen.getByText('Poster configuration unavailable')).toBeTruthy();
     expect(screen.getByText('events.poster.retryConfig')).toBeTruthy();
     fillGig();
+    await choosePhoto();
     fireEvent.press(screen.getByText('events.create.publish'));
-    await screen.findByText('events.create.successTitle');
+    await act(async () => {});
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
+    expect(screen.getByLabelText('events.poster.selectedPreview')).toBeTruthy();
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+    expect(LargeSecureStore.setItem).not.toHaveBeenCalled();
+  });
+
+  it('keeps the required picker visible while configuration is absent and issues no requests', async () => {
+    mockConfig.mockReturnValue({ data: undefined, isPending: true, isError: false });
+    await showForm();
+    fillGig();
+    await choosePhoto();
+    expect(mockPickPoster).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByText('events.create.publish'));
+    await act(async () => {});
+    expect(mutationMock).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+    expect(LargeSecureStore.setItem).not.toHaveBeenCalled();
+    expect(screen.queryByText('events.create.successTitle')).toBeNull();
   });
 });

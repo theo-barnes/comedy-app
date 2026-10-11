@@ -107,7 +107,7 @@ class FakeEvents:
     def __init__(self, images):
         self.images = images
         images.events = self
-        self.events = {'gig': PosterEvent('gig', USER.user_id, None, 0)}
+        self.events = {'gig': PosterEvent('gig', USER.user_id, None, 0, 'published')}
         self.fail_swap = False
         self.lock = RLock()
 
@@ -117,7 +117,11 @@ class FakeEvents:
     def referenced(self, asset_id):
         return any(event.asset_id == asset_id for event in self.events.values())
 
-    def swap(self, event_id, owner_id, expected_revision, asset, url):
+    def validate_publication(self, event_id):
+        if self.events[event_id].publication_status != 'draft':
+            raise ConflictError('not a draft')
+
+    def swap(self, event_id, owner_id, expected_revision, asset, url, *, publish=False):
         with self.lock:
             event = self.events.get(event_id)
             if (
@@ -131,13 +135,14 @@ class FakeEvents:
                 previous.touched_at = datetime.now(timezone.utc)
             self.events[event_id] = replace(
                 event, asset_id=asset.id if asset else None, revision=event.revision + 1,
+                publication_status='published' if publish else event.publication_status,
             )
 
 
-def setup_service(*, enabled=True):
+def setup_service():
     images, storage = FakeImages(), FakeStorage()
     events = FakeEvents(images)
-    return PosterService(images, storage, events, enabled=enabled), images, storage, events
+    return PosterService(images, storage, events), images, storage, events
 
 
 def upload(service, storage, data=None, content_type='image/png'):
@@ -215,10 +220,9 @@ def test_pending_completion_is_retryable_and_expiry_is_explicit():
 
 
 @pytest.mark.parametrize('method', ['initiate', 'complete', 'attach', 'remove'])
-def test_every_mutation_denies_disabled_and_unconfigured(method):
+def test_every_mutation_denies_unconfigured_storage(method):
     for service in (
-        setup_service(enabled=False)[0],
-        PosterService(None, None, FakeEvents(FakeImages()), enabled=True),
+        PosterService(None, None, FakeEvents(FakeImages())),
     ):
         args = {
             'initiate': ('gig', USER, 'image/png', 10),
@@ -284,11 +288,12 @@ def test_attach_replace_remove_and_stale_success_replay():
     with pytest.raises(ConflictError):
         service.remove('gig', 1, USER)
     assert events.events['gig'].asset_id == second.asset_id
-    service.remove('gig', 2, USER)
-    assert events.events['gig'].asset_id is None
-    assert events.events['gig'].revision == 3
-    with pytest.raises(ConflictError):
-        service.attach('gig', second.asset_id, 1, USER)
+    with pytest.raises(ConflictError, match='require an image'):
+        service.remove('gig', 2, USER)
+    assert events.events['gig'].asset_id == second.asset_id
+    assert events.events['gig'].revision == 2
+    service.attach('gig', second.asset_id, 1, USER)
+    assert events.events['gig'].revision == 2
     assert storage.objects[DISPLAY_BUCKET, images.assets[second.asset_id].display_key]
 
 
@@ -379,7 +384,6 @@ def test_cleanup_dry_run_expiry_reference_grace_and_retries_on_rollback():
     abandoned = upload(service, storage)
     service.attach('gig', attached.asset_id, 0, USER)
     age(images)
-    service.enabled = False
     assert service.cleanup() == (1, 0)
     assert images.assets[abandoned.asset_id].status == 'uploading'
     storage.fail_delete = True

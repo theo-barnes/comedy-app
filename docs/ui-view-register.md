@@ -1,6 +1,6 @@
 # UI View Register
 
-Last inventory update: 2026-10-08.
+Last inventory update: 2026-10-11.
 
 This is persistent, versioned UI memory for people and agents, not a claim that every page has
 been visually reviewed. Read it before user-visible work, including backend changes that alter
@@ -98,3 +98,33 @@ after operator setup, append actual device/platform, scenario and screenshot evi
 Next inventory maintenance: verify deployed poster journeys and final visual guidance, including
 real iOS HEIC conversion, long-poster readability, permission/error states and cleanup/cache effects.
 Keep pending final-design follow-ups until the user supplies guidance.
+
+### Required-image correction, 2026-10-11
+
+The user clarified that every publicly posted gig requires **one primary photo**. Private
+preparation is approved; existing image-less gigs must be hidden publicly and remain accessible
+to the owner for completion. The user approved retaining the provisional layout for these states,
+not a redesign. [Required gig images](plans/active/required-gig-images.md) supersedes the optional
+poster and default-off activation guidance above.
+
+Affected stable views:
+
+- `gig-create` / `gig-poster-compose`: required picker remains visible; availability errors block
+  publication, preparation/upload/validation/finalization do not report public success, and
+  restart/retry resumes the same private record.
+- `gig-poster-manage`: published gigs support replacement, not removal of their only photo.
+  Incomplete owned gigs link to completion in the existing form.
+- `home-venue`: owner's incomplete gigs are labelled not published with a completion action.
+- `home-fan` / `gig-poster-display`: only published image-bearing gigs are eligible; incomplete
+  events must also be absent from server lists/details/linked projections.
+
+The correction is implemented with automated acceptance and rollout still distinct. Required
+event/client suites passed 129 tests, and the owner Home suite passed 8 tests separately.
+TypeScript, targeted lint and native iOS/Android production bundle exports passed. These checks
+do not prove live Storage/RLS or visual/device acceptance. The isolated local PostGIS attempt
+could not initialize because PostgreSQL's PostGIS extension is not installed; CI now runs the
+explicit disposable-database migration/constraint/finalization suite.
+
+No live Storage journey, new screenshot approval, or device acceptance is claimed. The older
+optional-view inventory above is historical; for current implementation use these corrected states
+and the required-image execution plan.

@@ -5,18 +5,26 @@ import { renderWithTheme } from '../../../utils/renderWithTheme';
 import { VenueHome } from '@/features/home/venue/VenueHome';
 
 const mockEvents = jest.fn();
-const mockPosterConfig = jest.fn();
 jest.mock('@/features/auth/useAuth', () => ({
   useAuth: () => ({ profile: { id: 'venue-1', role: 'venue' }, isGuest: false }),
 }));
 jest.mock('@/lib/api/events', () => ({ useVenueEvents: () => mockEvents() }));
 jest.mock('@/lib/api/client', () => ({ isApiConfigured: () => true }));
-jest.mock('@/lib/api/gig-posters', () => ({ usePosterConfig: () => mockPosterConfig() }));
+const event = {
+  id: 'event-1',
+  venueId: 'venue-1',
+  title: 'Friday comedy',
+  startTime: '2027-02-12T20:00:00Z',
+  status: 'scheduled',
+  publicationStatus: 'published',
+  posterUrl: 'https://storage.example.com/poster.png',
+  posterWidth: 100,
+  posterHeight: 200,
+};
 
 describe('VenueHome', () => {
   beforeEach(() => {
     mockEvents.mockReturnValue({ isPending: false, isError: false, data: { items: [] } });
-    mockPosterConfig.mockReturnValue({ data: { enabled: true }, isError: false });
     jest.clearAllMocks();
   });
   it('renders without crashing', () => {
@@ -44,7 +52,7 @@ describe('VenueHome', () => {
   it('renders published venue events without inventing ticket-sales statistics', () => {
     mockEvents.mockReturnValue({
       data: {
-        items: [{ id: 'event-1', title: 'Friday comedy', startTime: '2027-02-12T20:00:00Z' }],
+        items: [event],
       },
     });
     renderWithTheme(<VenueHome />);
@@ -56,14 +64,7 @@ describe('VenueHome', () => {
   it('identifies cancelled events returned by the venue listing', () => {
     mockEvents.mockReturnValue({
       data: {
-        items: [
-          {
-            id: 'event-1',
-            title: 'Friday comedy',
-            startTime: '2027-02-12T20:00:00Z',
-            status: 'cancelled',
-          },
-        ],
+        items: [{ ...event, status: 'cancelled' }],
       },
     });
     renderWithTheme(<VenueHome />);
@@ -73,15 +74,7 @@ describe('VenueHome', () => {
   it('shows the poster and opens management for an owned gig', () => {
     mockEvents.mockReturnValue({
       data: {
-        items: [
-          {
-            id: 'event-1',
-            venueId: 'venue-1',
-            title: 'Friday comedy',
-            startTime: '2027-02-12T20:00:00Z',
-            posterUrl: 'https://storage.example.com/poster.png',
-          },
-        ],
+        items: [event],
       },
     });
     renderWithTheme(<VenueHome />);
@@ -93,23 +86,26 @@ describe('VenueHome', () => {
     });
   });
 
-  it('keeps published artwork readable when poster mutations are disabled', () => {
-    mockPosterConfig.mockReturnValue({ data: { enabled: false } });
+  it('offers owner completion for a private draft instead of published management', () => {
     mockEvents.mockReturnValue({
       data: {
         items: [
           {
-            id: 'event-1',
-            venueId: 'venue-1',
-            title: 'Friday comedy',
-            startTime: '2027-02-12T20:00:00Z',
-            posterUrl: 'https://storage.example.com/poster.png',
+            ...event,
+            publicationStatus: 'draft',
+            posterUrl: null,
           },
         ],
       },
     });
     renderWithTheme(<VenueHome />);
-    expect(screen.getByLabelText('events.poster.imageLabel')).toBeTruthy();
+    expect(screen.queryByLabelText('events.poster.imageLabel')).toBeNull();
+    expect(screen.getByText('events.poster.needsImage')).toBeTruthy();
     expect(screen.queryByText('events.poster.manage')).toBeNull();
+    fireEvent.press(screen.getByText('events.poster.completeGig'));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/create-event',
+      params: { draftId: 'event-1' },
+    });
   });
 });

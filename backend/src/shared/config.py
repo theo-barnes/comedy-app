@@ -30,7 +30,6 @@ class Settings(BaseSettings):
     supabase_jwt_audience: str = 'authenticated'
     auth_role_cache_ttl_seconds: int = 60
     supabase_service_role_key: str = ''
-    gig_posters_enabled: bool = False
     gig_poster_cleanup_dry_run: bool = True
 
     # Rate limiting

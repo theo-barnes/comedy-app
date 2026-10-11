@@ -5,7 +5,12 @@ import type { PropsWithChildren } from 'react';
 import { useGigPosterUpload, type PosterSelection } from '@/features/events/poster-upload';
 import { createTusPosterUpload, PosterUploadCancelled } from '@/features/events/poster-tus-upload';
 import type { VenueEvent } from '@/lib/api/events';
-import { attachGigPoster, completePosterUpload, createPosterUpload } from '@/lib/api/gig-posters';
+import {
+  attachGigPoster,
+  completePosterUpload,
+  createPosterUpload,
+  publishGig,
+} from '@/lib/api/gig-posters';
 import { queryKeys } from '@/lib/api/keys';
 import { ApiError } from '@/lib/api/client';
 
@@ -18,6 +23,7 @@ jest.mock('@/lib/api/gig-posters', () => ({
   createPosterUpload: jest.fn(),
   completePosterUpload: jest.fn(),
   attachGigPoster: jest.fn(),
+  publishGig: jest.fn(),
 }));
 jest.mock('expo-file-system', () => ({ File: jest.fn() }));
 jest.mock('tus-js-client', () => ({ Upload: jest.fn() }));
@@ -28,9 +34,12 @@ const event: VenueEvent = {
   title: 'Friday comedy',
   startTime: '2027-02-12T20:00:00Z',
   status: 'scheduled',
+  publicationStatus: 'published',
   comedianIds: [],
   posterRevision: 2,
   posterUrl: 'https://storage.example.com/old.png',
+  posterWidth: 600,
+  posterHeight: 900,
 };
 const selection: PosterSelection = {
   uri: 'file:///poster.png',
@@ -77,6 +86,7 @@ describe('gig poster upload orchestration', () => {
       height: 900,
     });
     jest.mocked(attachGigPoster).mockResolvedValue(updated);
+    jest.mocked(publishGig).mockResolvedValue(updated);
   });
 
   it('waits for private processing before attaching with the current revision', async () => {
@@ -94,6 +104,7 @@ describe('gig poster upload orchestration', () => {
       { eventId: 'event-1', assetId: 'asset-1', expectedRevision: 2 },
       expect.anything(),
     );
+    expect(publishGig).not.toHaveBeenCalled();
     const processed = jest.mocked(completePosterUpload).mock.invocationCallOrder[0];
     const attached = jest.mocked(attachGigPoster).mock.invocationCallOrder[0];
     if (processed === undefined || attached === undefined)
@@ -102,6 +113,40 @@ describe('gig poster upload orchestration', () => {
     expect(client.getQueryData(queryKeys.event(event.id))).toEqual(updated);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.homeFeedRoot });
     expect(result.current.isPending).toBe(false);
+    unmount();
+    client.clear();
+  });
+
+  it('publishes a draft only after private processing, never using the published replacement endpoint', async () => {
+    const draft: VenueEvent = { ...event, publicationStatus: 'draft', posterUrl: null };
+    const { result, client, unmount } = setup();
+    await act(async () => {
+      await expect(result.current.upload(draft, selection)).resolves.toEqual(updated);
+    });
+    expect(publishGig).toHaveBeenCalledWith(
+      { eventId: draft.id, assetId: 'asset-1', expectedRevision: 2 },
+      expect.anything(),
+    );
+    expect(jest.mocked(completePosterUpload).mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(publishGig).mock.invocationCallOrder[0]!,
+    );
+    expect(attachGigPoster).not.toHaveBeenCalled();
+    expect(client.getQueryData(queryKeys.event(draft.id))).toEqual(updated);
+    unmount();
+    client.clear();
+  });
+
+  it('does not publish a draft when image processing fails', async () => {
+    jest.mocked(completePosterUpload).mockRejectedValueOnce(new Error('Malformed image'));
+    const draft: VenueEvent = { ...event, publicationStatus: 'draft', posterUrl: null };
+    const { result, client, unmount } = setup();
+    client.setQueryData(queryKeys.event(draft.id), draft);
+    await act(async () => {
+      await expect(result.current.upload(draft, selection)).rejects.toThrow('Malformed image');
+    });
+    expect(publishGig).not.toHaveBeenCalled();
+    expect(attachGigPoster).not.toHaveBeenCalled();
+    expect(client.getQueryData(queryKeys.event(draft.id))).toEqual(draft);
     unmount();
     client.clear();
   });
@@ -151,6 +196,38 @@ describe('gig poster upload orchestration', () => {
     expect(createPosterUpload).toHaveBeenCalledTimes(1);
     expect(completePosterUpload).toHaveBeenCalledTimes(1);
     expect(attachGigPoster).toHaveBeenCalledTimes(2);
+    unmount();
+    client.clear();
+  });
+
+  it('replays draft publication with the same processed asset after an ambiguous finalization response', async () => {
+    const draft: VenueEvent = {
+      ...event,
+      publicationStatus: 'draft',
+      posterUrl: null,
+      posterWidth: null,
+      posterHeight: null,
+    };
+    jest
+      .mocked(publishGig)
+      .mockRejectedValueOnce(new TypeError('Publication response lost'))
+      .mockResolvedValueOnce(updated);
+    const { result, client, unmount } = setup();
+    client.setQueryData(queryKeys.event(draft.id), draft);
+    await act(async () => {
+      await expect(result.current.upload(draft, selection)).rejects.toThrow('response lost');
+    });
+    expect(client.getQueryData(queryKeys.event(draft.id))).toEqual(draft);
+    await act(async () => {
+      await expect(result.current.upload(draft, selection)).resolves.toEqual(updated);
+    });
+    expect(createPosterUpload).toHaveBeenCalledTimes(1);
+    expect(completePosterUpload).toHaveBeenCalledTimes(1);
+    expect(publishGig).toHaveBeenCalledTimes(2);
+    expect(jest.mocked(publishGig).mock.calls[0]?.[0]).toEqual(
+      jest.mocked(publishGig).mock.calls[1]?.[0],
+    );
+    expect(attachGigPoster).not.toHaveBeenCalled();
     unmount();
     client.clear();
   });

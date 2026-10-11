@@ -7,7 +7,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-from .models.domain import Event
+from .models.domain import Event, EventPublicationStatus
 from .validation import parse_local_time, validate_ticket_url
 
 
@@ -46,6 +46,10 @@ class CreateNativeEventRequest(BaseModel):
     @classmethod
     def validate_ticket(cls, value: str | None) -> str | None:
         return validate_ticket_url(value) if value is not None else None
+
+
+class UpdateNativeDraftRequest(CreateNativeEventRequest):
+    expectedRevision: int = Field(..., ge=0, strict=True)
 
 
 class UpdateEventRequest(BaseModel):
@@ -92,6 +96,7 @@ class EventSchema(BaseModel):
     longitude: float | None = None
     ticketUrl: str | None = None
     status: str
+    publicationStatus: EventPublicationStatus
     comedianIds: list[str] = Field(default_factory=list)
     posterUrl: str | None = None
     posterRevision: int = 0
@@ -112,6 +117,7 @@ class EventSchema(BaseModel):
             longitude=event.longitude,
             ticketUrl=event.ticket_url,
             status=event.status.value,
+            publicationStatus=event.publication_status,
             comedianIds=list(event.comedian_ids),
             posterUrl=event.poster_url,
             posterRevision=event.poster_revision,

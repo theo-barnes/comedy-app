@@ -14,10 +14,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import h3
 
 from shared.auth.models import AuthenticatedUser
-from shared.errors import NotFoundError, PermissionDeniedError, ValidationFailedError
+from shared.errors import ConflictError, NotFoundError, PermissionDeniedError, ValidationFailedError
 from shared.ports import PlaceLookup
 
-from .models.domain import Event, EventStatus
+from .models.domain import Event, EventPublicationStatus, EventStatus
 from .repository import EventRepository
 from .validation import parse_local_time, validate_ticket_url
 
@@ -72,9 +72,25 @@ class EventService:
         ticket_url: str | None = None,
         idempotency_key: str | None = None,
     ) -> Event:
+        previous, _ = self._native_submission(
+            user, title=title, description=description, local_start_time=local_start_time,
+            local_end_time=local_end_time, time_zone=time_zone, ticket_url=ticket_url,
+            idempotency_key=idempotency_key,
+        )
+        if (
+            previous is not None
+            and previous.publication_status is EventPublicationStatus.PUBLISHED
+        ):
+            return previous
+        raise ConflictError('update required: prepare a draft and publish it with a managed image')
+
+    def _native_submission(
+        self, user: AuthenticatedUser, *, title: str, description: str | None,
+        local_start_time: str, local_end_time: str | None, time_zone: str,
+        ticket_url: str | None, idempotency_key: str | None,
+    ) -> tuple[Event | None, tuple[str, str] | None]:
         if user.role != 'venue':
             raise PermissionDeniedError('only venues can publish native events')
-        payload_hash = ''
         if idempotency_key is not None:
             try:
                 idempotency_key = str(UUID(idempotency_key))
@@ -86,8 +102,49 @@ class EventService:
                 'timeZone': time_zone, 'ticketUrl': ticket_url,
             }, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
             previous = self._repository.get_submission(user.user_id, idempotency_key, payload_hash)
-            if previous is not None:
-                return previous
+            return previous, (idempotency_key, payload_hash)
+        return None, None
+
+    def create_native_draft(
+        self, user: AuthenticatedUser, *, title: str, local_start_time: str, time_zone: str,
+        local_end_time: str | None = None, description: str | None = None,
+        ticket_url: str | None = None, idempotency_key: str | None = None,
+    ) -> Event:
+        previous, submission = self._native_submission(
+            user, title=title, description=description, local_start_time=local_start_time,
+            local_end_time=local_end_time, time_zone=time_zone, ticket_url=ticket_url,
+            idempotency_key=idempotency_key,
+        )
+        if previous is not None:
+            return previous
+        fields = self._native_fields(
+            user, title=title, description=description, local_start_time=local_start_time,
+            local_end_time=local_end_time, time_zone=time_zone, ticket_url=ticket_url,
+        )
+        return self.create(user, **fields, submission=submission)
+
+    def update_native_draft(
+        self, event_id: str, user: AuthenticatedUser, *, expected_revision: int,
+        title: str, local_start_time: str, time_zone: str,
+        local_end_time: str | None = None, description: str | None = None,
+        ticket_url: str | None = None,
+    ) -> Event:
+        event = self._owned_event(event_id, user)
+        if event.publication_status is not EventPublicationStatus.DRAFT:
+            raise ConflictError('only private drafts can be completed')
+        fields = self._native_fields(
+            user, title=title, description=description, local_start_time=local_start_time,
+            local_end_time=local_end_time, time_zone=time_zone, ticket_url=ticket_url,
+        )
+        fields.update(self._location_fields(fields['latitude'], fields['longitude']))
+        return self._repository.update_draft(event_id, user.user_id, expected_revision, fields)
+
+    def _native_fields(
+        self, user: AuthenticatedUser, *, title: str, local_start_time: str, time_zone: str,
+        local_end_time: str | None, description: str | None, ticket_url: str | None,
+    ) -> dict[str, Any]:
+        if user.role != 'venue':
+            raise PermissionDeniedError('only venues can prepare gigs')
         title = title.strip()
         if not 1 <= len(title) <= 200:
             raise ValidationFailedError('title must contain 1 to 200 characters')
@@ -121,17 +178,17 @@ class EventService:
             or not -90 <= venue.latitude <= 90 or not -180 <= venue.longitude <= 180
         ):
             raise ValidationFailedError('set up valid venue latitude and longitude before publishing')
-        return self.create(
-            user,
-            title=title,
-            description=description,
-            start_time=start,
-            end_time=end,
-            latitude=venue.latitude,
-            longitude=venue.longitude,
-            ticket_url=ticket_url,
-            submission=(idempotency_key, payload_hash) if idempotency_key else None,
-        )
+        return {
+            'title': title, 'description': description, 'start_time': start, 'end_time': end,
+            'latitude': venue.latitude, 'longitude': venue.longitude, 'ticket_url': ticket_url,
+        }
+
+    def _location_fields(self, latitude: float, longitude: float) -> dict[str, Any]:
+        place = self._places.resolve_city(latitude, longitude)
+        return {
+            'h3_index': h3.latlng_to_cell(latitude, longitude, self._h3_resolution),
+            'place_id': place.id if place is not None else None,
+        }
 
     @staticmethod
     def _native_utc_time(value: str, zone: ZoneInfo, field: str) -> datetime:
@@ -207,6 +264,8 @@ class EventService:
         """Apply a partial update; re-derives h3_index/place_id when coordinates change."""
 
         event = self._owned_event(event_id, user)
+        if event.publication_status is EventPublicationStatus.DRAFT:
+            raise ConflictError('use draft completion with expectedRevision for private gigs')
         start = fields.get('start_time', event.start_time)
         end = fields.get('end_time', event.end_time)
         self._validate_times(start, end)
@@ -240,9 +299,12 @@ class EventService:
         self._owned_event(event_id, user)
         self._repository.remove_comedian(event_id, comedian_id)
 
-    def get(self, event_id: str) -> Event:
+    def get(self, event_id: str, user: AuthenticatedUser | None = None) -> Event:
         event = self._repository.get(event_id)
-        if event is None:
+        if event is None or (
+            event.publication_status is EventPublicationStatus.DRAFT
+            and (user is None or user.user_id != event.venue_id)
+        ):
             raise NotFoundError('event not found')
         return event
 
@@ -260,6 +322,15 @@ class EventService:
     def list_by_venue(self, venue_id: str, *, limit: int = 50, upcoming_only: bool = True) -> list[Event]:
         from_time = datetime.now(timezone.utc) if upcoming_only else None
         return self._repository.list_by_venue(venue_id, limit=limit, from_time=from_time)
+
+    def list_owned(self, user: AuthenticatedUser, *, limit: int = 50) -> list[Event]:
+        return self._repository.list_by_venue(
+            user.user_id, limit=limit, from_time=None, include_drafts=True,
+        )
+
+    def is_public(self, event_id: str) -> bool:
+        event = self._repository.get(event_id)
+        return event is not None and event.publication_status is EventPublicationStatus.PUBLISHED
 
     def _owned_event(self, event_id: str, user: AuthenticatedUser) -> Event:
         event = self._repository.get(event_id)

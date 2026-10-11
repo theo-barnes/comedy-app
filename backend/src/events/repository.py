@@ -10,7 +10,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 from shared.errors import ConflictError
 
-from .models.domain import Event, EventStatus
+from .models.domain import Event, EventPublicationStatus, EventStatus
+from .publication import validate_publication
 from .models.orm import EventComedianRow, EventRow, NativeEventSubmissionRow
 
 
@@ -28,11 +29,16 @@ class EventRepository(Protocol):
     def swap_poster(
         self, event_id: str, owner_id: str, expected_revision: int,
         asset_id: str | None, url: str | None, width: int | None, height: int | None,
+        *, publish: bool = False,
     ) -> None: ...
 
     def get(self, event_id: str) -> Event | None: ...
 
     def update_fields(self, event_id: str, fields: dict) -> None: ...
+
+    def update_draft(
+        self, event_id: str, owner_id: str, expected_revision: int, fields: dict,
+    ) -> Event: ...
 
     def set_status(self, event_id: str, status: EventStatus) -> None: ...
 
@@ -41,7 +47,7 @@ class EventRepository(Protocol):
     def remove_comedian(self, event_id: str, comedian_id: str) -> bool: ...
 
     def list_by_venue(
-        self, venue_id: str, *, limit: int, from_time: datetime | None
+        self, venue_id: str, *, limit: int, from_time: datetime | None, include_drafts: bool = False,
     ) -> list[Event]: ...
 
     def list_nearby(
@@ -56,6 +62,7 @@ def _event_from_row(row: EventRow, comedian_ids: tuple[str, ...]) -> Event:
         title=row.title,
         start_time=row.start_time,
         status=EventStatus(row.status),
+        publication_status=EventPublicationStatus(row.publication_status),
         description=row.description,
         end_time=row.end_time,
         place_id=row.place_id,
@@ -119,6 +126,7 @@ class SqlEventRepository:
             ),
             ticket_url=event.ticket_url,
             status=event.status.value,
+            publication_status=event.publication_status.value,
             poster_revision=0,
         )
         with self._session_factory() as session:
@@ -162,16 +170,19 @@ class SqlEventRepository:
     def swap_poster(
         self, event_id: str, owner_id: str, expected_revision: int,
         asset_id: str | None, url: str | None, width: int | None, height: int | None,
+        *, publish: bool = False,
     ) -> None:
         with self._session_factory() as session:
             self.swap_poster_in_session(
                 session, event_id, owner_id, expected_revision, asset_id, url, width, height,
+                publish=publish,
             )
             session.commit()
 
     def swap_poster_in_session(
         self, session: Session, event_id: str, owner_id: str, expected_revision: int,
         asset_id: str | None, url: str | None, width: int | None, height: int | None,
+        *, publish: bool = False,
     ) -> None:
         from images.models.orm import ImageAssetRow
 
@@ -180,16 +191,44 @@ class SqlEventRepository:
         ).with_for_update().execution_options(populate_existing=True))
         if row is None or row.poster_revision != expected_revision:
             raise ConflictError('poster changed; refresh the gig before retrying')
+        if publish:
+            validate_publication(_event_from_row(row, ()))
+        elif row.publication_status == 'published' and asset_id is None:
+            raise ConflictError('published gigs require an image; replace the existing poster')
+        elif row.publication_status == 'draft' and asset_id is not None:
+            raise ConflictError('use publication to attach a draft image')
+        if asset_id is not None and (not url or not url.strip() or not width or not height
+                                     or width <= 0 or height <= 0):
+            raise ConflictError('a complete managed poster is required')
         previous = row.poster_asset_id
         row.poster_asset_id = asset_id
         row.poster_url = url
         row.poster_width = width
         row.poster_height = height
         row.poster_revision += 1
+        if publish:
+            row.publication_status = 'published'
         if previous is not None and previous != asset_id:
             session.execute(update(ImageAssetRow).where(
                 ImageAssetRow.id == previous,
             ).values(status='retired', touched_at=datetime.now(timezone.utc)))
+
+    def update_draft(
+        self, event_id: str, owner_id: str, expected_revision: int, fields: dict,
+    ) -> Event:
+        with self._session_factory() as session:
+            row = session.scalar(select(EventRow).where(
+                EventRow.id == event_id, EventRow.venue_id == owner_id,
+            ).with_for_update().execution_options(populate_existing=True))
+            if row is None or row.publication_status != 'draft' or row.poster_revision != expected_revision:
+                raise ConflictError('draft changed; refresh the gig before retrying')
+            for key, value in fields.items():
+                setattr(row, key, value)
+            row.center = f'SRID=4326;POINT({row.longitude} {row.latitude})'
+            row.poster_revision += 1
+            session.commit()
+            session.refresh(row)
+            return _event_from_row(row, self._comedians_for(session, event_id))
 
     def update_fields(self, event_id: str, fields: dict) -> None:
         with self._session_factory() as session:
@@ -230,16 +269,21 @@ class SqlEventRepository:
             return bool(result.rowcount)
 
     def list_by_venue(
-        self, venue_id: str, *, limit: int, from_time: datetime | None
+        self, venue_id: str, *, limit: int, from_time: datetime | None, include_drafts: bool = False,
     ) -> list[Event]:
         stmt = (
             select(EventRow)
             .where(EventRow.venue_id == venue_id)
-            .order_by(EventRow.start_time.asc())
             .limit(limit)
         )
+        if include_drafts:
+            stmt = stmt.order_by(EventRow.created_at.desc(), EventRow.id.desc())
+        else:
+            stmt = stmt.order_by(EventRow.start_time.asc())
         if from_time is not None:
             stmt = stmt.where(EventRow.start_time >= from_time)
+        if not include_drafts:
+            stmt = stmt.where(EventRow.publication_status == 'published')
         with self._session_factory() as session:
             rows = session.execute(stmt).scalars().all()
             return [
@@ -253,6 +297,7 @@ class SqlEventRepository:
             """
             SELECT id FROM events
             WHERE status = 'scheduled'
+              AND publication_status = 'published'
               AND start_time >= :from_time
               AND center IS NOT NULL
               AND ST_DWithin(

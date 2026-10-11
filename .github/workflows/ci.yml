@@ -144,3 +144,24 @@ jobs:
               session.execute(select(EventRow).limit(1))
           print("event_orm_projection_ok")
           PY
+
+      - name: Create isolated required-image migration database
+        working-directory: backend
+        run: |
+          python - <<'PY'
+          import psycopg
+
+          with psycopg.connect(
+              "postgresql://platform:platform@localhost:5432/platform",
+              autocommit=True,
+          ) as connection:
+              connection.execute("CREATE DATABASE comedy_required_images_test")
+          PY
+
+      - name: Verify required-image migration and publication on PostGIS
+        working-directory: backend
+        env:
+          DISCOVERY_DATABASE_URL: ''
+          REQUIRED_GIG_IMAGES_TEST_DATABASE_URL: postgresql://platform:platform@localhost:5432/comedy_required_images_test
+          REQUIRED_GIG_IMAGES_DISPOSABLE_DATABASE: '1'
+        run: python -m pytest tests/test_required_gig_images_postgis.py -q

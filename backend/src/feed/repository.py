@@ -172,7 +172,9 @@ class SqlFeedRepository:
             events: dict[str, EventRow] = {}
             if event_ids:
                 for event in session.execute(
-                    select(EventRow).where(EventRow.id.in_(event_ids))
+                    select(EventRow).where(
+                        EventRow.id.in_(event_ids), EventRow.publication_status == 'published',
+                    )
                 ).scalars():
                     events[event.id] = event
 

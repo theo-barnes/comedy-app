@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Header, Query, status
 
 from shared.auth import AuthenticatedUser, get_current_user, require_role
 from shared.ratelimit import rate_limited
+from shared.errors import ConflictError
 from images.factory import get_service as get_poster_service
 from images.schemas import (
     PosterAttachRequest, PosterCompleteSchema, PosterConfigSchema, PosterRemoveRequest,
@@ -18,7 +19,8 @@ from images.service import PosterService
 
 from .factory import get_service
 from .schemas import (
-    CreateEventRequest, CreateNativeEventRequest, EventListResponse, EventSchema, UpdateEventRequest,
+    CreateEventRequest, CreateNativeEventRequest, EventListResponse, EventSchema,
+    UpdateEventRequest, UpdateNativeDraftRequest,
 )
 from .service import EventService
 
@@ -35,7 +37,8 @@ PosterWriteRateLimit = Depends(rate_limited('event-poster', limit=30, window_sec
 
 @router.get('/events/poster-config', response_model=PosterConfigSchema)
 def poster_config(user: CurrentUser, posters: PosterServiceDependency) -> PosterConfigSchema:
-    return PosterConfigSchema(enabled=posters.enabled)
+    posters.require_configured()
+    return PosterConfigSchema(enabled=True)
 
 
 @router.post('/events/{event_id}/poster/uploads', response_model=PosterUploadSchema)
@@ -67,7 +70,7 @@ def attach_poster(
     posters: PosterServiceDependency, service: Service, _rl: None = PosterWriteRateLimit,
 ) -> EventSchema:
     posters.attach(event_id, body.assetId, body.expectedRevision, user)
-    return EventSchema.from_domain(service.get(event_id))
+    return EventSchema.from_domain(service.get(event_id, user))
 
 
 @router.delete('/events/{event_id}/poster', response_model=EventSchema)
@@ -76,24 +79,14 @@ def remove_poster(
     posters: PosterServiceDependency, service: Service, _rl: None = PosterWriteRateLimit,
 ) -> EventSchema:
     posters.remove(event_id, body.expectedRevision, user)
-    return EventSchema.from_domain(service.get(event_id))
+    return EventSchema.from_domain(service.get(event_id, user))
 
 
 @router.post('/events', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
 def create_event(
     body: CreateEventRequest, user: VenueUser, service: Service, _rl: None = EventWriteRateLimit
 ) -> EventSchema:
-    event = service.create(
-        user,
-        title=body.title,
-        description=body.description,
-        start_time=body.startTime,
-        end_time=body.endTime,
-        latitude=body.latitude,
-        longitude=body.longitude,
-        ticket_url=body.ticketUrl,
-    )
-    return EventSchema.from_domain(event)
+    raise ConflictError('update required: prepare a draft and publish it with a managed image')
 
 
 @router.post('/events/native', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
@@ -123,6 +116,41 @@ def update_event(
     _rl: None = EventWriteRateLimit,
 ) -> EventSchema:
     return EventSchema.from_domain(service.update(event_id, user, body.to_fields()))
+
+
+@router.post('/events/native/drafts', response_model=EventSchema, status_code=status.HTTP_201_CREATED)
+def create_native_draft(
+    body: CreateNativeEventRequest, user: VenueUser, service: Service,
+    idempotency_key: Annotated[str | None, Header(alias='Idempotency-Key')] = None,
+    _rl: None = EventWriteRateLimit,
+) -> EventSchema:
+    return EventSchema.from_domain(service.create_native_draft(
+        user, title=body.title, description=body.description,
+        local_start_time=body.localStartTime, local_end_time=body.localEndTime,
+        time_zone=body.timeZone, ticket_url=body.ticketUrl, idempotency_key=idempotency_key,
+    ))
+
+
+@router.patch('/events/{event_id}/draft', response_model=EventSchema)
+def update_native_draft(
+    event_id: str, body: UpdateNativeDraftRequest, user: VenueUser, service: Service,
+    _rl: None = EventWriteRateLimit,
+) -> EventSchema:
+    return EventSchema.from_domain(service.update_native_draft(
+        event_id, user, expected_revision=body.expectedRevision,
+        title=body.title, description=body.description,
+        local_start_time=body.localStartTime, local_end_time=body.localEndTime,
+        time_zone=body.timeZone, ticket_url=body.ticketUrl,
+    ))
+
+
+@router.post('/events/{event_id}/publish', response_model=EventSchema)
+def publish_event(
+    event_id: str, body: PosterAttachRequest, user: VenueUser,
+    posters: PosterServiceDependency, service: Service, _rl: None = PosterWriteRateLimit,
+) -> EventSchema:
+    posters.publish(event_id, body.assetId, body.expectedRevision, user)
+    return EventSchema.from_domain(service.get(event_id, user))
 
 
 @router.delete('/events/{event_id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -163,7 +191,16 @@ def nearby_events(
 
 @router.get('/events/{event_id}', response_model=EventSchema)
 def get_event(event_id: str, user: CurrentUser, service: Service) -> EventSchema:
-    return EventSchema.from_domain(service.get(event_id))
+    return EventSchema.from_domain(service.get(event_id, user))
+
+
+@router.get('/venues/me/events', response_model=EventListResponse)
+def list_owned_events(
+    user: VenueUser, service: Service, limit: int = Query(50, ge=1, le=100),
+) -> EventListResponse:
+    return EventListResponse(items=[
+        EventSchema.from_domain(event) for event in service.list_owned(user, limit=limit)
+    ])
 
 
 @router.get('/venues/{venue_id}/events', response_model=EventListResponse)

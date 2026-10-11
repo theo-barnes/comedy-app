@@ -2,17 +2,19 @@ import { act, renderHook } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PropsWithChildren } from 'react';
 
-import { apiMutation } from '@/lib/api/client';
-import { useCreateNativeEvent, useSaveVenueProfile } from '@/lib/api/events';
+import { apiFetch, apiMutation } from '@/lib/api/client';
+import { useCreateNativeEvent, useSaveVenueProfile, useVenueEvents } from '@/lib/api/events';
 import { queryKeys } from '@/lib/api/keys';
 
 jest.mock('@/lib/api/client', () => ({
   ...jest.requireActual('@/lib/api/client'),
   apiMutation: jest.fn(),
+  apiFetch: jest.fn(),
+  isApiConfigured: () => true,
 }));
 
 describe('native event cache updates', () => {
-  it('refreshes venue and nearby Home events after publication', async () => {
+  it('refreshes the owner list after preparation without advertising public Home changes', async () => {
     const client = new QueryClient({ defaultOptions: { mutations: { gcTime: 0 } } });
     const invalidate = jest.spyOn(client, 'invalidateQueries');
     jest.mocked(apiMutation).mockResolvedValueOnce({ id: 'event-1' });
@@ -28,7 +30,20 @@ describe('native event cache updates', () => {
       });
     });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.venueEvents('venue-1') });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.homeFeedRoot });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: queryKeys.homeFeedRoot });
+    unmount();
+    client.clear();
+  });
+
+  it('uses the authenticated owner list so private drafts are available for completion', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    jest.mocked(apiFetch).mockResolvedValueOnce({ items: [] });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { unmount } = renderHook(() => useVenueEvents('venue-1'), { wrapper });
+    await act(async () => {});
+    expect(apiFetch).toHaveBeenCalledWith('/venues/me/events', { schema: expect.anything() });
     unmount();
     client.clear();
   });

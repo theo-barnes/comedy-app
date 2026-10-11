@@ -11,14 +11,14 @@ from pydantic import ValidationError
 
 from creators.models.domain import VenueProfile
 from events.controller import (
-    EventWriteRateLimit, VenueUser, create_event, create_native_event, router,
+    EventWriteRateLimit, VenueUser, create_event, create_native_draft, create_native_event, router,
 )
 from events.factory import RepositoryVenueLookup
 from events.models.domain import EventStatus
 from events.schemas import CreateEventRequest, CreateNativeEventRequest, EventSchema
 from events.service import EventService, NativeVenue
 from shared.auth.models import AuthenticatedUser
-from shared.errors import PermissionDeniedError, ValidationFailedError
+from shared.errors import ConflictError, PermissionDeniedError, ValidationFailedError
 from tests.test_events import FakeComedianLookup, FakeEventRepository, FakePlaceLookup
 
 
@@ -59,7 +59,7 @@ def _service(venue: NativeVenue | None = VENUE) -> tuple[EventService, FakeVenue
 
 def _publish(service: EventService, user: AuthenticatedUser = USER, **overrides):
     body = _payload(**overrides)
-    return service.create_native(
+    return service.create_native_draft(
         user,
         title=body['title'],
         description=body.get('description'),
@@ -247,10 +247,13 @@ def test_native_controller_preserves_response_contract_auth_limiter_and_route_or
     assert route.status_code == 201
     assert route.response_model is EventSchema
     service, _ = _service()
-    response = create_native_event(CreateNativeEventRequest(**_payload()), USER, service)
+    with pytest.raises(ConflictError, match='update required'):
+        create_native_event(CreateNativeEventRequest(**_payload()), USER, service)
+    response = create_native_draft(CreateNativeEventRequest(**_payload()), USER, service)
     assert response.venueId == USER.user_id
     assert response.latitude == VENUE.latitude
     assert response.status == 'scheduled'
+    assert response.publicationStatus == 'draft'
     assert response.startTime.tzinfo is timezone.utc
 
 
@@ -285,10 +288,9 @@ def test_native_factory_wires_stored_venue_lookup(monkeypatch: pytest.MonkeyPatc
     creators.get_venue.assert_called_once_with(USER.user_id)
 
 
-def test_legacy_creation_contract_remains_unchanged() -> None:
+def test_legacy_creation_cannot_bypass_required_image() -> None:
     service, _ = _service(None)
     body = CreateEventRequest(title=' ', startTime='2000-01-01T00:00:00Z', latitude=10, longitude=20)
-    event = create_event(body, USER, service)
-    assert event.title == ' '
-    assert event.startTime.year == 2000
-    assert (event.latitude, event.longitude) == (10, 20)
+    with pytest.raises(ConflictError, match='update required'):
+        create_event(body, USER, service)
+    assert service._repository.events == {}

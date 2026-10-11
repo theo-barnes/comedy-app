@@ -3,18 +3,30 @@ import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod/v3';
 
 import { ApiError } from '@/lib/api/client';
-import { useCreateNativeEvent, type NativeEventInput, type VenueEvent } from '@/lib/api/events';
+import {
+  updateEventDraft,
+  useCreateNativeEvent,
+  type NativeEventInput,
+  type VenueEvent,
+} from '@/lib/api/events';
 import { useEvent } from '@/lib/api/gig-posters';
 import { IncompleteStoredValueError, LargeSecureStore } from '@/lib/large-secure-store';
 
 import { nativeEventInputSchema } from './event-form';
 
-const journalSchema = z.object({
+const legacyJournalSchema = z.object({
   version: z.literal(1),
   key: z.string().uuid(),
   input: nativeEventInputSchema,
   eventId: z.string().min(1).optional(),
   posterWanted: z.boolean(),
+});
+const journalSchema = z.object({
+  version: z.literal(2),
+  key: z.string().uuid(),
+  input: nativeEventInputSchema,
+  creationInput: nativeEventInputSchema,
+  eventId: z.string().min(1).optional(),
 });
 export type PendingPublication = z.infer<typeof journalSchema>;
 export const publicationJournalKey = (userId: string) => `gig-publication.${userId}`;
@@ -40,7 +52,15 @@ export async function readPublication(userId: string): Promise<PendingPublicatio
   }
   if (value === null) return null;
   try {
-    return journalSchema.parse(JSON.parse(value));
+    const record = z.union([journalSchema, legacyJournalSchema]).parse(JSON.parse(value));
+    if (record.version === 2) return record;
+    return {
+      version: 2,
+      key: record.key,
+      input: record.input,
+      creationInput: record.input,
+      eventId: record.eventId,
+    };
   } catch (failure) {
     if (failure instanceof SyntaxError || failure instanceof z.ZodError) {
       throw new InvalidPublicationJournalError();
@@ -49,8 +69,8 @@ export async function readPublication(userId: string): Promise<PendingPublicatio
   }
 }
 
-export function useEventPublication(userId: string, enabled: boolean) {
-  const publish = useCreateNativeEvent(userId);
+export function useEventPublication(userId: string, enabled: boolean, draftId?: string) {
+  const prepare = useCreateNativeEvent(userId);
   const [pending, setPending] = useState<PendingPublication | null>(null);
   const [created, setCreated] = useState<VenueEvent | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -60,10 +80,8 @@ export function useEventPublication(userId: string, enabled: boolean) {
   const [isPending, setIsPending] = useState(false);
   const alive = useRef(true);
   const busy = useRef(false);
-  const eventQuery = useEvent(
-    created?.id ?? pending?.eventId,
-    enabled && !!(created || pending?.eventId),
-  );
+  const activeEventId = created?.id ?? (pending ? pending.eventId : draftId);
+  const eventQuery = useEvent(activeEventId, enabled && !!activeEventId);
 
   useEffect(() => {
     alive.current = true;
@@ -116,18 +134,43 @@ export function useEventPublication(userId: string, enabled: boolean) {
     };
   }, [enabled, userId]);
 
-  async function submit(input?: NativeEventInput, posterWanted = false) {
-    if (!enabled || busy.current || created || pending?.eventId || recoveryError || !loaded) {
+  const recovered = eventQuery.data;
+  const ownedRecovered = recovered?.venueId === userId ? recovered : null;
+  const currentEvent =
+    created && ownedRecovered
+      ? (ownedRecovered.posterRevision ?? 0) >= (created.posterRevision ?? 0)
+        ? ownedRecovered
+        : created
+      : (created ?? ownedRecovered);
+
+  async function submit(input?: NativeEventInput) {
+    if (!enabled || busy.current || recoveryError || !loaded) {
+      return null;
+    }
+    if (currentEvent?.publicationStatus === 'published') return currentEvent;
+    if ((pending?.eventId || draftId) && !currentEvent) {
+      setError(new Error('events.poster.refreshFailed'));
+      return null;
+    }
+    if (draftId && pending && pending.eventId !== draftId) {
+      setError(new Error('events.poster.otherPreparation'));
       return null;
     }
     const record: PendingPublication | null =
-      pending ??
+      (pending
+        ? {
+            ...pending,
+            ...(currentEvent && input ? { input } : {}),
+            ...(currentEvent ? { eventId: currentEvent.id } : {}),
+          }
+        : null) ??
       (input
         ? {
-            version: 1,
+            version: 2,
             key: randomUUID(),
             input,
-            posterWanted,
+            creationInput: input,
+            ...(currentEvent ? { eventId: currentEvent.id } : {}),
           }
         : null);
     if (!record) return null;
@@ -140,7 +183,12 @@ export function useEventPublication(userId: string, enabled: boolean) {
       if (!alive.current) return null;
       setPending(record);
       posting = true;
-      const event = await publish.mutateAsync({ ...record.input, idempotencyKey: record.key });
+      const event = currentEvent
+        ? await updateEventDraft(currentEvent.id, record.input, currentEvent.posterRevision ?? 0)
+        : await prepare.mutateAsync({
+            ...record.creationInput,
+            idempotencyKey: record.key,
+          });
       if (!alive.current) return null;
       setCreated(event);
       const saved = { ...record, eventId: event.id };
@@ -149,7 +197,7 @@ export function useEventPublication(userId: string, enabled: boolean) {
       return alive.current ? event : null;
     } catch (failure) {
       if (!alive.current) return null;
-      if (posting && failure instanceof ApiError && failure.status === 422) {
+      if (posting && !currentEvent && failure instanceof ApiError && failure.status === 422) {
         try {
           await LargeSecureStore.removeItem(publicationJournalKey(userId));
           if (alive.current) {
@@ -192,22 +240,17 @@ export function useEventPublication(userId: string, enabled: boolean) {
     }
   }
 
-  const recovered = eventQuery.data;
-  const ownedRecovered = recovered?.venueId === userId ? recovered : null;
-  const currentEvent =
-    created && ownedRecovered
-      ? (ownedRecovered.posterRevision ?? 0) >= (created.posterRevision ?? 0)
-        ? ownedRecovered
-        : created
-      : (created ?? ownedRecovered);
   return {
     pending,
     journalRecovered,
     created: currentEvent,
     setCreated,
-    recovering: (enabled && !loaded) || (!!pending?.eventId && !created && eventQuery.isPending),
+    recovering: (enabled && !loaded) || (!!activeEventId && !created && eventQuery.isPending),
     recoveryError:
       recoveryError ??
+      (draftId && pending && pending.eventId !== draftId
+        ? new Error('events.poster.otherPreparation')
+        : null) ??
       (!created
         ? (eventQuery.error ??
           (recovered && !ownedRecovered ? new Error('events.poster.notOwner') : null))
@@ -221,7 +264,7 @@ export function useEventPublication(userId: string, enabled: boolean) {
         ? clear()
         : Promise.resolve(false),
     retryRecovery: () => {
-      if (pending?.eventId) {
+      if (activeEventId) {
         void eventQuery.refetch();
       } else {
         setLoaded(false);

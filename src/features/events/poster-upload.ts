@@ -7,6 +7,7 @@ import {
   attachGigPoster,
   completePosterUpload,
   createPosterUpload,
+  publishGig,
   refreshPosterQueries,
 } from '@/lib/api/gig-posters';
 import { queryKeys } from '@/lib/api/keys';
@@ -121,7 +122,8 @@ export function useGigPosterUpload(userId: string) {
           uploaded.current = asset;
         }
         update('attaching', 1);
-        const result = await attachGigPoster(
+        const finalize = event.publicationStatus === 'draft' ? publishGig : attachGigPoster;
+        const result = await finalize(
           {
             eventId: event.id,
             assetId: asset.assetId,
