@@ -9,19 +9,20 @@ const mockPause = jest.fn();
 const mockReplaceAsync = jest.fn().mockResolvedValue(undefined);
 const mockDispose = jest.fn();
 const mockFetchNarrationAudio = jest.fn();
+const mockPlayer = {
+  play: mockPlay,
+  pause: mockPause,
+  replaceAsync: mockReplaceAsync,
+};
 
-let isPlaying = false;
+let mockIsPlaying = false;
 
 jest.mock('expo', () => ({
-  useEvent: () => ({ isPlaying }),
+  useEvent: () => ({ isPlaying: mockIsPlaying }),
 }));
 
 jest.mock('expo-video', () => ({
-  useVideoPlayer: () => ({
-    play: mockPlay,
-    pause: mockPause,
-    replaceAsync: mockReplaceAsync,
-  }),
+  useVideoPlayer: () => mockPlayer,
 }));
 
 jest.mock('@/lib/api/narration', () => ({
@@ -33,7 +34,7 @@ describe('NarrationButton', () => {
 
   beforeEach(() => {
     process.env.EXPO_PUBLIC_API_URL = 'https://api-dev.example.com';
-    isPlaying = false;
+    mockIsPlaying = false;
     mockPlay.mockReset();
     mockPause.mockReset();
     mockReplaceAsync.mockClear();
@@ -55,7 +56,7 @@ describe('NarrationButton', () => {
       <NarrationButton resourceType="event" resourceId="event-1" label="Friday comedy" />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Listen to Friday comedy' }));
+    fireEvent.press(screen.getByText('accessibility.listen'));
 
     await waitFor(() =>
       expect(mockFetchNarrationAudio).toHaveBeenCalledWith('event', 'event-1', expect.anything()),
@@ -70,7 +71,7 @@ describe('NarrationButton', () => {
       <NarrationButton resourceType="event" resourceId="event-1" label="Friday comedy" />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Listen to Friday comedy' }));
+    fireEvent.press(screen.getByText('accessibility.listen'));
 
     expect(await screen.findByText('Narration request failed')).toBeTruthy();
     expect(mockPlay).not.toHaveBeenCalled();

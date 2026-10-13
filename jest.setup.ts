@@ -101,6 +101,15 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('expo-video', () => ({
+  useVideoPlayer: () => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    replaceAsync: jest.fn().mockResolvedValue(undefined),
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+  }),
+}));
+
 jest.mock('expo-router', () => ({
   router: {
     back: jest.fn(),

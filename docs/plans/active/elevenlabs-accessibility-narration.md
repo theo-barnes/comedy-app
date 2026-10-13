@@ -41,16 +41,18 @@ production only after that evidence. Disable the flag or remove the key to roll 
 ## Validation
 
 - `cd backend && DISCOVERY_DATABASE_URL='' DISCOVERY_REDIS_URL='' .venv/bin/python -m pytest
-  tests/test_accessibility.py -q`: 9 passed on 2026-10-13.
+tests/test_accessibility.py -q`: 9 passed on 2026-10-13.
 - `cd backend && DISCOVERY_DATABASE_URL='' DISCOVERY_REDIS_URL='' .venv/bin/python -m pytest
-  tests/ -q`: 337 passed, 13 skipped on 2026-10-13.
+tests/ -q`: 337 passed, 13 skipped on 2026-10-13.
 - `cd backend && .venv/bin/python -m compileall -q src/accessibility src/shared/config.py
-  src/main.py`: passed on 2026-10-13.
-- Focused mobile API/control test command is committed, but cannot run in this environment because
-  `node` and package-manager executables are unavailable; the Jest launcher exits before test
-  discovery. Run it in CI or a Node-enabled workspace before merge.
-- Pending: Node-enabled typecheck, lint, governance validation and a development-build playback
-  journey where environment credentials and device access permit it.
+src/main.py`: passed on 2026-10-13.
+- `corepack pnpm test:focused --runTestsByPath __tests__/lib/api/client.test.ts
+__tests__/features/accessibility/NarrationButton.test.tsx --silent`: 30 passed on 2026-10-13.
+- `corepack pnpm test:ci`: 93 suites and 498 tests passed on 2026-10-13.
+- `corepack pnpm typecheck`, `corepack pnpm lint`, and `corepack pnpm validate:governance`: passed
+  on 2026-10-13.
+- Pending: a development-build playback journey with non-production credentials, selected
+  platform voice, and device access.
 
 ## Exact next action
 

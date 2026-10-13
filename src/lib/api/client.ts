@@ -34,9 +34,7 @@ export function getApiErrorMessage(error: Error, t: TFunction): string {
       'schema_revision_unknown',
       'database_unreachable',
       'narration_unavailable',
-    ].includes(
-      error.code ?? '',
-    )
+    ].includes(error.code ?? '')
   ) {
     return t('common.serviceUnavailable');
   }
@@ -191,7 +189,7 @@ export async function apiBinaryFetch(
   options: { contentType: string; signal?: AbortSignal },
 ): Promise<Response> {
   const response = await request(path, { signal: options.signal });
-  const contentType = response.headers.get('content-type')?.split(';', 1)[0].toLowerCase();
+  const contentType = response.headers.get('content-type')?.split(';', 1)[0]?.toLowerCase();
   if (contentType !== options.contentType) {
     throw new ApiError(`Request to ${path} returned an unexpected content type`, response.status);
   }
