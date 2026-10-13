@@ -2,6 +2,7 @@ import { z } from 'zod/v3';
 
 import {
   ApiError,
+  apiBinaryFetch,
   apiFetch,
   apiSend,
   getApiBaseUrl,
@@ -88,6 +89,46 @@ describe('apiFetch', () => {
       searchParams: { lat: 51.5, cursor: undefined, limit: 20 },
     });
 
+    describe('apiBinaryFetch', () => {
+      it('authenticates the internal binary request and accepts the expected media type', async () => {
+        mockGetSession.mockResolvedValue({ data: { session: { access_token: 'jwt-123' } } });
+        mockFetch.mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'audio/mpeg; charset=binary' }),
+        });
+        const abort = new AbortController();
+
+        await apiBinaryFetch('/accessibility/narration/event/event-1', {
+          contentType: 'audio/mpeg',
+          signal: abort.signal,
+        });
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          'https://api-dev.example.com/v1/accessibility/narration/event/event-1',
+          expect.objectContaining({
+            headers: { Authorization: '******' },
+            signal: abort.signal,
+          }),
+        );
+      });
+
+      it('rejects a successful response with an unexpected content type', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+        });
+
+        await expect(
+          apiBinaryFetch('/accessibility/narration/event/event-1', { contentType: 'audio/mpeg' }),
+        ).rejects.toMatchObject({
+          name: 'ApiError',
+          status: 200,
+        });
+      });
+    });
+
     const url = new URL(mockFetch.mock.calls[0][0] as string);
     expect(url.origin).toBe('https://api-dev.example.com');
     expect(url.pathname).toBe('/v1/feed/videos');
@@ -168,7 +209,12 @@ describe('apiFetch', () => {
     );
   });
 
-  it.each(['schema_revision_behind', 'schema_revision_unknown', 'database_unreachable'])(
+  it.each([
+    'schema_revision_behind',
+    'schema_revision_unknown',
+    'database_unreachable',
+    'narration_unavailable',
+  ])(
     'retains readiness code %s and presents a localized unavailable message',
     async (code) => {
       mockFetch.mockResolvedValue(

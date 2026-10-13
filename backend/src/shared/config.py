@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,6 +44,14 @@ class Settings(BaseSettings):
     max_video_size_bytes: int = 500 * 1024 * 1024
     max_active_uploads_per_creator: int = 2
     content_h3_resolution: int = 9
+
+    # Accessibility narration (ElevenLabs; all values are backend-only)
+    elevenlabs_enabled: bool = False
+    elevenlabs_api_key: str = ''
+    elevenlabs_voice_id: str = ''
+    elevenlabs_model_id: str = 'eleven_flash_v2_5'
+    elevenlabs_max_narration_characters: int = Field(default=1200, ge=1, le=10_000)
+    elevenlabs_narration_requests_per_hour: int = Field(default=20, ge=1, le=100)
 
     # Database
     database_url: str = ''

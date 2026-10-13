@@ -15,6 +15,13 @@
     "noResults": "No results found",
     "seeAll": "See all"
   },
+  "accessibility": {
+    "listen": "Listen",
+    "listenTo": "Listen to {{label}}",
+    "stopNarration": "Stop narration",
+    "narrationHint": "Plays an audio narration of this public information.",
+    "narrationUnavailable": "Narration is temporarily unavailable."
+  },
   "tabs": {
     "home": "Home",
     "discover": "Discover",

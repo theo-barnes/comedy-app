@@ -13,6 +13,13 @@
     "noResults": "Aucun résultat",
     "seeAll": "Voir tout"
   },
+  "accessibility": {
+    "listen": "Écouter",
+    "listenTo": "Écouter {{label}}",
+    "stopNarration": "Arrêter la narration",
+    "narrationHint": "Lit une narration audio de ces informations publiques.",
+    "narrationUnavailable": "La narration est temporairement indisponible."
+  },
   "events": {
     "title": "Soirées comédie",
     "subtitle": "Découvrez les spectacles d'humour près de chez vous.",

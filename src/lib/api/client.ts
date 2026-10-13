@@ -29,7 +29,12 @@ export function getApiErrorMessage(error: Error, t: TFunction): string {
   if (
     error instanceof ApiError &&
     error.status === 503 &&
-    ['schema_revision_behind', 'schema_revision_unknown', 'database_unreachable'].includes(
+    [
+      'schema_revision_behind',
+      'schema_revision_unknown',
+      'database_unreachable',
+      'narration_unavailable',
+    ].includes(
       error.code ?? '',
     )
   ) {
@@ -175,4 +180,20 @@ export async function apiSend(
   options: { method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown } = { method: 'POST' },
 ): Promise<void> {
   await request(path, options);
+}
+
+/**
+ * Fetch a binary response from the platform API and reject unexpected media types.
+ * The caller owns consuming the response body and any resulting local-file lifecycle.
+ */
+export async function apiBinaryFetch(
+  path: string,
+  options: { contentType: string; signal?: AbortSignal },
+): Promise<Response> {
+  const response = await request(path, { signal: options.signal });
+  const contentType = response.headers.get('content-type')?.split(';', 1)[0].toLowerCase();
+  if (contentType !== options.contentType) {
+    throw new ApiError(`Request to ${path} returned an unexpected content type`, response.status);
+  }
+  return response;
 }
