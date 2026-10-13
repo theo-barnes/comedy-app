@@ -35,6 +35,7 @@
     "expo-file-system": "~56.0.10",
     "expo-font": "~56.0.7",
     "expo-glass-effect": "~56.0.4",
+    "expo-image-manipulator": "~56.0.26",
     "expo-image-picker": "~56.0.24",
     "expo-linking": "^56.0.17",
     "expo-localization": "^56.0.6",
