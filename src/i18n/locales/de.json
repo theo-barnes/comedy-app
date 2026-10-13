@@ -13,6 +13,13 @@
     "noResults": "Keine Ergebnisse",
     "seeAll": "Alle anzeigen"
   },
+  "accessibility": {
+    "listen": "Anhören",
+    "listenTo": "{{label}} anhören",
+    "stopNarration": "Erzählung stoppen",
+    "narrationHint": "Spielt eine Audionachricht zu diesen öffentlichen Informationen ab.",
+    "narrationUnavailable": "Die Erzählung ist vorübergehend nicht verfügbar."
+  },
   "events": {
     "title": "Comedy-Abende",
     "subtitle": "Entdecke Comedy-Events, Lineups und Clips in deiner Nähe.",

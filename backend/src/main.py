@@ -7,6 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from accessibility.controller import router as accessibility_router
 from content.controller import router as content_router
 from content.controller import webhook_router as content_webhook_router
 from creators.controller import router as creators_router
@@ -68,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(engagement_router, prefix='/v1')
     app.include_router(feed_router, prefix='/v1')
     app.include_router(analytics_router, prefix='/v1')
+    app.include_router(accessibility_router, prefix='/v1')
     app.include_router(discovery_router, include_in_schema=False)
 
     @app.get('/health', include_in_schema=False)

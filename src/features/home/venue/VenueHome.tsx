@@ -6,6 +6,7 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { NarrationButton } from '@/features/accessibility/NarrationButton';
 import { useAuth } from '@/features/auth/useAuth';
 import { GigPosterImage } from '@/features/events/GigPosterImage';
 import { HomeScreenLayout } from '@/features/home/components/HomeScreenLayout';
@@ -62,6 +63,9 @@ export function VenueHome() {
                 UTC
               </AppText>
               {event.description ? <AppText>{event.description}</AppText> : null}
+              {event.publicationStatus === 'published' && event.status === 'scheduled' ? (
+                <NarrationButton resourceType="event" resourceId={event.id} label={event.title} />
+              ) : null}
               {allowed && event.venueId === profile.id && (
                 <Button
                   variant="secondary"

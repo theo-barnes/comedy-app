@@ -2,6 +2,7 @@ import { z } from 'zod/v3';
 
 import {
   ApiError,
+  apiBinaryFetch,
   apiFetch,
   apiSend,
   getApiBaseUrl,
@@ -168,26 +169,28 @@ describe('apiFetch', () => {
     );
   });
 
-  it.each(['schema_revision_behind', 'schema_revision_unknown', 'database_unreachable'])(
-    'retains readiness code %s and presents a localized unavailable message',
-    async (code) => {
-      mockFetch.mockResolvedValue(
-        jsonResponse({ status: 'unavailable', code }, { ok: false, status: 503 }),
-      );
-      const error = await apiFetch('/creators/me', { schema }).catch((failure: unknown) => failure);
-      expect(error).toBeInstanceOf(ApiError);
-      expect(error).toMatchObject({ status: 503, code });
-      const translator = createInstance();
-      await translator.init({
-        lng: 'en',
-        resources: {
-          en: { translation: { common: { serviceUnavailable: 'Please retry shortly.' } } },
-        },
-      });
-      if (!(error instanceof ApiError)) throw new Error('Expected ApiError');
-      expect(getApiErrorMessage(error, translator.t)).toBe('Please retry shortly.');
-    },
-  );
+  it.each([
+    'schema_revision_behind',
+    'schema_revision_unknown',
+    'database_unreachable',
+    'narration_unavailable',
+  ])('retains readiness code %s and presents a localized unavailable message', async (code) => {
+    mockFetch.mockResolvedValue(
+      jsonResponse({ status: 'unavailable', code }, { ok: false, status: 503 }),
+    );
+    const error = await apiFetch('/creators/me', { schema }).catch((failure: unknown) => failure);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 503, code });
+    const translator = createInstance();
+    await translator.init({
+      lng: 'en',
+      resources: {
+        en: { translation: { common: { serviceUnavailable: 'Please retry shortly.' } } },
+      },
+    });
+    if (!(error instanceof ApiError)) throw new Error('Expected ApiError');
+    expect(getApiErrorMessage(error, translator.t)).toBe('Please retry shortly.');
+  });
 
   it.each([
     { status: 'unavailable', code: { secret: 'must not render' } },
@@ -265,6 +268,45 @@ describe('apiFetch', () => {
     mockFetch.mockResolvedValue(jsonResponse({ value: 42 }));
 
     await expect(apiFetch('/feed/videos', { schema })).rejects.toThrow();
+  });
+});
+
+describe('apiBinaryFetch', () => {
+  it('authenticates the internal binary request and accepts the expected media type', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { access_token: 'jwt-123' } } });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'audio/mpeg; charset=binary' }),
+    });
+    const abort = new AbortController();
+
+    await apiBinaryFetch('/accessibility/narration/event/event-1', {
+      contentType: 'audio/mpeg',
+      signal: abort.signal,
+    });
+
+    expect(mockFetch.mock.calls[0][0]).toBe(
+      'https://api-dev.example.com/v1/accessibility/narration/event/event-1',
+    );
+    const request = mockFetch.mock.calls[0][1] as RequestInit;
+    expect(request.signal).toBe(abort.signal);
+    expect((request.headers as Record<string, string>).Authorization).toBe('Bearer jwt-123');
+  });
+
+  it('rejects a successful response with an unexpected content type', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+    });
+
+    await expect(
+      apiBinaryFetch('/accessibility/narration/event/event-1', { contentType: 'audio/mpeg' }),
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 200,
+    });
   });
 });
 
